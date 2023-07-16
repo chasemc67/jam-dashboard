@@ -63,11 +63,13 @@ const FretboardControls: FunctionComponent = () => {
   const [startingFret, setStartingFret] = useState(0);
   const [showTextNotes, setShowTextNotes] = useState(true);
   const [isLeftHanded, setIsLeftHanded] = useState(false);
+const [inputFocus, setInputFocus] = useState(-1);
 
   const handleInputChange = (index: number, value: string) => {
     const updatedRootNotes = [...rootNotes];
     updatedRootNotes[index] = value;
     setRootNotes(updatedRootNotes);
+    setInputFocus(-1); // Revert inputFocus to -1 after the input value has been changed
   };
 
   const getOutlineColor = (note: string) => {
@@ -79,10 +81,16 @@ const FretboardControls: FunctionComponent = () => {
     return rootNotes.map((note, index) => (
       <StringInput key={index}>
         <TextInput
-          value={note}
-          onChange={e => handleInputChange(index, e.target.value)}
-          borderColor={getOutlineColor(note)}
-        />
+  value={inputFocus === index ? '' : note} // Value is empty if the input is in focus
+  onFocus={() => setInputFocus(index)} // OnFocus event added to set the focused input's index
+  onBlur={() => {  // onBlur event added to revert to the initial value if no new value is entered
+    if (note === '') {
+      handleInputChange(index, rootNotes[index]);
+    }
+  }}
+  onChange={e => handleInputChange(index, e.target.value)}
+  borderColor={getOutlineColor(note)}
+/>
       </StringInput>
     ));
   };
