@@ -11,12 +11,17 @@ const AppHeader = styled.header`
   justify-content: center;
 `;
 
+const HelloWorld = styled.h2`
+  text-align: center;
+`;
+
 function App() {
   return (
     <div className="App">
       <AppHeader>
         <h1>Jam Dashboard</h1>
       </AppHeader>
+      <HelloWorld>Hello World</HelloWorld>
       <AppBody>
         <FretboardControls />
       </AppBody>
