@@ -11,11 +11,18 @@ const AppHeader = styled.header`
   justify-content: center;
 `;
 
+const HelloWorld = styled.p`
+  font-size: 18px;
+  text-align: center;
+  color: #333;
+`;
+
 function App() {
   return (
     <div className="App">
       <AppHeader>
         <h1>Jam Dashboard</h1>
+        <HelloWorld>Hello World</HelloWorld>
       </AppHeader>
       <AppBody>
         <FretboardControls />
