@@ -1,6 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import FretboardControls from './components/FretboardControls/FretboardControls';
+import LikeCounter from './components/LikeCounter/LikeCounter';
 
 const AppBody = styled.div`
   margin: 20px;
@@ -19,6 +20,7 @@ function App() {
       </AppHeader>
       <AppBody>
         <FretboardControls />
+        <LikeCounter />
       </AppBody>
     </div>
   );
