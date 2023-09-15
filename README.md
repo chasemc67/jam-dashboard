@@ -1,3 +1,5 @@
+&#x1F308; &#x1F4A9;
+
 # Jam Dashboard
 
 Jam dashboard is a simply highly-configurable tooling for finding/visualizing specific notes on a guitar fretboard with arbitrary tunings.  
