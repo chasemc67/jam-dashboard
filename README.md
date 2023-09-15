@@ -1,3 +1,4 @@
+🌈 💩
 # Jam Dashboard
 
 Jam dashboard is a simply highly-configurable tooling for finding/visualizing specific notes on a guitar fretboard with arbitrary tunings.  
