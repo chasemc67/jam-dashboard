@@ -3,6 +3,8 @@ import styled from 'styled-components';
 import FretboardControls from './components/FretboardControls/FretboardControls';
 import RandomPlayer from './components/Player/RandomPlayer';
 import GamePlayer from './components/Player/GamePlayer';
+import './styles/globals.css';
+
 const AppBody = styled.div`
   margin: 20px;
 `;
