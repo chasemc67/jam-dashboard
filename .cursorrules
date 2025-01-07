@@ -1,0 +1,26 @@
+jam-dashboard is a react website to help with learning and playing guitar.
+
+Specifically, it contains two main features:
+
+- a fretboard visualizer, which lets you easily see where a collection of notes are on the fretboard
+- a random chord generator and player, to help with ear training
+
+The fretboard visulizer has a number of advanced features, including:
+
+- being able to control the tuning of each string
+- adjusting the number of frets visualized
+- using a key-picker to easily select notes being visualized, with the ability to also edit those notes after in the textbox
+- a scale detector which can suggest matching scales based on the notes in the textbox.
+
+The fretboard visualizer is in two main react components:
+
+- fret.tsx renders individual frets
+- fretboard.tsx renders a collection of frets into a fretboard
+
+The component which handles the overall page layout, and the inputs for fretboard, is FretboardControls.tsx
+
+For music-theory related utils and functions, we mostly use Tonal.js. We also have a musicTheoryUtils.ts file which handles things like converting between equivalent notes (flat/sharp)
+and other util functions used to match up equivalent notes on the fretboard
+
+We always add storybook stories to all our UI components.
+We always add Jest unit tests to all our util files.
