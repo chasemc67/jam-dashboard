@@ -1,0 +1,162 @@
+import { getEveryChordInScale } from './scaleChords';
+
+describe('Scale Chord Functions', () => {
+  describe('getEveryChordInScale', () => {
+    test('returns correct chords for D major scale', () => {
+      const result = getEveryChordInScale('d major');
+      expect(result).toEqual([
+        {
+          note: 'D',
+          chords: [
+            'D5',
+            'Dsus4',
+            'DM7sus4',
+            'DM',
+            'Dmaj7',
+            'D6',
+            'Dsus2',
+            'Dsus24',
+            'DM9sus4',
+            'DMadd9',
+            'Dmaj9',
+            'D6add9',
+            'Dmaj13',
+            'DM7add13',
+          ],
+        },
+        {
+          note: 'E',
+          chords: [
+            'E5',
+            'Esus4',
+            'E7sus4',
+            'Em',
+            'Em7',
+            'Em6',
+            'E4',
+            'Emadd4',
+            'Em7add11',
+            'Esus2',
+            'Esus24',
+            'E11',
+            'E9sus4',
+            'E13sus4',
+            'Emadd9',
+            'Em9',
+            'Em69',
+            'Em13',
+            'Em11',
+          ],
+        },
+        {
+          note: 'F#',
+          chords: [
+            'F#5',
+            'F#sus4',
+            'F#7sus4',
+            'F#m7#5',
+            'F#m',
+            'F#m7',
+            'F#4',
+            'F#madd4',
+            'F#m7add11',
+            'F#b9sus',
+            'F#11b9',
+            'F#7sus4b9b13',
+            'F#mb6b9',
+          ],
+        },
+        {
+          note: 'G',
+          chords: [
+            'G5',
+            'GM',
+            'Gmaj7',
+            'G6',
+            'Gmaj#4',
+            'GM6#11',
+            'Gsus2',
+            'GMadd9',
+            'Gmaj9',
+            'G6add9',
+            'Gmaj13',
+            'GM7add13',
+            'Gmaj9#11',
+            'G69#11',
+            'GM13#11',
+          ],
+        },
+        {
+          note: 'A',
+          chords: [
+            'A5',
+            'Asus4',
+            'A7sus4',
+            'A7no5',
+            'AM',
+            'A7',
+            'A6',
+            'A7add6',
+            'Asus2',
+            'Asus24',
+            'A11',
+            'A9sus4',
+            'A13sus4',
+            'A9no5',
+            'A13no5',
+            'AMadd9',
+            'A9',
+            'A6add9',
+            'A13',
+          ],
+        },
+        {
+          note: 'B',
+          chords: [
+            'B5',
+            'Bsus4',
+            'B7sus4',
+            'Bm7#5',
+            'Bm',
+            'Bm7',
+            'B4',
+            'Bmadd4',
+            'Bm7add11',
+            'Bsus2',
+            'Bsus24',
+            'B11',
+            'B9sus4',
+            'Bm9#5',
+            'Bmadd9',
+            'Bm9',
+            'Bm11',
+          ],
+        },
+        {
+          note: 'C#',
+          chords: ['C#m7#5', 'C#dim', 'C#m7b5', 'C#4', 'C#mb6b9'],
+        },
+      ]);
+    });
+
+    test('returns correct chords for C major scale with custom chord types', () => {
+      const result = getEveryChordInScale('C major', [
+        'maj',
+        'min',
+        '7',
+        'maj7',
+        'min7',
+        'dim',
+      ]);
+      expect(result).toEqual([
+        { note: 'C', chords: ['Cmaj', 'Cmaj7'] },
+        { note: 'D', chords: ['Dmin', 'Dmin7'] },
+        { note: 'E', chords: ['Emin', 'Emin7'] },
+        { note: 'F', chords: ['Fmaj', 'Fmaj7'] },
+        { note: 'G', chords: ['Gmaj', 'G7'] },
+        { note: 'A', chords: ['Amin', 'Amin7'] },
+        { note: 'B', chords: ['Bdim'] },
+      ]);
+    });
+  });
+});
