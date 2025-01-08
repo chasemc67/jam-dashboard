@@ -1,5 +1,11 @@
 jam-dashboard is a react website to help with learning and playing guitar.
 
+It's built with:
+
+- Remix
+- Tailwind
+- ShadCN
+
 Specifically, it contains two main features:
 
 - a fretboard visualizer, which lets you easily see where a collection of notes are on the fretboard
