@@ -6,6 +6,11 @@ It's built with:
 - Tailwind
 - ShadCN
 
+The way color theming works is:
+
+- Colors are defined in tailwind.css, and the inital theme (colors) are taken from a ShadCN
+- theres a `/theme` route where we can preview the colors
+
 Specifically, it contains two main features:
 
 - a fretboard visualizer, which lets you easily see where a collection of notes are on the fretboard

@@ -1,26 +1,31 @@
 const colorGroups = {
-  'Base Colors': ['background', 'foreground'],
+  'Base Colors': ['bg-background', 'bg-foreground'],
   'Component Colors': [
-    'card',
-    'popover',
-    'primary',
-    'secondary',
-    'muted',
-    'accent',
+    'bg-card',
+    'bg-popover',
+    'bg-primary',
+    'bg-secondary',
+    'bg-muted',
+    'bg-accent',
   ],
-  'State Colors': ['destructive'],
-  'Border & Input': ['border', 'input', 'ring'],
-  'Chart Colors': ['chart-1', 'chart-2', 'chart-3', 'chart-4', 'chart-5'],
+  'State Colors': ['bg-destructive'],
+  'Border & Input': ['bg-border', 'bg-input', 'bg-ring'],
+  'Chart Colors': [
+    'bg-chart-1',
+    'bg-chart-2',
+    'bg-chart-3',
+    'bg-chart-4',
+    'bg-chart-5',
+  ],
 };
 
 function ColorSwatch({ name }: { name: string }) {
-  const baseClass = name.startsWith('chart-')
-    ? `bg-chart-${name.split('-')[1]}`
-    : `bg-${name}`;
   return (
     <div className="flex flex-col gap-2">
-      <div className={`h-16 w-16 rounded-md ${baseClass} ring-1 ring-border`} />
-      <span className="text-sm text-muted-foreground">{name}</span>
+      <div className={`h-16 w-16 rounded-md ${name} ring-1 ring-border`} />
+      <span className="text-sm text-muted-foreground">
+        {name.replace('bg-', '')}
+      </span>
     </div>
   );
 }
