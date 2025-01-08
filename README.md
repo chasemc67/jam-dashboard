@@ -14,11 +14,17 @@ Run the dev server:
 npm run dev
 ```
 
+Run Tests:
+
+```shellscript
+npm run test
+```
+
 ## TODO
 
 ```
 npm run storybook
-npm run test
+
 npm run format
 ```
 
