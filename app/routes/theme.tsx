@@ -11,11 +11,14 @@ const colorGroups = {
   'State Colors': ['bg-destructive'],
   'Border & Input': ['bg-border', 'bg-input', 'bg-ring'],
   'Chart Colors': [
+    'bg-chart-0',
     'bg-chart-1',
     'bg-chart-2',
     'bg-chart-3',
     'bg-chart-4',
     'bg-chart-5',
+    'bg-chart-6',
+    'bg-chart-7',
   ],
 };
 
