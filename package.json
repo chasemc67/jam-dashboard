@@ -28,6 +28,7 @@
     "tonal": "^6.4.0"
   },
   "devDependencies": {
+    "@githubnext/vitale": "^0.0.19",
     "@remix-run/dev": "^2.15.2",
     "@types/jest": "^29.5.14",
     "@types/react": "^18.2.20",
