@@ -11,8 +11,8 @@
     "typecheck": "tsc",
     "format": "prettier --write .",
     "test": "jest",
-    "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "storybook": "STORYBOOK=true storybook dev -p 6006",
+    "build-storybook": "STORYBOOK=true storybook build"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.1.1",
