@@ -8,34 +8,15 @@ With Jam Dashboard you can highlight just the notes you need, in any tuning, and
 
 ## Development
 
-Run the dev server:
+Common commands:
 
 ```shellscript
-npm run dev
-```
-
-Run Tests:
-
-```shellscript
-npm run test
-```
-
-Run Storybook:
-
-```shellscript
-npm run storybook
+npm run dev // dev server
+npm run test // run unit tests
+npm run storybook // storybooks
+npm run format // prettier
 ```
 
 ## Deployment
 
-First, build your app for production:
-
-```sh
-npm run build
-```
-
-Then run the app in production mode:
-
-```sh
-npm start
-```
+Change merged to main will auto-deploy to vercel
