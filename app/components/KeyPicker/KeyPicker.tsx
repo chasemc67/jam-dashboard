@@ -20,6 +20,10 @@ import {
 } from '~/components/ui/popover';
 import { Key, Note } from 'tonal';
 
+// Add noop filter function that always returns 1 (highest score)
+// This effectively disables the built-in filtering
+const noopFilter = () => 1;
+
 interface KeyPickerProps {
   // optionally accept props such as defaultScale, styling, callbacks, etc.
 }
@@ -99,7 +103,7 @@ export const KeyPicker: React.FC<KeyPickerProps> = () => {
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[300px] p-0">
-        <Command>
+        <Command filter={noopFilter}>
           <CommandInput
             placeholder="Enter notes separated by commas..."
             value={searchInput}
