@@ -1,6 +1,6 @@
 import type { MetaFunction } from '@remix-run/node';
 import { KeyPicker } from '~/components/KeyPicker/KeyPicker';
-import { FretboardControls } from '~/components/FretboardControls/FretboardControls';
+import FretboardControls from '~/components/FretboardControls';
 
 export const meta: MetaFunction = () => {
   return [
