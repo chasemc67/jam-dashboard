@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Check, ChevronsUpDown } from 'lucide-react';
 
 import { all_notes } from '~/utils/musicTheoryUtils';
@@ -19,10 +19,6 @@ import {
   PopoverTrigger,
 } from '~/components/ui/popover';
 import { Key, Note } from 'tonal';
-
-// Add noop filter function that always returns 1 (highest score)
-// This effectively disables the built-in filtering
-const noopFilter = () => 1;
 
 interface KeyPickerProps {
   // optionally accept props such as defaultScale, styling, callbacks, etc.
@@ -66,26 +62,33 @@ const key_options = generate_key_options();
 export const KeyPicker: React.FC<KeyPickerProps> = () => {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState('');
-  const [searchInput, setSearchInput] = useState('');
 
-  const filteredOptions = useMemo(() => {
-    const searchNotes = parseSearchInput(searchInput);
+  const filterKeys = (value: string, search: string) => {
+    const option = key_options.find(opt => opt.value === value);
+    if (!option) return 0;
 
-    if (searchNotes.length === 0) {
-      return key_options;
+    // If the search string has no commas, treat it as a key name search
+    if (!search.includes(',')) {
+      return option.value.toLowerCase().startsWith(search.toLowerCase())
+        ? 1
+        : 0;
     }
 
-    // Return options where all search notes are found in the scale
-    const filtered_options = key_options.filter(option =>
-      searchNotes.every(searchNote =>
-        option.scale.some(
-          scaleNote => Note.simplify(scaleNote) === Note.simplify(searchNote),
-        ),
+    // Otherwise, treat it as a note search
+    const searchNotes = parseSearchInput(search);
+    if (searchNotes.length === 0) {
+      return 1;
+    }
+
+    // Check if all search notes are in the scale
+    const matchesAllNotes = searchNotes.every(searchNote =>
+      option.scale.some(
+        scaleNote => Note.simplify(scaleNote) === Note.simplify(searchNote),
       ),
     );
-    console.log(filtered_options);
-    return filtered_options;
-  }, [searchInput]);
+
+    return matchesAllNotes ? 1 : 0;
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -103,16 +106,12 @@ export const KeyPicker: React.FC<KeyPickerProps> = () => {
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[300px] p-0">
-        <Command filter={noopFilter}>
-          <CommandInput
-            placeholder="Enter notes separated by commas..."
-            value={searchInput}
-            onValueChange={setSearchInput}
-          />
+        <Command filter={filterKeys}>
+          <CommandInput placeholder="Enter notes separated by commas..." />
           <CommandList>
             <CommandEmpty>No matching keys found.</CommandEmpty>
             <CommandGroup>
-              {filteredOptions.map(key_option => (
+              {key_options.map(key_option => (
                 <CommandItem
                   key={key_option.value}
                   value={key_option.value}
