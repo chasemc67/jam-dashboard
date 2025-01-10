@@ -1,5 +1,6 @@
 import type { MetaFunction } from '@remix-run/node';
 import { KeyPicker } from '~/components/KeyPicker/KeyPicker';
+import { FretboardControls } from '~/components/FretboardControls/FretboardControls';
 
 export const meta: MetaFunction = () => {
   return [
@@ -22,6 +23,7 @@ export default function Index() {
           </h1>
           <KeyPicker />
         </div>
+        <FretboardControls />
       </div>
     </div>
   );
