@@ -5,7 +5,7 @@
 // it calculates which notes would appear on each string, by its offset (fret number)
 // and root notes each string is tuned to.
 
-import React, { FunctionComponent } from 'react';
+import React from 'react';
 import styled from 'styled-components';
 import {
   getNoteAtFret,
@@ -75,7 +75,7 @@ const FretMarker = styled.div<{ tallMarker?: boolean }>`
   z-index: 1;
 `;
 
-const Fret: FunctionComponent<FretProps> = ({
+const Fret: React.FC<FretProps> = ({
   rootNotes,
   fretNumber,
   highlightedNotes,

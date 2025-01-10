@@ -1,6 +1,6 @@
 // FretboardControls.tsx
 
-import React, { FunctionComponent, useState } from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import FretBoard from '../FretBoard';
 import HighlightedNotesControls from '../HighlightedNotesControls';
@@ -58,7 +58,7 @@ const NumberInput = styled.input`
   width: 60px;
 `;
 
-const FretboardControls: FunctionComponent = () => {
+const FretboardControls: React.FC = () => {
   const [rootNotes, setRootNotes] = useState(['E', 'B', 'G', 'D', 'A', 'E']);
   const [highlightedNotes, setHighlightedNotes] = useState<HighlightedNote[]>([
     { note: 'C', color: 'blue' },

@@ -1,5 +1,5 @@
 // HighlightedNotesControls.tsx
-import React, { FunctionComponent, useState } from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import { Scale, ScaleType } from 'tonal';
 
@@ -101,9 +101,10 @@ export type HighlightedNotesControlsProps = {
   setHighlightedNotes: (notes: HighlightedNote[]) => void;
 };
 
-const HighlightedNotesControls: FunctionComponent<
-  HighlightedNotesControlsProps
-> = ({ highlightedNotes, setHighlightedNotes }) => {
+const HighlightedNotesControls: React.FC<HighlightedNotesControlsProps> = ({
+  highlightedNotes,
+  setHighlightedNotes,
+}) => {
   const [inputValue, setInputValue] = useState(
     highlightedNotes.map(n => n.note).join(', '),
   );

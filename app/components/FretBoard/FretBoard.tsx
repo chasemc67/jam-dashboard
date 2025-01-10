@@ -1,5 +1,5 @@
 // FretBoard.tsx
-import React, { FunctionComponent } from 'react';
+import React from 'react';
 import styled from 'styled-components';
 import Fret, { HighlightedNote } from '../Fret';
 
@@ -16,7 +16,7 @@ export type FretBoardProps = {
   isLeftHanded?: boolean;
 };
 
-const FretBoard: FunctionComponent<FretBoardProps> = ({
+const FretBoard: React.FC<FretBoardProps> = ({
   rootNotes,
   highlightedNotes,
   numberOfFrets,
