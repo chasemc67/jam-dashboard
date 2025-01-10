@@ -1,4 +1,24 @@
 const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+export const all_notes = [
+  `Cb`,
+  'C',
+  'C#',
+  `Db`,
+  'D',
+  'D#',
+  `Eb`,
+  'E',
+  'F',
+  'F#',
+  `Gb`,
+  'G',
+  'G#',
+  `Ab`,
+  'A',
+  'A#',
+  `Bb`,
+  'B',
+];
 
 // Map of note modifiers to their semitone offset
 const modifierToOffset: { [key: string]: number } = {

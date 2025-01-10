@@ -1,6 +1,6 @@
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
-
+import { KeyPicker } from '~/components/KeyPicker/KeyPicker';
 export default function Test() {
   return (
     <div className="min-h-screen bg-background dark">
@@ -17,6 +17,7 @@ export default function Test() {
           <Button className="w-full bg-primary hover:bg-primary/90">
             Click me
           </Button>
+          <KeyPicker />
         </div>
       </div>
     </div>
