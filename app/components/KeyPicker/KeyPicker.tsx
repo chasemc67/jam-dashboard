@@ -68,13 +68,14 @@ export const KeyPicker: React.FC<KeyPickerProps> = () => {
     if (!option) return 0;
 
     // If the search string has no commas, treat it as a key name search
+    // So you can search for "C major" or "C minor"
     if (!search.includes(',')) {
       return option.value.toLowerCase().startsWith(search.toLowerCase())
         ? 1
         : 0;
     }
 
-    // Otherwise, treat it as a note search
+    // Otherwise, treat it as a detect-scale search and find matching scales
     const searchNotes = parseSearchInput(search);
     if (searchNotes.length === 0) {
       return 1;
