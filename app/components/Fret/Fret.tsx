@@ -24,11 +24,11 @@ export type FretProps = {
   showTextNotes?: boolean;
 };
 
-// const getFretWidth = (fretNumber: number): string => {
-//   const baseWidth = 120;
-//   const factor = 0.94;
-//   return `${baseWidth * Math.pow(factor, fretNumber)}px`;
-// };
+const getFretWidth = (fretNumber: number): number => {
+  const baseWidth = 120;
+  const factor = 0.94;
+  return baseWidth * Math.pow(factor, fretNumber);
+};
 
 const Fret: React.FC<FretProps> = ({
   rootNotes,
@@ -64,7 +64,10 @@ const Fret: React.FC<FretProps> = ({
   const tallMarkerFrets = [12, 24];
 
   return (
-    <div className="flex flex-col justify-between bg-[#f0e9e2] border border-[#c0b7a8] p-2.5 relative w-[113px] h-[300px]">
+    <div
+      style={{ width: `${getFretWidth(fretNumber)}px` }}
+      className="flex flex-col justify-between bg-[#f0e9e2] border border-[#c0b7a8] p-2.5 relative h-[300px]"
+    >
       {renderStrings()}
       {fretMarkers.includes(fretNumber) && (
         <div
