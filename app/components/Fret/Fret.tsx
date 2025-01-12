@@ -6,7 +6,6 @@
 // and root notes each string is tuned to.
 
 import React from 'react';
-import styled from 'styled-components';
 import {
   getNoteAtFret,
   areNotesEquivalent,
@@ -30,17 +29,6 @@ export type FretProps = {
 //   const factor = 0.94;
 //   return `${baseWidth * Math.pow(factor, fretNumber)}px`;
 // };
-
-const FretMarker = styled.div`
-  background-color: #aaa;
-  width: 75%;
-  height: 25%;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 1;
-`;
 
 const Fret: React.FC<FretProps> = ({
   rootNotes,
@@ -77,7 +65,9 @@ const Fret: React.FC<FretProps> = ({
   return (
     <div className="flex flex-col justify-between bg-[#f0e9e2] border border-[#c0b7a8] p-2.5 relative w-[113px] h-[300px]">
       {renderStrings()}
-      {fretMarkers.includes(fretNumber) && <FretMarker />}
+      {fretMarkers.includes(fretNumber) && (
+        <div className="bg-[#aaa] w-3/4 h-1/4 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[1]" />
+      )}
     </div>
   );
 };
