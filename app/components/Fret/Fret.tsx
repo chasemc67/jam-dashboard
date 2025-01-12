@@ -31,21 +31,6 @@ export type FretProps = {
 //   return `${baseWidth * Math.pow(factor, fretNumber)}px`;
 // };
 
-const NoteCircle = styled.div`
-  background-color: red;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  position: absolute;
-  top: -9px;
-  left: calc(50% - 10px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  z-index: 3;
-`;
-
 const FretMarker = styled.div`
   background-color: #aaa;
   width: 75%;
@@ -73,9 +58,14 @@ const Fret: React.FC<FretProps> = ({
       return (
         <div key={index} className="h-[2px] bg-[#808080] relative z-[2]">
           {highlightedNote && (
-            <NoteCircle color={highlightedNote.color}>
+            <div
+              style={
+                { '--note-color': highlightedNote.color } as React.CSSProperties
+              }
+              className="rounded-full w-5 h-5 absolute -top-[9px] left-[calc(50%-10px)] flex items-center justify-center text-white z-[3] bg-[var(--note-color)]"
+            >
               {showTextNotes && highlightedNote.note}
-            </NoteCircle>
+            </div>
           )}
         </div>
       );
