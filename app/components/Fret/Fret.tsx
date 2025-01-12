@@ -11,6 +11,7 @@ import {
   getNoteAtFret,
   areNotesEquivalent,
 } from '../../utils/musicTheoryUtils';
+import '~/tailwind.css';
 
 export type HighlightedNote = {
   note: string;
@@ -29,18 +30,6 @@ export type FretProps = {
 //   const factor = 0.94;
 //   return `${baseWidth * Math.pow(factor, fretNumber)}px`;
 // };
-
-const FretContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  background-color: #f0e9e2;
-  border: 1px solid #c0b7a8;
-  padding: 10px;
-  position: relative;
-  width: 113px;
-  height: 300px;
-`;
 
 const FretString = styled.div`
   height: 2px;
@@ -101,13 +90,12 @@ const Fret: React.FC<FretProps> = ({
   };
 
   const fretMarkers = [3, 5, 7, 9, 12, 15, 17, 19, 24];
-  // const tallMarkerFrets = [12, 24];
 
   return (
-    <FretContainer>
+    <div className="flex flex-col justify-between bg-[#f0e9e2] border border-[#c0b7a8] p-2.5 relative w-[113px] h-[300px]">
       {renderStrings()}
       {fretMarkers.includes(fretNumber) && <FretMarker />}
-    </FretContainer>
+    </div>
   );
 };
 
