@@ -1,7 +1,7 @@
 // FretBoard.tsx
 import React from 'react';
 import styled from 'styled-components';
-import Fret, { HighlightedNote } from '../Fret_backup';
+import Fret, { HighlightedNote } from '../Fret';
 
 const FretBoardContainer = styled.div`
   display: flex;
