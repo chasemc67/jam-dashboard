@@ -31,13 +31,6 @@ export type FretProps = {
 //   return `${baseWidth * Math.pow(factor, fretNumber)}px`;
 // };
 
-const FretString = styled.div`
-  height: 2px;
-  background-color: #808080;
-  position: relative;
-  z-index: 2;
-`;
-
 const NoteCircle = styled.div`
   background-color: red;
   border-radius: 50%;
@@ -78,13 +71,13 @@ const Fret: React.FC<FretProps> = ({
       );
 
       return (
-        <FretString key={index}>
+        <div key={index} className="h-[2px] bg-[#808080] relative z-[2]">
           {highlightedNote && (
             <NoteCircle color={highlightedNote.color}>
               {showTextNotes && highlightedNote.note}
             </NoteCircle>
           )}
-        </FretString>
+        </div>
       );
     });
   };
