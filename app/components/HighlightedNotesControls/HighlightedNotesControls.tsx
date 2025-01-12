@@ -1,95 +1,7 @@
 // HighlightedNotesControls.tsx
 import React, { useState } from 'react';
-import styled from 'styled-components';
 import { Scale, ScaleType } from 'tonal';
-
-const Container = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: 20px;
-`;
-
-const TextInput = styled.input`
-  width: 200px;
-  height: 30px;
-  margin-bottom: 10px;
-`;
-
-const NoteButton = styled.button<{ backgroundColor: string }>`
-  width: 30px;
-  height: 30px;
-  background-color: ${props => props.backgroundColor};
-  margin-right: 5px;
-  color: white;
-  font-weight: bold;
-  border: none;
-  cursor: pointer;
-`;
-
-const ButtonsContainer = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-`;
-
-const ColorPicker = styled.select`
-  width: 60%;
-`;
-
-const ScaleControls = styled.div`
-  display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
-  align-items: center;
-`;
-
-const Select = styled.select`
-  height: 30px;
-  min-width: 100px;
-`;
-
-const Button = styled.button`
-  height: 30px;
-  padding: 0 15px;
-  cursor: pointer;
-`;
-
-const DetectedScales = styled.div`
-  margin: 10px 0;
-  font-size: 0.9em;
-  color: #666;
-`;
-
-const colors = [
-  { name: 'Grey', value: 'grey' },
-  { name: 'Blue', value: 'blue' },
-  { name: 'Red', value: 'red' },
-  { name: 'Green', value: 'green' },
-  { name: 'Orange', value: 'orange' },
-  { name: 'Brown', value: 'brown' },
-  { name: 'Purple', value: 'purple' },
-  { name: 'Teal', value: 'teal' },
-];
-
-const possibleRoots = [
-  'C',
-  'C#',
-  'Db',
-  'D',
-  'D#',
-  'Eb',
-  'E',
-  'F',
-  'F#',
-  'Gb',
-  'G',
-  'G#',
-  'Ab',
-  'A',
-  'A#',
-  'Bb',
-  'B',
-];
+import { cn } from '~/lib/utils';
 
 interface HighlightedNote {
   note: string;
@@ -156,69 +68,118 @@ const HighlightedNotesControls: React.FC<HighlightedNotesControlsProps> = ({
     setHighlightedNotes(updatedHighlightedNotes);
   };
 
-  const renderColorPicker = (note: string, currentColor: string) => (
-    <ColorPicker
-      value={currentColor}
-      onChange={e => handleColorChange(note, e.target.value)}
-    >
-      {colors.map(color => (
-        <option key={color.value} value={color.value}>
-          {color.name}
-        </option>
-      ))}
-    </ColorPicker>
-  );
+  const colors = [
+    { name: 'Grey', value: 'grey' },
+    { name: 'Blue', value: 'blue' },
+    { name: 'Red', value: 'red' },
+    { name: 'Green', value: 'green' },
+    { name: 'Orange', value: 'orange' },
+    { name: 'Brown', value: 'brown' },
+    { name: 'Purple', value: 'purple' },
+    { name: 'Teal', value: 'teal' },
+  ];
+
+  const possibleRoots = [
+    'C',
+    'C#',
+    'Db',
+    'D',
+    'D#',
+    'Eb',
+    'E',
+    'F',
+    'F#',
+    'Gb',
+    'G',
+    'G#',
+    'Ab',
+    'A',
+    'A#',
+    'Bb',
+    'B',
+  ];
 
   return (
-    <Container>
-      <ScaleControls>
-        <Select
+    <div className="flex flex-col items-center mt-5">
+      <div className="flex items-center gap-2.5 mb-4">
+        <select
           value={selectedRoot}
           onChange={e => setSelectedRoot(e.target.value)}
+          className="h-10 min-w-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           {possibleRoots.map(root => (
             <option key={root} value={root}>
               {root}
             </option>
           ))}
-        </Select>
-        <Select
+        </select>
+        <select
           value={selectedScaleType}
           onChange={e => setSelectedScaleType(e.target.value)}
+          className="h-10 min-w-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           {ScaleType.all().map(scale => (
             <option key={scale.name} value={scale.name}>
               {scale.name}
             </option>
           ))}
-        </Select>
-        <Button onClick={handleScaleSelect}>Apply Scale</Button>
-      </ScaleControls>
+        </select>
+        <button
+          onClick={handleScaleSelect}
+          className="h-10 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+        >
+          Apply Scale
+        </button>
+      </div>
 
-      <TextInput
+      <input
         value={inputValue}
         onChange={e => handleInputChange(e.target.value)}
         placeholder="Enter comma-separated notes"
+        className="w-[200px] h-10 mb-2.5 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       />
-      <Button onClick={handleDetectScales}>Detect Scales</Button>
+
+      <button
+        onClick={handleDetectScales}
+        className="h-10 px-4 py-2 mb-2.5 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/90"
+      >
+        Detect Scales
+      </button>
 
       {detectedScales.length > 0 && (
-        <DetectedScales>
+        <div className="text-sm text-muted-foreground mb-2.5">
           Matching scales: {detectedScales.join(', ')}
-        </DetectedScales>
+        </div>
       )}
 
-      <ButtonsContainer>
+      <div className="flex flex-wrap gap-2">
         {highlightedNotes.map((highlightedNote, index) => (
-          <div key={index}>
-            <NoteButton backgroundColor={highlightedNote.color}>
+          <div key={index} className="flex items-center gap-2">
+            <button
+              className={cn(
+                'w-8 h-8 rounded-md text-white font-bold',
+                `bg-${highlightedNote.color}-500`,
+              )}
+            >
               {highlightedNote.note}
-            </NoteButton>
-            {renderColorPicker(highlightedNote.note, highlightedNote.color)}
+            </button>
+            <select
+              value={highlightedNote.color}
+              onChange={e =>
+                handleColorChange(highlightedNote.note, e.target.value)
+              }
+              className="h-8 rounded-md border border-input bg-background px-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              {colors.map(color => (
+                <option key={color.value} value={color.value}>
+                  {color.name}
+                </option>
+              ))}
+            </select>
           </div>
         ))}
-      </ButtonsContainer>
-    </Container>
+      </div>
+    </div>
   );
 };
 
