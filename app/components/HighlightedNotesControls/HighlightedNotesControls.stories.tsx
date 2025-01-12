@@ -1,6 +1,6 @@
 // HighlightedNotesControls.stories.tsx
-import React, { useState } from 'react';
-import { Meta, Story } from '@storybook/react';
+import { useState } from 'react';
+import { Meta, StoryFn } from '@storybook/react';
 import HighlightedNotesControls, {
   HighlightedNotesControlsProps,
 } from './HighlightedNotesControls';
@@ -10,7 +10,9 @@ export default {
   component: HighlightedNotesControls,
 } as Meta;
 
-const Template: Story<HighlightedNotesControlsProps> = args => {
+const Template: StoryFn<HighlightedNotesControlsProps> = (
+  args: HighlightedNotesControlsProps,
+) => {
   const [highlightedNotes, setHighlightedNotes] = useState([
     { note: 'C', color: 'grey' },
     { note: 'D', color: 'grey' },

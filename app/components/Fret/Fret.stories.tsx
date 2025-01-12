@@ -1,23 +1,24 @@
 // Fret.stories.tsx
-import React from 'react';
-import { Story, Meta } from '@storybook/react/types-6-0';
-import Fret, { FretProps } from './Fret';
+import type { Meta, StoryObj } from '@storybook/react';
+import Fret from './Fret';
 import '~/tailwind.css';
 
-export default {
+const meta = {
   title: 'Components/Fret',
   component: Fret,
-} as Meta;
+} satisfies Meta<typeof Fret>;
 
-const Template: Story<FretProps> = args => <Fret {...args} />;
+export default meta;
+type Story = StoryObj<typeof meta>;
 
-export const Default = Template.bind({});
-Default.args = {
-  fretNumber: 1,
-  highlightedNotes: [
-    { note: 'C', color: 'blue' },
-    { note: 'E', color: 'red' },
-  ],
-  rootNotes: ['E', 'A', 'D', 'G', 'B', 'E'],
-  showTextNotes: true,
+export const Default: Story = {
+  args: {
+    fretNumber: 1,
+    highlightedNotes: [
+      { note: 'C', color: 'blue' },
+      { note: 'E', color: 'red' },
+    ],
+    rootNotes: ['E', 'A', 'D', 'G', 'B', 'E'],
+    showTextNotes: true,
+  },
 };
