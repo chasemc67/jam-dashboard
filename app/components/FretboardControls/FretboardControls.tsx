@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import FretBoard from '../FretBoard';
 import HighlightedNotesControls from '../HighlightedNotesControls';
-import { HighlightedNote } from '../Fret';
+import { HighlightedNote } from '../Fret_backup';
 
 const FretboardControlsContainer = styled.div`
   display: flex;
