@@ -1,11 +1,6 @@
 // FretBoard.tsx
 import React from 'react';
-import styled from 'styled-components';
 import Fret, { HighlightedNote } from '../Fret';
-
-const FretBoardContainer = styled.div`
-  display: flex;
-`;
 
 export type FretBoardProps = {
   rootNotes: string[];
@@ -45,7 +40,7 @@ const FretBoard: React.FC<FretBoardProps> = ({
     return frets;
   };
 
-  return <FretBoardContainer>{renderFrets()}</FretBoardContainer>;
+  return <div className="flex">{renderFrets()}</div>;
 };
 
 export default FretBoard;

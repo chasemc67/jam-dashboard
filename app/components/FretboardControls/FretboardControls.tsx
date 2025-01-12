@@ -1,62 +1,9 @@
 // FretboardControls.tsx
 
 import React, { useState } from 'react';
-import styled from 'styled-components';
 import FretBoard from '../FretBoard';
 import HighlightedNotesControls from '../HighlightedNotesControls';
 import { HighlightedNote } from '../Fret';
-
-const FretboardControlsContainer = styled.div`
-  display: flex;
-`;
-
-const InputContainer = styled.div<{ isLeftHanded: boolean }>`
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  height: 330px;
-  order: ${props => (props.isLeftHanded ? 1 : 0)};
-`;
-
-const FretBoardWrapper = styled.div<{ isLeftHanded: boolean }>`
-  order: ${props => (props.isLeftHanded ? 0 : 1)};
-`;
-
-const TextInput = styled.input<{ borderColor: string }>`
-  width: 30px;
-  height: 30px;
-  text-align: center;
-  border: 5px solid ${props => props.borderColor};
-`;
-
-const StringInput = styled.div`
-  display: flex;
-  align-items: start;
-  height: calc(100% / 6);
-`;
-
-const CheckboxContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  margin-top: 10px;
-  gap: 5px;
-`;
-
-const CheckboxLabel = styled.label`
-  display: flex;
-  align-items: center;
-  gap: 5px;
-`;
-
-const NumberInputLabel = styled.label`
-  display: flex;
-  align-items: center;
-  gap: 5px;
-`;
-
-const NumberInput = styled.input`
-  width: 60px;
-`;
 
 const FretboardControls: React.FC = () => {
   const [rootNotes, setRootNotes] = useState(['E', 'B', 'G', 'D', 'A', 'E']);
@@ -91,23 +38,26 @@ const FretboardControls: React.FC = () => {
 
   const renderInputs = () => {
     return rootNotes.map((note, index) => (
-      <StringInput key={index}>
-        <TextInput
+      <div key={index} className="flex items-start h-[calc(100%/6)]">
+        <input
           value={note}
           onChange={e => handleInputChange(index, e.target.value)}
-          borderColor={getOutlineColor(note)}
+          className="w-[30px] h-[30px] text-center border-[5px]"
+          style={{ borderColor: getOutlineColor(note) }}
         />
-      </StringInput>
+      </div>
     ));
   };
 
   return (
     <div>
-      <FretboardControlsContainer>
-        <InputContainer isLeftHanded={isLeftHanded}>
+      <div className="flex">
+        <div
+          className={`flex flex-col justify-between h-[330px] ${isLeftHanded ? 'order-1' : 'order-0'}`}
+        >
           {renderInputs()}
-        </InputContainer>
-        <FretBoardWrapper isLeftHanded={isLeftHanded}>
+        </div>
+        <div className={isLeftHanded ? 'order-0' : 'order-1'}>
           <FretBoard
             rootNotes={rootNotes}
             highlightedNotes={highlightedNotes}
@@ -116,40 +66,41 @@ const FretboardControls: React.FC = () => {
             showTextNotes={showTextNotes}
             isLeftHanded={isLeftHanded}
           />
-        </FretBoardWrapper>
-      </FretboardControlsContainer>
+        </div>
+      </div>
       <HighlightedNotesControls
         highlightedNotes={highlightedNotes}
         setHighlightedNotes={setHighlightedNotes}
       />
-      <CheckboxContainer>
-        <NumberInputLabel>
+      <div className="flex flex-col mt-2.5 gap-1.5">
+        <label className="flex items-center gap-1.5">
           Number of Frets:
-          <NumberInput
+          <input
             type="number"
             min="1"
             max="24"
             value={numberOfFrets}
             onChange={e => setNumberOfFrets(Number(e.target.value))}
+            className="w-[60px]"
           />
-        </NumberInputLabel>
-        <CheckboxLabel>
+        </label>
+        <label className="flex items-center gap-1.5">
           <input
             type="checkbox"
             checked={isLeftHanded}
             onChange={() => setIsLeftHanded(!isLeftHanded)}
-          />{' '}
+          />
           Left Handed
-        </CheckboxLabel>
-        <CheckboxLabel>
+        </label>
+        <label className="flex items-center gap-1.5">
           <input
             type="checkbox"
             checked={showTextNotes}
             onChange={() => setShowTextNotes(!showTextNotes)}
           />
           Show Text Notes
-        </CheckboxLabel>
-      </CheckboxContainer>
+        </label>
+      </div>
     </div>
   );
 };
