@@ -1,7 +1,7 @@
 import type { MetaFunction } from '@remix-run/node';
 import { KeyPicker } from '~/components/KeyPicker/KeyPicker';
 import FretboardControls from '~/components/FretboardControls';
-
+import RandomPlayer from '~/components/RandomPlayer';
 export const meta: MetaFunction = () => {
   return [
     { title: 'Jam Dashboard - Guitar Learning Tools' },
@@ -24,6 +24,7 @@ export default function Index() {
           <KeyPicker />
         </div>
         <FretboardControls />
+        <RandomPlayer />
       </div>
     </div>
   );
