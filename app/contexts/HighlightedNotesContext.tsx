@@ -41,6 +41,7 @@ export function HighlightedNotesProvider({
       }));
       setHighlightedNotes(updatedNotes);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings.quickColors]);
 
   const setKeyAndNotes = (key: string, scale: string[]) => {
