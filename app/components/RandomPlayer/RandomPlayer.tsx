@@ -10,9 +10,10 @@ import {
 import ChordSelectionControls from '~/components/ChordSelectionControls';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
+import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
 
 const RandomPlayer: React.FC = () => {
-  const [selectedKey, setSelectedKey] = useState<string>('C major');
+  const { selectedKey } = useHighlightedNotes();
   const [selectedChordGroups, setSelectedChordGroups] = useState<
     ChordTypeGroup[]
   >([chordTypeGroups[0]]);
@@ -65,13 +66,11 @@ const RandomPlayer: React.FC = () => {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Random Chord Player</CardTitle>
+        <CardTitle>Ear Training</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-4">
           <ChordSelectionControls
-            selectedKey={selectedKey}
-            onKeyChange={setSelectedKey}
             selectedChordGroups={selectedChordGroups}
             onChordGroupsChange={handleChordGroupChange}
           />

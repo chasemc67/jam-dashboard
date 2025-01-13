@@ -1,25 +1,19 @@
 import React from 'react';
 import Select, { StylesConfig } from 'react-select';
-import {
-  ChordTypeGroup,
-  chordTypeGroups,
-  possibleKeys,
-} from '../../utils/chordPlayerUtils';
-import { cn } from '~/lib/utils';
+import { ChordTypeGroup, chordTypeGroups } from '../../utils/chordPlayerUtils';
+import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
 
 export type ChordSelectionControlsProps = {
-  selectedKey: string;
-  onKeyChange: (key: string) => void;
   selectedChordGroups: ChordTypeGroup[];
   onChordGroupsChange: (groups: readonly ChordTypeGroup[]) => void;
 };
 
 const ChordSelectionControls: React.FC<ChordSelectionControlsProps> = ({
-  selectedKey,
-  onKeyChange,
   selectedChordGroups,
   onChordGroupsChange,
 }) => {
+  const { selectedKey } = useHighlightedNotes();
+
   const selectStyles: StylesConfig<ChordTypeGroup, true> = {
     control: (base, state) => ({
       ...base,
@@ -74,25 +68,10 @@ const ChordSelectionControls: React.FC<ChordSelectionControlsProps> = ({
   return (
     <div className="space-y-4">
       <div>
-        <label className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-foreground">Key:</span>
-          <select
-            value={selectedKey}
-            onChange={e => onKeyChange(e.target.value)}
-            className={cn(
-              'h-9 rounded-md border border-input bg-background px-3',
-              'text-sm ring-offset-background',
-              'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
-              'disabled:cursor-not-allowed disabled:opacity-50',
-            )}
-          >
-            {possibleKeys.map(key => (
-              <option key={key} value={key}>
-                {key}
-              </option>
-            ))}
-          </select>
-        </label>
+          <span className="text-sm text-foreground">{selectedKey}</span>
+        </div>
       </div>
 
       <div>
