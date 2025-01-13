@@ -2,6 +2,7 @@ import type { MetaFunction } from '@remix-run/node';
 import FretboardControls from '~/components/FretboardControls';
 import RandomPlayer from '~/components/RandomPlayer';
 import Header from '~/components/Header';
+// import ScaleChordGrid from '~/components/ScaleChordGrid';
 
 export const meta: MetaFunction = () => {
   return [
