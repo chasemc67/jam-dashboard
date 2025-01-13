@@ -98,7 +98,7 @@ export const KeyPicker: React.FC<KeyPickerProps> = () => {
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-[300px] justify-between"
+          className="w-[350px] justify-between"
         >
           {value
             ? key_options.find(key_option => key_option.value === value)?.label
@@ -106,7 +106,7 @@ export const KeyPicker: React.FC<KeyPickerProps> = () => {
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[300px] p-0">
+      <PopoverContent className="w-[350px] p-0">
         <Command filter={filterKeys}>
           <CommandInput placeholder="Enter notes separated by commas..." />
           <CommandList>
