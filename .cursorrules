@@ -11,10 +11,11 @@ The way color theming works is:
 - Colors are defined in tailwind.css, and the inital theme (colors) are taken from a ShadCN
 - theres a `/theme` route where we can preview the colors
 
-Specifically, it contains two main features:
+Specifically, it contains the following features:
 
+- a global key picker which drives the key for the whole page
 - a fretboard visualizer, which lets you easily see where a collection of notes are on the fretboard
-- a random chord generator and player, to help with ear training
+- a note and chord generator and player, to help with ear training
 
 The fretboard visulizer has a number of advanced features, including:
 
@@ -35,3 +36,10 @@ and other util functions used to match up equivalent notes on the fretboard
 
 We always add storybook stories to all our UI components.
 We always add Jest unit tests to all our util files.
+
+When adding new React components, we give each their own folder, with a story and index.tsx to export them. The structure looks like this:
+
+📂 ReactComponentName/
+├── ReactComponentName.tsx
+├── ReactComponentName.stories.tsx
+└── index.tsx
