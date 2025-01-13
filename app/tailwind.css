@@ -33,14 +33,19 @@ body {
     --input: 240 5.9% 90%;
     --ring: 346.8 77.2% 49.8%;
     --radius: 0.5rem;
-    --chart-0: 240 10% 80%;
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    --chart-6: 320 65% 55%;
-    --chart-7: 85 65% 45%;
+    --note-grey: 240 10% 60%;
+    --note-red: 0 75% 60%;
+    --note-blue: 210 75% 60%;
+    --note-green: 142 70% 45%;
+    --note-yellow: 48 95% 60%;
+    --note-orange: 27 95% 55%;
+    --note-purple: 270 70% 60%;
+    --note-pink: 330 85% 62%;
   }
 
   .dark {
@@ -63,14 +68,19 @@ body {
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 346.8 77.2% 49.8%;
-    --chart-0: 240 15% 35%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
-    --chart-6: 320 60% 45%;
-    --chart-7: 85 60% 40%;
+    --note-grey: 240 15% 40%;
+    --note-red: 0 70% 50%;
+    --note-blue: 210 70% 50%;
+    --note-green: 142 65% 35%;
+    --note-yellow: 48 90% 50%;
+    --note-orange: 27 90% 45%;
+    --note-purple: 270 65% 50%;
+    --note-pink: 330 80% 52%;
   }
 }
 

@@ -17,14 +17,21 @@ const colorGroups = {
   'State Colors': ['bg-destructive', 'bg-destructive-foreground'],
   'Border & Input': ['bg-border', 'bg-input', 'bg-ring'],
   'Chart Colors': [
-    'bg-chart-0',
     'bg-chart-1',
     'bg-chart-2',
     'bg-chart-3',
     'bg-chart-4',
     'bg-chart-5',
-    'bg-chart-6',
-    'bg-chart-7',
+  ],
+  'Note Colors': [
+    'bg-note-grey',
+    'bg-note-red',
+    'bg-note-blue',
+    'bg-note-green',
+    'bg-note-yellow',
+    'bg-note-orange',
+    'bg-note-purple',
+    'bg-note-pink',
   ],
 };
 
