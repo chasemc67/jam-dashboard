@@ -66,7 +66,7 @@ const Fret: React.FC<FretProps> = ({
       {renderStrings()}
       {fretMarkers.includes(fretNumber) && (
         <div
-          className={`bg-muted-foreground w-3/4 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[1] ${tallMarkerFrets.includes(fretNumber) ? 'h-1/2' : 'h-1/4'}`}
+          className={`bg-background w-3/4 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[1] ${tallMarkerFrets.includes(fretNumber) ? 'h-1/2' : 'h-1/4'}`}
         />
       )}
     </div>
