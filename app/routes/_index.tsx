@@ -18,7 +18,7 @@ export default function Index() {
   return (
     <div className="flex min-h-screen flex-col bg-background dark">
       <Header />
-      <div className="container mx-auto flex flex-1 flex-col items-center justify-center gap-8 p-4">
+      <div className="container mx-auto flex flex-1 flex-col items-center justify-center gap-8 p-4 pb-20 md:pb-4">
         <FretboardControls />
         <RandomPlayer />
       </div>
