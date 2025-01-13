@@ -1,15 +1,7 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { HighlightedNote } from '~/components/Fret';
-
-const noteColors = [
-  'red',
-  'blue',
-  'green',
-  'yellow',
-  'orange',
-  'purple',
-  'pink',
-];
+import { getColorForDegree } from '~/utils/noteColoringUtils';
+import { useSettings } from './SettingsContext';
 
 interface HighlightedNotesContextType {
   highlightedNotes: HighlightedNote[];
@@ -28,6 +20,7 @@ export function HighlightedNotesProvider({
 }: {
   children: React.ReactNode;
 }) {
+  const { settings } = useSettings();
   const [highlightedNotes, setHighlightedNotes] = useState<HighlightedNote[]>([
     { note: 'C', color: 'red' },
     { note: 'D', color: 'blue' },
@@ -37,13 +30,24 @@ export function HighlightedNotesProvider({
     { note: 'A', color: 'purple' },
     { note: 'B', color: 'pink' },
   ]);
-  const [selectedKey, setSelectedKey] = useState<string>('');
+  const [selectedKey, setSelectedKey] = useState<string>('C major');
+
+  // Update colors whenever quickColors setting changes
+  useEffect(() => {
+    if (highlightedNotes.length > 0) {
+      const updatedNotes = highlightedNotes.map((note, index) => ({
+        note: note.note,
+        color: getColorForDegree(settings.quickColors, index + 1),
+      }));
+      setHighlightedNotes(updatedNotes);
+    }
+  }, [settings.quickColors, highlightedNotes]);
 
   const setKeyAndNotes = (key: string, scale: string[]) => {
     setSelectedKey(key);
     const newHighlightedNotes = scale.map((note, index) => ({
       note,
-      color: noteColors[index % noteColors.length],
+      color: getColorForDegree(settings.quickColors, index + 1),
     }));
     setHighlightedNotes(newHighlightedNotes);
   };

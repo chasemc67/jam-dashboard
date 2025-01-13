@@ -12,8 +12,8 @@ export const noteColoringPatterns: Record<
   Record<number, keyof typeof noteColorClasses>
 > = {
   scale: {
-    1: 'blue',
-    2: 'red',
+    1: 'red',
+    2: 'blue',
     3: 'green',
     4: 'yellow',
     5: 'orange',
@@ -21,8 +21,8 @@ export const noteColoringPatterns: Record<
     7: 'pink',
   },
   pentatonic: {
-    1: 'blue',
-    2: 'red',
+    1: 'red',
+    2: 'blue',
     3: 'green',
     4: 'grey',
     5: 'orange',
@@ -30,12 +30,12 @@ export const noteColoringPatterns: Record<
     7: 'pink',
   },
   'major/minor chords': {
-    1: 'blue',
-    2: 'red',
-    3: 'red',
-    4: 'blue',
-    5: 'blue',
-    6: 'red',
+    1: 'red',
+    2: 'blue',
+    3: 'blue',
+    4: 'red',
+    5: 'red',
+    6: 'blue',
     7: 'green',
   },
 };
