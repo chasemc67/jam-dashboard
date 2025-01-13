@@ -19,4 +19,4 @@ npm run format     # prettier
 
 ## Deployment
 
-Change merged to main will auto-deploy to vercel
+Changes merged to main will auto-deploy to vercel
