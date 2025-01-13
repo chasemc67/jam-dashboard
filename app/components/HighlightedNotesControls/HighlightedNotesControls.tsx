@@ -128,7 +128,7 @@ const HighlightedNotesControls: React.FC<HighlightedNotesControlsProps> = ({
           onClick={handleScaleSelect}
           className="h-10 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
         >
-          Apply Scale
+          Apply
         </button>
       </div>
 
