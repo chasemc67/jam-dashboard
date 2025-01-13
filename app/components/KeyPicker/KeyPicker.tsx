@@ -65,8 +65,8 @@ const noteColors = [
 
 export const KeyPicker: React.FC = () => {
   const [open, setOpen] = useState(false);
-  const [value, setValue] = useState('');
-  const { setHighlightedNotes } = useHighlightedNotes();
+  const { setHighlightedNotes, selectedKey, setSelectedKey } =
+    useHighlightedNotes();
 
   const filterKeys = (value: string, search: string) => {
     const option = key_options.find(opt => opt.value === value);
@@ -93,16 +93,20 @@ export const KeyPicker: React.FC = () => {
   };
 
   const handleKeySelect = (currentValue: string) => {
-    setValue(currentValue === value ? '' : currentValue);
+    setSelectedKey(currentValue === selectedKey ? '' : currentValue);
     setOpen(false);
 
     // Update highlighted notes based on the selected key
-    const selectedKey = key_options.find(opt => opt.value === currentValue);
-    if (selectedKey) {
-      const newHighlightedNotes = selectedKey.scale.map((note, index) => ({
-        note,
-        color: noteColors[index % noteColors.length],
-      }));
+    const selectedKeyOption = key_options.find(
+      opt => opt.value === currentValue,
+    );
+    if (selectedKeyOption) {
+      const newHighlightedNotes = selectedKeyOption.scale.map(
+        (note, index) => ({
+          note,
+          color: noteColors[index % noteColors.length],
+        }),
+      );
       setHighlightedNotes(newHighlightedNotes);
     }
   };
@@ -116,8 +120,9 @@ export const KeyPicker: React.FC = () => {
           aria-expanded={open}
           className="w-[350px] justify-between"
         >
-          {value
-            ? key_options.find(key_option => key_option.value === value)?.label
+          {selectedKey
+            ? key_options.find(key_option => key_option.value === selectedKey)
+                ?.label
             : 'Select key...'}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -137,7 +142,9 @@ export const KeyPicker: React.FC = () => {
                   <Check
                     className={cn(
                       'mr-2 h-4 w-4',
-                      value === key_option.value ? 'opacity-100' : 'opacity-0',
+                      selectedKey === key_option.value
+                        ? 'opacity-100'
+                        : 'opacity-0',
                     )}
                   />
                   {key_option.label}

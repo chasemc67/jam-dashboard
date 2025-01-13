@@ -4,6 +4,8 @@ import type { HighlightedNote } from '~/components/Fret';
 interface HighlightedNotesContextType {
   highlightedNotes: HighlightedNote[];
   setHighlightedNotes: (notes: HighlightedNote[]) => void;
+  selectedKey: string;
+  setSelectedKey: (key: string) => void;
 }
 
 const HighlightedNotesContext = createContext<
@@ -24,10 +26,16 @@ export function HighlightedNotesProvider({
     { note: 'A', color: 'purple' },
     { note: 'B', color: 'pink' },
   ]);
+  const [selectedKey, setSelectedKey] = useState<string>('');
 
   return (
     <HighlightedNotesContext.Provider
-      value={{ highlightedNotes, setHighlightedNotes }}
+      value={{
+        highlightedNotes,
+        setHighlightedNotes,
+        selectedKey,
+        setSelectedKey,
+      }}
     >
       {children}
     </HighlightedNotesContext.Provider>
