@@ -1,21 +1,5 @@
 import { ChordType } from 'tonal';
 
-// Define all possible keys (using just major scales for now)
-export const possibleKeys = [
-  'C',
-  'C#',
-  'D',
-  'D#',
-  'E',
-  'F',
-  'F#',
-  'G',
-  'G#',
-  'A',
-  'A#',
-  'B',
-].map(note => `${note} major`);
-
 export interface ChordTypeGroup {
   label: string;
   value: string[];
