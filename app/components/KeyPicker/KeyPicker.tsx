@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Check, ChevronsUpDown } from 'lucide-react';
-
+import { Key, Note } from 'tonal';
 import { all_notes } from '~/utils/musicTheoryUtils';
-
 import { cn } from '~/lib/utils';
 import { Button } from '~/components/ui/button';
 import {
@@ -18,11 +17,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '~/components/ui/popover';
-import { Key, Note } from 'tonal';
-
-interface KeyPickerProps {
-  // optionally accept props such as defaultScale, styling, callbacks, etc.
-}
+import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
 
 interface KeyOption {
   label: string;
@@ -50,7 +45,6 @@ export const generate_key_options = () => {
 };
 
 export const parseSearchInput = (input: string): string[] => {
-  // parse search input into an array of notes
   return input
     .split(',')
     .map(note => note.trim())
@@ -59,29 +53,36 @@ export const parseSearchInput = (input: string): string[] => {
 
 const key_options = generate_key_options();
 
-export const KeyPicker: React.FC<KeyPickerProps> = () => {
+const noteColors = [
+  'red',
+  'blue',
+  'green',
+  'yellow',
+  'orange',
+  'purple',
+  'pink',
+];
+
+export const KeyPicker: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState('');
+  const { setHighlightedNotes } = useHighlightedNotes();
 
   const filterKeys = (value: string, search: string) => {
     const option = key_options.find(opt => opt.value === value);
     if (!option) return 0;
 
-    // If the search string has no commas, treat it as a key name search
-    // So you can search for "C major" or "C minor"
     if (!search.includes(',')) {
       return option.value.toLowerCase().startsWith(search.toLowerCase())
         ? 1
         : 0;
     }
 
-    // Otherwise, treat it as a detect-scale search and find matching scales
     const searchNotes = parseSearchInput(search);
     if (searchNotes.length === 0) {
       return 1;
     }
 
-    // Check if all search notes are in the scale
     const matchesAllNotes = searchNotes.every(searchNote =>
       option.scale.some(
         scaleNote => Note.simplify(scaleNote) === Note.simplify(searchNote),
@@ -89,6 +90,21 @@ export const KeyPicker: React.FC<KeyPickerProps> = () => {
     );
 
     return matchesAllNotes ? 1 : 0;
+  };
+
+  const handleKeySelect = (currentValue: string) => {
+    setValue(currentValue === value ? '' : currentValue);
+    setOpen(false);
+
+    // Update highlighted notes based on the selected key
+    const selectedKey = key_options.find(opt => opt.value === currentValue);
+    if (selectedKey) {
+      const newHighlightedNotes = selectedKey.scale.map((note, index) => ({
+        note,
+        color: noteColors[index % noteColors.length],
+      }));
+      setHighlightedNotes(newHighlightedNotes);
+    }
   };
 
   return (
@@ -116,10 +132,7 @@ export const KeyPicker: React.FC<KeyPickerProps> = () => {
                 <CommandItem
                   key={key_option.value}
                   value={key_option.value}
-                  onSelect={currentValue => {
-                    setValue(currentValue === value ? '' : currentValue);
-                    setOpen(false);
-                  }}
+                  onSelect={handleKeySelect}
                 >
                   <Check
                     className={cn(

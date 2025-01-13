@@ -2,22 +2,12 @@
 
 import React, { useState } from 'react';
 import FretBoard from '../FretBoard';
-import HighlightedNotesControls from '../HighlightedNotesControls';
-import { HighlightedNote } from '../Fret';
 import { getNoteColorClass } from '~/utils/noteColors';
+import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
 
 const FretboardControls: React.FC = () => {
   const [rootNotes, setRootNotes] = useState(['E', 'B', 'G', 'D', 'A', 'E']);
-  const [highlightedNotes, setHighlightedNotes] = useState<HighlightedNote[]>([
-    { note: 'C', color: 'red' },
-    { note: 'D', color: 'blue' },
-    { note: 'E', color: 'green' },
-    { note: 'F', color: 'yellow' },
-    { note: 'G', color: 'orange' },
-    { note: 'A', color: 'purple' },
-    { note: 'B', color: 'pink' },
-  ]);
-
+  const { highlightedNotes } = useHighlightedNotes();
   const [numberOfFrets, setNumberOfFrets] = useState(12);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [startingFret, setStartingFret] = useState(0);
@@ -74,10 +64,6 @@ const FretboardControls: React.FC = () => {
           </div>
         </div>
       </div>
-      <HighlightedNotesControls
-        highlightedNotes={highlightedNotes}
-        setHighlightedNotes={setHighlightedNotes}
-      />
       <div className="flex flex-col mt-2.5 gap-1.5">
         <label className="flex items-center gap-1.5">
           Number of Frets:
