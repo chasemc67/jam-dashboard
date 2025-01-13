@@ -43,7 +43,9 @@ const Player: React.FC<PlayerProps> = ({ notes }) => {
       <Button variant="outline" onClick={playChordArpeggio}>
         Play Arpeggio
       </Button>
-      <Button onClick={playChordSimultaneous}>Play Chord</Button>
+      <Button variant="outline" onClick={playChordSimultaneous}>
+        Play Chord
+      </Button>
     </div>
   );
 };
