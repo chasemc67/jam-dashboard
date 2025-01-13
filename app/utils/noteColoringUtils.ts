@@ -3,7 +3,7 @@ import { noteColorClasses } from './noteColors';
 export const COLORING_PATTERN_CHOICES = [
   'scale',
   'pentatonic',
-  'major/minor chords',
+  'major/minor roots',
 ] as const;
 export type ColoringPatternType = (typeof COLORING_PATTERN_CHOICES)[number];
 
@@ -29,7 +29,7 @@ export const noteColoringPatterns: Record<
     6: 'purple',
     7: 'grey',
   },
-  'major/minor chords': {
+  'major/minor roots': {
     1: 'red',
     2: 'blue',
     3: 'blue',
