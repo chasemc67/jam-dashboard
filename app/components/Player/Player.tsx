@@ -9,10 +9,12 @@ export interface PlayerProps {
 const Player: React.FC<PlayerProps> = ({ notes }) => {
   const [chord, setChord] = useState<string[]>(notes);
   const synthRef = useRef<Tone.PolySynth | null>(null);
+  const isConnectedRef = useRef(false);
 
+  // Initialize synth but don't connect to destination yet
   useEffect(() => {
     if (!synthRef.current) {
-      synthRef.current = new Tone.PolySynth(Tone.Synth).toDestination();
+      synthRef.current = new Tone.PolySynth(Tone.Synth);
     }
   }, []);
 
@@ -20,8 +22,17 @@ const Player: React.FC<PlayerProps> = ({ notes }) => {
     setChord(notes);
   }, [notes]);
 
-  const playChordArpeggio = async () => {
+  const ensureAudioContext = async () => {
+    // Resume audio context and connect synth
     await Tone.start();
+    if (synthRef.current && !isConnectedRef.current) {
+      synthRef.current.toDestination();
+      isConnectedRef.current = true;
+    }
+  };
+
+  const playChordArpeggio = async () => {
+    await ensureAudioContext();
     const now = Tone.now();
     if (synthRef.current) {
       chord.forEach((note, i) => {
@@ -31,7 +42,7 @@ const Player: React.FC<PlayerProps> = ({ notes }) => {
   };
 
   const playChordSimultaneous = async () => {
-    await Tone.start();
+    await ensureAudioContext();
     const now = Tone.now();
     if (synthRef.current) {
       synthRef.current.triggerAttackRelease(chord, '2n', now);
