@@ -18,10 +18,8 @@ export default function Header() {
         <div className="mr-4 flex">
           <h1 className="text-xl font-bold text-primary">Jam Dashboard</h1>
         </div>
-        <div className="flex flex-1 items-center justify-center">
+        <div className="flex flex-1 items-center justify-center space-x-2">
           <KeyPicker />
-        </div>
-        <div className="flex items-center justify-end space-x-2">
           <Button
             variant="ghost"
             size="icon"
