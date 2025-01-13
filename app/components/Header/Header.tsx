@@ -1,7 +1,6 @@
-import { Button } from '~/components/ui/button';
-import { Settings } from 'lucide-react';
 import { KeyPicker } from '~/components/KeyPicker/KeyPicker';
 import { cn } from '~/lib/utils';
+import { Settings } from '~/components/Settings';
 
 export default function Header() {
   return (
@@ -20,14 +19,7 @@ export default function Header() {
         </div>
         <div className="flex flex-1 items-center justify-center space-x-2">
           <KeyPicker />
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9"
-            aria-label="Settings"
-          >
-            <Settings className="h-4 w-4" />
-          </Button>
+          <Settings />
         </div>
       </div>
 
@@ -35,14 +27,7 @@ export default function Header() {
       <div className="md:hidden container h-14 max-w-none">
         <div className="flex h-full items-center justify-around px-4">
           <KeyPicker />
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9"
-            aria-label="Settings"
-          >
-            <Settings className="h-4 w-4" />
-          </Button>
+          <Settings />
         </div>
       </div>
     </header>
