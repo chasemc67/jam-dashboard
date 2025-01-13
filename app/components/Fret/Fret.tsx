@@ -45,7 +45,7 @@ const Fret: React.FC<FretProps> = ({
         <div key={index} className="h-[2px] bg-[#808080] relative z-[2]">
           {highlightedNote && (
             <div
-              className={`rounded-full w-5 h-5 absolute -top-[9px] left-[calc(50%-10px)] flex items-center justify-center text-white z-[3] ${getNoteColorClass(highlightedNote.color, 'background')}`}
+              className={`rounded-md w-5 h-5 absolute -top-[9px] left-[calc(50%-10px)] flex items-center justify-center text-muted z-[3] ${getNoteColorClass(highlightedNote.color, 'background')}`}
             >
               {showTextNotes && highlightedNote.note}
             </div>
