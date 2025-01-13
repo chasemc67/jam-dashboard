@@ -11,10 +11,12 @@ interface SettingsContextType {
 
 const STORAGE_KEY = 'jam-dashboard-settings';
 
+const defaultSettings: Settings = {
+  isLefty: false,
+};
+
 // Helper function to safely parse stored settings
 const getStoredSettings = (): Settings | null => {
-  if (typeof window === 'undefined') return null;
-
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     return stored ? JSON.parse(stored) : null;
@@ -29,23 +31,28 @@ const SettingsContext = createContext<SettingsContextType | undefined>(
 );
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
-  const [settings, setSettings] = useState<Settings>(() => {
-    // Initialize from localStorage if available, otherwise use defaults
-    return (
-      getStoredSettings() || {
-        isLefty: false,
-      }
-    );
-  });
+  const [settings, setSettings] = useState<Settings>(defaultSettings);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Load settings from localStorage on mount
+  useEffect(() => {
+    const storedSettings = getStoredSettings();
+    if (storedSettings) {
+      setSettings(storedSettings);
+    }
+    setIsInitialized(true);
+  }, []);
 
   // Persist settings to localStorage whenever they change
   useEffect(() => {
+    if (!isInitialized) return;
+
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
     } catch (error) {
       console.error('Error saving settings to localStorage:', error);
     }
-  }, [settings]);
+  }, [settings, isInitialized]);
 
   const updateSettings = (newSettings: Partial<Settings>) => {
     setSettings(prev => ({
