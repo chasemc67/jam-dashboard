@@ -76,6 +76,20 @@ export default function Settings() {
                 />
               </div>
               <div className="flex items-center space-x-2">
+                <Label htmlFor="number-of-strings">Number of Strings:</Label>
+                <Input
+                  id="number-of-strings"
+                  type="number"
+                  min="4"
+                  max="12"
+                  value={settings.numberOfStrings}
+                  onChange={e =>
+                    updateSettings({ numberOfStrings: Number(e.target.value) })
+                  }
+                  className="w-[60px]"
+                />
+              </div>
+              <div className="flex items-center space-x-2">
                 <Label htmlFor="quick-colors">Quick Colors:</Label>
                 <Select
                   value={settings.quickColors}

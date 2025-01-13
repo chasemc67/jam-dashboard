@@ -1,16 +1,44 @@
 // FretboardControls.tsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import FretBoard from '../FretBoard';
 import { getNoteColorClass } from '~/utils/noteColors';
 import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
 import { useSettings } from '~/contexts/SettingsContext';
 
+const DEFAULT_TUNING_PATTERN = ['E', 'B', 'G', 'D', 'A'];
+
+const getDefaultTuning = (numberOfStrings: number): string[] => {
+  const tuning: string[] = [];
+  for (let i = 0; i < numberOfStrings; i++) {
+    tuning.push(DEFAULT_TUNING_PATTERN[i % DEFAULT_TUNING_PATTERN.length]);
+  }
+  return tuning;
+};
+
 const FretboardControls: React.FC = () => {
-  const [rootNotes, setRootNotes] = useState(['E', 'B', 'G', 'D', 'A', 'E']);
   const { highlightedNotes } = useHighlightedNotes();
   const { settings } = useSettings();
+  const [rootNotes, setRootNotes] = useState(() =>
+    getDefaultTuning(settings.numberOfStrings),
+  );
   const [startingFret] = useState(0);
+
+  // Update tuning when number of strings changes
+  useEffect(() => {
+    setRootNotes(prev => {
+      const newTuning = getDefaultTuning(settings.numberOfStrings);
+      // Preserve existing tuning values for strings that still exist
+      for (
+        let i = 0;
+        i < Math.min(prev.length, settings.numberOfStrings);
+        i++
+      ) {
+        newTuning[i] = prev[i];
+      }
+      return newTuning;
+    });
+  }, [settings.numberOfStrings]);
 
   const handleInputChange = (index: number, value: string) => {
     const processedValue =
@@ -29,7 +57,13 @@ const FretboardControls: React.FC = () => {
 
   const renderInputs = () => {
     return rootNotes.map((note, index) => (
-      <div key={index} className="flex items-start h-[calc(100%/6)]">
+      <div
+        key={index}
+        className="flex items-start h-[calc(100%/var(--num-strings))]"
+        style={
+          { '--num-strings': settings.numberOfStrings } as React.CSSProperties
+        }
+      >
         <input
           value={note}
           onChange={e => handleInputChange(index, e.target.value)}

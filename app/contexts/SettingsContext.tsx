@@ -4,6 +4,7 @@ import type { ColoringPatternType } from '~/utils/noteColoringUtils';
 interface Settings {
   isLefty: boolean;
   numberOfFrets: number;
+  numberOfStrings: number;
   showTextNotes: boolean;
   quickColors: ColoringPatternType;
 }
@@ -18,6 +19,7 @@ const STORAGE_KEY = 'jam-dashboard-settings';
 const defaultSettings: Settings = {
   isLefty: false,
   numberOfFrets: 12,
+  numberOfStrings: 6,
   showTextNotes: true,
   quickColors: 'scale',
 };
