@@ -41,7 +41,7 @@ export function HighlightedNotesProvider({
       }));
       setHighlightedNotes(updatedNotes);
     }
-  }, [settings.quickColors, highlightedNotes]);
+  }, [settings.quickColors]);
 
   const setKeyAndNotes = (key: string, scale: string[]) => {
     setSelectedKey(key);
