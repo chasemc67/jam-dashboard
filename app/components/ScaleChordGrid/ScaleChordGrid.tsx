@@ -6,10 +6,14 @@ import { cn } from '~/lib/utils';
 
 export interface ScaleChordGridProps {
   onChordClick?: (chord: string) => void;
+  enabledChordTypes?: string[];
+  showNoteRow?: boolean;
 }
 
 export const ScaleChordGrid: React.FC<ScaleChordGridProps> = ({
   onChordClick = (chord: string) => console.log(`Clicked chord: ${chord}`),
+  enabledChordTypes,
+  showNoteRow = true,
 }) => {
   const { selectedKey } = useHighlightedNotes();
   const chordsInScale = selectedKey ? getEveryChordInScale(selectedKey) : [];
@@ -25,29 +29,36 @@ export const ScaleChordGrid: React.FC<ScaleChordGridProps> = ({
     ),
   ).sort();
 
+  // Filter chord types if enabledChordTypes is provided
+  const displayedChordTypes = enabledChordTypes
+    ? allChordTypes.filter(type => enabledChordTypes.includes(type))
+    : allChordTypes;
+
   return (
     <div className="w-full overflow-x-auto">
       <div className="min-w-max">
         {/* Grid header with notes */}
-        <div className="grid grid-flow-col gap-2 mb-2">
-          <div className="w-20" /> {/* Empty cell for chord type labels */}
-          {chordsInScale.map(({ note }) => (
-            <Button
-              key={note}
-              variant="secondary"
-              className={cn(
-                'w-20 h-20 text-lg font-bold',
-                'hover:bg-primary hover:text-primary-foreground',
-              )}
-              onClick={() => onChordClick(note)}
-            >
-              {note}
-            </Button>
-          ))}
-        </div>
+        {showNoteRow && (
+          <div className="grid grid-flow-col gap-2 mb-2">
+            <div className="w-20" /> {/* Empty cell for chord type labels */}
+            {chordsInScale.map(({ note }) => (
+              <Button
+                key={note}
+                variant="secondary"
+                className={cn(
+                  'w-20 h-20 text-lg font-bold',
+                  'hover:bg-primary hover:text-primary-foreground',
+                )}
+                onClick={() => onChordClick(note)}
+              >
+                {note}
+              </Button>
+            ))}
+          </div>
+        )}
 
         {/* Grid rows for each chord type */}
-        {allChordTypes.map(chordType => (
+        {displayedChordTypes.map(chordType => (
           <div key={chordType} className="grid grid-flow-col gap-2 mb-2">
             <div className="w-20 flex items-center justify-end pr-2 font-medium text-sm">
               {chordType}

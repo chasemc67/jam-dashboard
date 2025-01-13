@@ -26,6 +26,27 @@ export const Default: Story = {
   },
 };
 
+export const WithSimpleTriads: Story = {
+  args: {
+    onChordClick: chord => console.log(`Clicked chord: ${chord}`),
+    enabledChordTypes: ['maj', 'min'],
+  },
+};
+
+export const WithSeventhChords: Story = {
+  args: {
+    onChordClick: chord => console.log(`Clicked chord: ${chord}`),
+    enabledChordTypes: ['7', 'maj7', 'min7', 'dim7'],
+  },
+};
+
+export const WithoutNoteRow: Story = {
+  args: {
+    onChordClick: chord => console.log(`Clicked chord: ${chord}`),
+    showNoteRow: false,
+  },
+};
+
 export const WithCustomKey: Story = {
   args: {
     onChordClick: chord => console.log(`Clicked chord: ${chord}`),
