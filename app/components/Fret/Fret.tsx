@@ -6,10 +6,8 @@
 // and root notes each string is tuned to.
 
 import React from 'react';
-import {
-  getNoteAtFret,
-  areNotesEquivalent,
-} from '../../utils/musicTheoryUtils';
+import { getNoteAtFret, areNotesEquivalent } from '~/utils/musicTheoryUtils';
+import { getNoteColorClass } from '~/utils/noteColors';
 import '~/tailwind.css';
 
 export type HighlightedNote = {
@@ -47,10 +45,7 @@ const Fret: React.FC<FretProps> = ({
         <div key={index} className="h-[2px] bg-[#808080] relative z-[2]">
           {highlightedNote && (
             <div
-              style={
-                { '--note-color': highlightedNote.color } as React.CSSProperties
-              }
-              className="rounded-full w-5 h-5 absolute -top-[9px] left-[calc(50%-10px)] flex items-center justify-center text-white z-[3] bg-[var(--note-color)]"
+              className={`rounded-full w-5 h-5 absolute -top-[9px] left-[calc(50%-10px)] flex items-center justify-center text-white z-[3] ${getNoteColorClass(highlightedNote.color, 'background')}`}
             >
               {showTextNotes && highlightedNote.note}
             </div>

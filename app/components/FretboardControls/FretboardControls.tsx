@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import FretBoard from '../FretBoard';
 import HighlightedNotesControls from '../HighlightedNotesControls';
 import { HighlightedNote } from '../Fret';
+import { getNoteColorClass } from '~/utils/noteColors';
 
 const FretboardControls: React.FC = () => {
   const [rootNotes, setRootNotes] = useState(['E', 'B', 'G', 'D', 'A', 'E']);
@@ -33,7 +34,9 @@ const FretboardControls: React.FC = () => {
 
   const getOutlineColor = (note: string) => {
     const foundNote = highlightedNotes.find(n => n.note === note);
-    return foundNote ? foundNote.color : 'black';
+    return foundNote
+      ? getNoteColorClass(foundNote.color, 'border')
+      : 'border-black';
   };
 
   const renderInputs = () => {
@@ -42,8 +45,7 @@ const FretboardControls: React.FC = () => {
         <input
           value={note}
           onChange={e => handleInputChange(index, e.target.value)}
-          className="w-[30px] h-[30px] text-center border-[5px]"
-          style={{ borderColor: getOutlineColor(note) }}
+          className={`w-[30px] h-[30px] text-center border-[5px] ${getOutlineColor(note)}`}
         />
       </div>
     ));
