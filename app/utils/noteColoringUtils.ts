@@ -26,8 +26,8 @@ export const noteColoringPatterns: Record<
     3: 'green',
     4: 'grey',
     5: 'orange',
-    6: 'grey',
-    7: 'pink',
+    6: 'purple',
+    7: 'grey',
   },
   'major/minor chords': {
     1: 'red',
