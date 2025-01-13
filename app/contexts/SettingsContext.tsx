@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface Settings {
   isLefty: boolean;
+  numberOfFrets: number;
+  showTextNotes: boolean;
 }
 
 interface SettingsContextType {
@@ -13,16 +15,25 @@ const STORAGE_KEY = 'jam-dashboard-settings';
 
 const defaultSettings: Settings = {
   isLefty: false,
+  numberOfFrets: 12,
+  showTextNotes: true,
 };
 
 // Helper function to safely parse stored settings
-const getStoredSettings = (): Settings | null => {
+const getStoredSettings = (): Settings => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : null;
+    if (!stored) return defaultSettings;
+
+    // Merge stored settings with defaults to ensure all fields exist
+    const parsedSettings = JSON.parse(stored);
+    return {
+      ...defaultSettings,
+      ...parsedSettings,
+    };
   } catch (error) {
     console.error('Error reading settings from localStorage:', error);
-    return null;
+    return defaultSettings;
   }
 };
 
@@ -37,9 +48,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   // Load settings from localStorage on mount
   useEffect(() => {
     const storedSettings = getStoredSettings();
-    if (storedSettings) {
-      setSettings(storedSettings);
-    }
+    setSettings(storedSettings);
     setIsInitialized(true);
   }, []);
 

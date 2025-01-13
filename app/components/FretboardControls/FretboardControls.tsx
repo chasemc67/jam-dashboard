@@ -10,10 +10,7 @@ const FretboardControls: React.FC = () => {
   const [rootNotes, setRootNotes] = useState(['E', 'B', 'G', 'D', 'A', 'E']);
   const { highlightedNotes } = useHighlightedNotes();
   const { settings } = useSettings();
-  const [numberOfFrets, setNumberOfFrets] = useState(12);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [startingFret, setStartingFret] = useState(0);
-  const [showTextNotes, setShowTextNotes] = useState(true);
+  const [startingFret] = useState(0);
 
   const handleInputChange = (index: number, value: string) => {
     const processedValue =
@@ -56,35 +53,14 @@ const FretboardControls: React.FC = () => {
               <FretBoard
                 rootNotes={rootNotes}
                 highlightedNotes={highlightedNotes}
-                numberOfFrets={numberOfFrets}
+                numberOfFrets={settings.numberOfFrets}
                 startingFret={startingFret}
-                showTextNotes={showTextNotes}
+                showTextNotes={settings.showTextNotes}
                 isLeftHanded={settings.isLefty}
               />
             </div>
           </div>
         </div>
-      </div>
-      <div className="flex flex-col mt-2.5 gap-1.5">
-        <label className="flex items-center gap-1.5">
-          Number of Frets:
-          <input
-            type="number"
-            min="1"
-            max="24"
-            value={numberOfFrets}
-            onChange={e => setNumberOfFrets(Number(e.target.value))}
-            className="w-[60px]"
-          />
-        </label>
-        <label className="flex items-center gap-1.5">
-          <input
-            type="checkbox"
-            checked={showTextNotes}
-            onChange={() => setShowTextNotes(!showTextNotes)}
-          />
-          Show Text Notes
-        </label>
       </div>
     </div>
   );

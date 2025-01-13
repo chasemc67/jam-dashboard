@@ -7,6 +7,7 @@ import {
 } from '~/components/ui/popover';
 import { Checkbox } from '~/components/ui/checkbox';
 import { Label } from '~/components/ui/label';
+import { Input } from '~/components/ui/input';
 import { useSettings } from '~/contexts/SettingsContext';
 
 export default function Settings() {
@@ -28,15 +29,41 @@ export default function Settings() {
         <div className="grid gap-4">
           <div className="space-y-2">
             <h4 className="font-medium leading-none">Fretboard Settings</h4>
-            <div className="flex items-center space-x-2 pt-2">
-              <Checkbox
-                id="left-handed"
-                checked={settings.isLefty}
-                onCheckedChange={checked =>
-                  updateSettings({ isLefty: checked === true })
-                }
-              />
-              <Label htmlFor="left-handed">Left-handed</Label>
+            <div className="flex flex-col gap-2 pt-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="left-handed"
+                  checked={settings.isLefty}
+                  onCheckedChange={checked =>
+                    updateSettings({ isLefty: checked === true })
+                  }
+                />
+                <Label htmlFor="left-handed">Left-handed</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="show-text-notes"
+                  checked={settings.showTextNotes}
+                  onCheckedChange={checked =>
+                    updateSettings({ showTextNotes: checked === true })
+                  }
+                />
+                <Label htmlFor="show-text-notes">Show Text Notes</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Label htmlFor="number-of-frets">Number of Frets:</Label>
+                <Input
+                  id="number-of-frets"
+                  type="number"
+                  min="1"
+                  max="24"
+                  value={settings.numberOfFrets}
+                  onChange={e =>
+                    updateSettings({ numberOfFrets: Number(e.target.value) })
+                  }
+                  className="w-[60px]"
+                />
+              </div>
             </div>
           </div>
         </div>
