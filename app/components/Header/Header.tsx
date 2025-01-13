@@ -12,6 +12,8 @@ export default function Header() {
         'md:border-b',
         // Mobile: bottom border, fixed positioning
         'fixed bottom-0 border-t md:relative md:top-0',
+        // Ensure header stays above other UI elements
+        'z-50',
       )}
     >
       {/* Desktop Layout */}
