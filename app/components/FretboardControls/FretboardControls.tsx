@@ -4,15 +4,16 @@ import React, { useState } from 'react';
 import FretBoard from '../FretBoard';
 import { getNoteColorClass } from '~/utils/noteColors';
 import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
+import { useSettings } from '~/contexts/SettingsContext';
 
 const FretboardControls: React.FC = () => {
   const [rootNotes, setRootNotes] = useState(['E', 'B', 'G', 'D', 'A', 'E']);
   const { highlightedNotes } = useHighlightedNotes();
+  const { settings } = useSettings();
   const [numberOfFrets, setNumberOfFrets] = useState(12);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [startingFret, setStartingFret] = useState(0);
   const [showTextNotes, setShowTextNotes] = useState(true);
-  const [isLeftHanded, setIsLeftHanded] = useState(false);
 
   const handleInputChange = (index: number, value: string) => {
     const processedValue =
@@ -45,11 +46,11 @@ const FretboardControls: React.FC = () => {
     <div>
       <div className="flex">
         <div
-          className={`flex flex-col justify-between h-[330px] ${isLeftHanded ? 'order-1' : 'order-0'}`}
+          className={`flex flex-col justify-between h-[330px] ${settings.isLefty ? 'order-1' : 'order-0'}`}
         >
           {renderInputs()}
         </div>
-        <div className={isLeftHanded ? 'order-0' : 'order-1'}>
+        <div className={settings.isLefty ? 'order-0' : 'order-1'}>
           <div className="max-w-[90vw] overflow-x-auto md:max-w-none md:overflow-visible">
             <div className="inline-flex">
               <FretBoard
@@ -58,7 +59,7 @@ const FretboardControls: React.FC = () => {
                 numberOfFrets={numberOfFrets}
                 startingFret={startingFret}
                 showTextNotes={showTextNotes}
-                isLeftHanded={isLeftHanded}
+                isLeftHanded={settings.isLefty}
               />
             </div>
           </div>
@@ -75,14 +76,6 @@ const FretboardControls: React.FC = () => {
             onChange={e => setNumberOfFrets(Number(e.target.value))}
             className="w-[60px]"
           />
-        </label>
-        <label className="flex items-center gap-1.5">
-          <input
-            type="checkbox"
-            checked={isLeftHanded}
-            onChange={() => setIsLeftHanded(!isLeftHanded)}
-          />
-          Left Handed
         </label>
         <label className="flex items-center gap-1.5">
           <input

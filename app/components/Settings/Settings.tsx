@@ -7,8 +7,11 @@ import {
 } from '~/components/ui/popover';
 import { Checkbox } from '~/components/ui/checkbox';
 import { Label } from '~/components/ui/label';
+import { useSettings } from '~/contexts/SettingsContext';
 
 export default function Settings() {
+  const { settings, updateSettings } = useSettings();
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -26,7 +29,13 @@ export default function Settings() {
           <div className="space-y-2">
             <h4 className="font-medium leading-none">Fretboard Settings</h4>
             <div className="flex items-center space-x-2 pt-2">
-              <Checkbox id="left-handed" />
+              <Checkbox
+                id="left-handed"
+                checked={settings.isLefty}
+                onCheckedChange={checked =>
+                  updateSettings({ isLefty: checked === true })
+                }
+              />
               <Label htmlFor="left-handed">Left-handed</Label>
             </div>
           </div>
