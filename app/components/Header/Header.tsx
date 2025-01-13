@@ -8,10 +8,7 @@ export default function Header() {
     <header
       className={cn(
         'w-full border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60',
-        // Desktop: top border
-        'md:border-b',
-        // Mobile: bottom border, fixed positioning
-        'fixed bottom-0 border-t md:relative md:top-0',
+        'border-b',
         // Ensure header stays above other UI elements
         'z-50',
       )}
