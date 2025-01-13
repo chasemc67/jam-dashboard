@@ -1,5 +1,4 @@
-import React from 'react';
-import { Meta, Story } from '@storybook/react';
+import { Meta, StoryFn } from '@storybook/react';
 import FretBoard, { FretBoardProps } from './FretBoard';
 
 export default {
@@ -7,19 +6,21 @@ export default {
   component: FretBoard,
 } as Meta;
 
-const Template: Story<FretBoardProps> = args => <FretBoard {...args} />;
+const Template: StoryFn<FretBoardProps> = (args: FretBoardProps) => (
+  <FretBoard {...args} />
+);
 
 export const Default = Template.bind({});
 Default.args = {
   rootNotes: ['E', 'A', 'D', 'G', 'B', 'E'],
   highlightedNotes: [
-    { note: 'C', color: 'blue' },
-    { note: 'D', color: 'red' },
+    { note: 'C', color: 'red' },
+    { note: 'D', color: 'blue' },
     { note: 'E', color: 'green' },
-    { note: 'F', color: 'orange' },
-    { note: 'G', color: 'brown' },
+    { note: 'F', color: 'yellow' },
+    { note: 'G', color: 'orange' },
     { note: 'A', color: 'purple' },
-    { note: 'B', color: 'teal' },
+    { note: 'B', color: 'pink' },
   ],
   numberOfFrets: 12,
   startingFret: 0,

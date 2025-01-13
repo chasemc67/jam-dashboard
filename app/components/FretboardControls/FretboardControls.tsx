@@ -8,13 +8,13 @@ import { HighlightedNote } from '../Fret';
 const FretboardControls: React.FC = () => {
   const [rootNotes, setRootNotes] = useState(['E', 'B', 'G', 'D', 'A', 'E']);
   const [highlightedNotes, setHighlightedNotes] = useState<HighlightedNote[]>([
-    { note: 'C', color: 'blue' },
-    { note: 'D', color: 'red' },
+    { note: 'C', color: 'red' },
+    { note: 'D', color: 'blue' },
     { note: 'E', color: 'green' },
-    { note: 'F', color: 'orange' },
-    { note: 'G', color: 'brown' },
+    { note: 'F', color: 'yellow' },
+    { note: 'G', color: 'orange' },
     { note: 'A', color: 'purple' },
-    { note: 'B', color: 'teal' },
+    { note: 'B', color: 'pink' },
   ]);
 
   const [numberOfFrets, setNumberOfFrets] = useState(12);
