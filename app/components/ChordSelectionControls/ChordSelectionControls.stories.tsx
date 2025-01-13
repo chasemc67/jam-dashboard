@@ -17,8 +17,6 @@ const Template: StoryFn<ChordSelectionControlsProps> = (
 
 export const Default = Template.bind({});
 Default.args = {
-  selectedKey: 'C major',
-  onKeyChange: () => {},
   selectedChordGroups: [
     {
       label: 'Simple Triads',
@@ -34,8 +32,6 @@ Default.args = {
 
 export const AllChordTypes = Template.bind({});
 AllChordTypes.args = {
-  selectedKey: 'G major',
-  onKeyChange: () => {},
   selectedChordGroups: [
     {
       label: 'Everything',

@@ -70,7 +70,9 @@ const ChordSelectionControls: React.FC<ChordSelectionControlsProps> = ({
       <div>
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-foreground">Key:</span>
-          <span className="text-sm text-foreground">{selectedKey}</span>
+          <span className="text-sm text-foreground">
+            {selectedKey || 'Select a Key at the top of the page'}
+          </span>
         </div>
       </div>
 
