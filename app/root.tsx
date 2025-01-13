@@ -33,6 +33,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
         <style
+          // disable overscroll
           dangerouslySetInnerHTML={{
             __html: `
           html, body {
