@@ -1,11 +1,22 @@
 import React, { createContext, useContext, useState } from 'react';
 import type { HighlightedNote } from '~/components/Fret';
 
+const noteColors = [
+  'red',
+  'blue',
+  'green',
+  'yellow',
+  'orange',
+  'purple',
+  'pink',
+];
+
 interface HighlightedNotesContextType {
   highlightedNotes: HighlightedNote[];
   setHighlightedNotes: (notes: HighlightedNote[]) => void;
   selectedKey: string;
   setSelectedKey: (key: string) => void;
+  setKeyAndNotes: (key: string, scale: string[]) => void;
 }
 
 const HighlightedNotesContext = createContext<
@@ -28,6 +39,15 @@ export function HighlightedNotesProvider({
   ]);
   const [selectedKey, setSelectedKey] = useState<string>('');
 
+  const setKeyAndNotes = (key: string, scale: string[]) => {
+    setSelectedKey(key);
+    const newHighlightedNotes = scale.map((note, index) => ({
+      note,
+      color: noteColors[index % noteColors.length],
+    }));
+    setHighlightedNotes(newHighlightedNotes);
+  };
+
   return (
     <HighlightedNotesContext.Provider
       value={{
@@ -35,6 +55,7 @@ export function HighlightedNotesProvider({
         setHighlightedNotes,
         selectedKey,
         setSelectedKey,
+        setKeyAndNotes,
       }}
     >
       {children}

@@ -53,20 +53,9 @@ export const parseSearchInput = (input: string): string[] => {
 
 const key_options = generate_key_options();
 
-const noteColors = [
-  'red',
-  'blue',
-  'green',
-  'yellow',
-  'orange',
-  'purple',
-  'pink',
-];
-
 export const KeyPicker: React.FC = () => {
   const [open, setOpen] = useState(false);
-  const { setHighlightedNotes, selectedKey, setSelectedKey } =
-    useHighlightedNotes();
+  const { selectedKey, setKeyAndNotes } = useHighlightedNotes();
 
   const filterKeys = (value: string, search: string) => {
     const option = key_options.find(opt => opt.value === value);
@@ -93,21 +82,17 @@ export const KeyPicker: React.FC = () => {
   };
 
   const handleKeySelect = (currentValue: string) => {
-    setSelectedKey(currentValue === selectedKey ? '' : currentValue);
+    const newKey = currentValue === selectedKey ? '' : currentValue;
     setOpen(false);
 
-    // Update highlighted notes based on the selected key
+    // Update both key and notes through context
     const selectedKeyOption = key_options.find(
       opt => opt.value === currentValue,
     );
     if (selectedKeyOption) {
-      const newHighlightedNotes = selectedKeyOption.scale.map(
-        (note, index) => ({
-          note,
-          color: noteColors[index % noteColors.length],
-        }),
-      );
-      setHighlightedNotes(newHighlightedNotes);
+      setKeyAndNotes(newKey, selectedKeyOption.scale);
+    } else if (newKey === '') {
+      setKeyAndNotes('', []);
     }
   };
 
