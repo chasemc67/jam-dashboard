@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Chord } from 'tonal';
 import Player from '~/components/Player';
-import { getEveryChordInScale } from '~/utils/scaleChords';
+import { getEveryChordInScale, getEveryNoteInScale } from '~/utils/scaleChords';
 import {
   ChordTypeGroup,
   chordTypeGroups,
   getActiveChordTypes,
+  INDIVIDUAL_NOTES,
 } from '~/utils/chordPlayerUtils';
 import ChordSelectionControls from '~/components/ChordSelectionControls';
 import { Button } from '~/components/ui/button';
@@ -37,20 +38,38 @@ const RandomPlayer: React.FC = () => {
       .flatMap(noteChords => noteChords.chords)
       .filter((chord): chord is string => chord !== null);
 
-    if (allPossibleChords.length === 0) return;
+    if (
+      allPossibleChords.length === 0 &&
+      !selectedChordGroups.some(group => group.label === INDIVIDUAL_NOTES)
+    )
+      return;
+
+    // convert allPossibleChords into a new array with the chord name and array of notes
+    const allPossibleChordsWithNotes = allPossibleChords.map(chord => {
+      const chordNotes = Chord.get(chord).notes;
+      return { chordName: chord, notes: chordNotes };
+    });
+
+    if (selectedChordGroups.some(group => group.label === INDIVIDUAL_NOTES)) {
+      allPossibleChordsWithNotes.push(
+        ...getEveryNoteInScale(selectedKey).map((note: string) => ({
+          chordName: note,
+          notes: [note],
+        })),
+      );
+    }
 
     // Pick a random chord
-    const randomChord =
-      allPossibleChords[Math.floor(Math.random() * allPossibleChords.length)];
-
-    // Get the notes of the chord using Tonal
-    const chordNotes = Chord.get(randomChord).notes;
+    const randomChordWithNotes =
+      allPossibleChordsWithNotes[
+        Math.floor(Math.random() * allPossibleChordsWithNotes.length)
+      ];
 
     // Convert to the format needed by the Player (adding octave 4)
-    const notesWithOctave = chordNotes.map(note => `${note}4`);
+    const notesWithOctave = randomChordWithNotes.notes.map(note => `${note}4`);
 
     setCurrentChord(notesWithOctave);
-    setCurrentChordName(randomChord);
+    setCurrentChordName(randomChordWithNotes.chordName);
   };
 
   const handleChordGroupChange = (

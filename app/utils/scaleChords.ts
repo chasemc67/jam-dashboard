@@ -1,6 +1,10 @@
 // get every chord that fits a scale
 import { Scale, Chord, ChordType } from 'tonal';
 
+export const getEveryNoteInScale = (scaleName: string) => {
+  return Scale.get(scaleName).notes;
+};
+
 export const getEveryChordInScale = (
   scaleName: string,
   customChordTypes?: string[],

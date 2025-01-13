@@ -5,10 +5,17 @@ export interface ChordTypeGroup {
   value: string[];
 }
 
+export const INDIVIDUAL_NOTES = 'Individual Notes';
+
 // Get all available chord types from Tonal
 const allChordTypes = ChordType.all().map(ct => ct.aliases[0]);
 
 export const chordTypeGroups: ChordTypeGroup[] = [
+  // For individual notes, we'll treat them as a special case
+  {
+    label: INDIVIDUAL_NOTES,
+    value: [],
+  },
   {
     label: 'Simple Triads',
     value: ['maj', 'min'],
