@@ -61,12 +61,12 @@ const Fret: React.FC<FretProps> = ({
   return (
     <div
       style={{ width: `${getFretWidth(fretNumber)}px` }}
-      className="flex flex-col justify-between bg-[#f0e9e2] border border-[#c0b7a8] p-2.5 relative h-[300px]"
+      className="flex flex-col justify-between bg-accent border border-card p-2.5 relative h-[300px]"
     >
       {renderStrings()}
       {fretMarkers.includes(fretNumber) && (
         <div
-          className={`bg-[#aaa] w-3/4 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[1] ${tallMarkerFrets.includes(fretNumber) ? 'h-1/2' : 'h-1/4'}`}
+          className={`bg-muted-foreground w-3/4 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[1] ${tallMarkerFrets.includes(fretNumber) ? 'h-1/2' : 'h-1/4'}`}
         />
       )}
     </div>
