@@ -8,7 +8,18 @@ import {
 import { Checkbox } from '~/components/ui/checkbox';
 import { Label } from '~/components/ui/label';
 import { Input } from '~/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '~/components/ui/select';
 import { useSettings } from '~/contexts/SettingsContext';
+import {
+  COLORING_PATTERN_CHOICES,
+  ColoringPatternType,
+} from '~/utils/noteColoringUtils';
 
 export default function Settings() {
   const { settings, updateSettings } = useSettings();
@@ -63,6 +74,26 @@ export default function Settings() {
                   }
                   className="w-[60px]"
                 />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Label htmlFor="quick-colors">Quick Colors:</Label>
+                <Select
+                  value={settings.quickColors}
+                  onValueChange={(value: ColoringPatternType) =>
+                    updateSettings({ quickColors: value })
+                  }
+                >
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue placeholder="Select pattern" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COLORING_PATTERN_CHOICES.map(pattern => (
+                      <SelectItem key={pattern} value={pattern}>
+                        {pattern}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>

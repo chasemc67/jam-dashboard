@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import type { ColoringPatternType } from '~/utils/noteColoringUtils';
 
 interface Settings {
   isLefty: boolean;
   numberOfFrets: number;
   showTextNotes: boolean;
+  quickColors: ColoringPatternType;
 }
 
 interface SettingsContextType {
@@ -17,6 +19,7 @@ const defaultSettings: Settings = {
   isLefty: false,
   numberOfFrets: 12,
   showTextNotes: true,
+  quickColors: 'scale',
 };
 
 // Helper function to safely parse stored settings
