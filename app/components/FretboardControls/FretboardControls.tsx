@@ -60,14 +60,18 @@ const FretboardControls: React.FC = () => {
           {renderInputs()}
         </div>
         <div className={isLeftHanded ? 'order-0' : 'order-1'}>
-          <FretBoard
-            rootNotes={rootNotes}
-            highlightedNotes={highlightedNotes}
-            numberOfFrets={numberOfFrets}
-            startingFret={startingFret}
-            showTextNotes={showTextNotes}
-            isLeftHanded={isLeftHanded}
-          />
+          <div className="max-w-[80vw] overflow-x-auto md:max-w-none md:overflow-visible">
+            <div className="inline-flex">
+              <FretBoard
+                rootNotes={rootNotes}
+                highlightedNotes={highlightedNotes}
+                numberOfFrets={numberOfFrets}
+                startingFret={startingFret}
+                showTextNotes={showTextNotes}
+                isLeftHanded={isLeftHanded}
+              />
+            </div>
+          </div>
         </div>
       </div>
       <HighlightedNotesControls

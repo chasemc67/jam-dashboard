@@ -22,10 +22,16 @@ export type FretProps = {
   showTextNotes?: boolean;
 };
 
-const getFretWidth = (fretNumber: number): number => {
-  const baseWidth = 120;
+const getFretWidth = (
+  fretNumber: number,
+): { mobile: number; desktop: number } => {
+  const mobileBase = 80;
+  const desktopBase = 120;
   const factor = 0.94;
-  return baseWidth * Math.pow(factor, fretNumber);
+  return {
+    mobile: mobileBase * Math.pow(factor, fretNumber),
+    desktop: desktopBase * Math.pow(factor, fretNumber),
+  };
 };
 
 const Fret: React.FC<FretProps> = ({
@@ -34,6 +40,8 @@ const Fret: React.FC<FretProps> = ({
   highlightedNotes,
   showTextNotes,
 }) => {
+  const widths = getFretWidth(fretNumber);
+
   const renderStrings = () => {
     return rootNotes.map((rootNote, index) => {
       const currentNote = getNoteAtFret(rootNote, fretNumber);
@@ -60,8 +68,12 @@ const Fret: React.FC<FretProps> = ({
 
   return (
     <div
-      style={{ width: `${getFretWidth(fretNumber)}px` }}
-      className="flex flex-col justify-between bg-accent border border-card p-2.5 relative h-[300px]"
+      style={{
+        width: `${widths.mobile}px`,
+        flexShrink: 0,
+        ['--fret-desktop-width' as string]: `${widths.desktop}px`,
+      }}
+      className="flex flex-col justify-between bg-accent border border-card p-2.5 relative h-[300px] md:!w-[var(--fret-desktop-width)]"
     >
       {renderStrings()}
       {fretMarkers.includes(fretNumber) && (
