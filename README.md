@@ -11,10 +11,10 @@ With Jam Dashboard you can highlight just the notes you need, in any tuning, and
 Common commands:
 
 ```shellscript
-npm run dev # dev server
-npm run test # run unit tests
-npm run storybook # storybooks
-npm run format # prettier
+npm run dev        # dev server
+npm run test       # run unit tests
+npm run storybook  # storybooks
+npm run format     # prettier
 ```
 
 ## Deployment
