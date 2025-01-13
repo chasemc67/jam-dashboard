@@ -26,19 +26,36 @@ export const links: LinksFunction = () => [
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark h-full overflow-hidden">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
+          html, body {
+            overscroll-behavior: none;
+            overflow: hidden;
+            height: 100%;
+          }
+          #root {
+            overflow: auto;
+            height: 100%;
+          }
+        `,
+          }}
+        />
       </head>
-      <body>
-        {children}
-        <ScrollRestoration />
-        <Scripts />
-        <Analytics />
-        <SpeedInsights />
+      <body className="bg-background">
+        <div id="root" className="bg-background">
+          {children}
+          <ScrollRestoration />
+          <Scripts />
+          <Analytics />
+          <SpeedInsights />
+        </div>
       </body>
     </html>
   );
