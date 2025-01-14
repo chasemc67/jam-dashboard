@@ -22,11 +22,11 @@ export const chordTypeGroups: ChordTypeGroup[] = [
   },
   {
     label: 'Seventh Chords',
-    value: ['7', 'maj7', 'min7', 'dim7'],
+    value: ['7', 'maj7', 'm7', 'dim7'],
   },
   {
     label: 'Extended Chords',
-    value: ['9', '11', '13', 'maj9', 'min9'],
+    value: ['5', '9', 'maj9', 'm9'],
   },
   {
     label: 'Suspended Chords',
