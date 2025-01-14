@@ -1,5 +1,6 @@
 // get every chord that fits a scale
-import { Scale, Chord, ChordType } from 'tonal';
+import { Scale, Chord } from 'tonal';
+import { chordTypesCurated } from '~/utils/chordTypesCurated';
 
 export const getEveryNoteInScale = (scaleName: string) => {
   return Scale.get(scaleName).notes;
@@ -17,8 +18,7 @@ export const getEveryChordInScale = (
   };
 
   // Use custom chord types if provided, otherwise get all available chord types
-  const chordTypes =
-    customChordTypes || ChordType.all().map(ct => ct.aliases[0]); // Use first alias for names
+  const chordTypes = customChordTypes || chordTypesCurated; // Use first alias for names
 
   // Find valid chords for each note in the scale
   const chordsByNote = scale.map(note => {

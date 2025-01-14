@@ -1,14 +1,14 @@
-import { ChordType } from 'tonal';
+import { chordTypesCurated } from '~/utils/chordTypesCurated';
 
 export interface ChordTypeGroup {
   label: string;
   value: string[];
 }
-
+0;
 export const INDIVIDUAL_NOTES = 'Individual Notes';
 
 // Get all available chord types from Tonal
-const allChordTypes = ChordType.all().map(ct => ct.aliases[0]);
+const allChordTypes = chordTypesCurated;
 
 export const chordTypeGroups: ChordTypeGroup[] = [
   // For individual notes, we'll treat them as a special case
