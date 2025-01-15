@@ -3,6 +3,7 @@ import { Button } from '~/components/ui/button';
 import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
 import { getEveryChordInScale } from '~/utils/scaleChords';
 import { cn } from '~/lib/utils';
+import { chordTypesCurated } from '~/utils/chordTypesCurated';
 
 export interface ScaleChordGridProps {
   onChordClick?: (chord: string) => void;
@@ -18,21 +19,10 @@ export const ScaleChordGrid: React.FC<ScaleChordGridProps> = ({
   const { selectedKey } = useHighlightedNotes();
   const chordsInScale = selectedKey ? getEveryChordInScale(selectedKey) : [];
 
-  // Get all unique chord types from all notes
-  const allChordTypes = Array.from(
-    new Set(
-      chordsInScale.flatMap(noteChords =>
-        noteChords.chords.map(
-          chord => chord?.slice(noteChords.note.length) as string,
-        ),
-      ),
-    ),
-  ).sort();
-
-  // Filter chord types if enabledChordTypes is provided
+  // Use chordTypesCurated for ordering, filtered by enabledChordTypes if provided
   const displayedChordTypes = enabledChordTypes
-    ? allChordTypes.filter(type => enabledChordTypes.includes(type))
-    : allChordTypes;
+    ? chordTypesCurated.filter(type => enabledChordTypes.includes(type))
+    : chordTypesCurated;
 
   return (
     <div className="w-full overflow-x-auto">
@@ -58,34 +48,44 @@ export const ScaleChordGrid: React.FC<ScaleChordGridProps> = ({
         )}
 
         {/* Grid rows for each chord type */}
-        {displayedChordTypes.map(chordType => (
-          <div key={chordType} className="grid grid-flow-col gap-2 mb-2">
-            <div className="w-20 flex items-center justify-end pr-2 font-medium text-sm">
-              {chordType}
-            </div>
-            {chordsInScale.map(({ note, chords }) => {
-              const fullChordName = `${note}${chordType}`;
-              const isSupported = chords.includes(fullChordName);
+        {displayedChordTypes.map(chordType => {
+          // Check if any chord in this row is supported
+          const hasAnySupportedChords = chordsInScale.some(({ chords }) =>
+            chords.includes(`${chords[0]?.charAt(0)}${chordType}`),
+          );
 
-              return (
-                <Button
-                  key={`${note}${chordType}`}
-                  variant="secondary"
-                  className={cn(
-                    'w-20 h-20',
-                    isSupported
-                      ? 'hover:bg-primary hover:text-primary-foreground'
-                      : 'opacity-25 cursor-not-allowed',
-                  )}
-                  disabled={!isSupported}
-                  onClick={() => isSupported && onChordClick(fullChordName)}
-                >
-                  {fullChordName}
-                </Button>
-              );
-            })}
-          </div>
-        ))}
+          // Skip rendering the row if no chords are supported
+          if (!hasAnySupportedChords) return null;
+
+          return (
+            <div key={chordType} className="grid grid-flow-col gap-2 mb-2">
+              <div className="w-20 flex items-center justify-end pr-2 font-medium text-sm">
+                {chordType}
+              </div>
+              {chordsInScale.map(({ note, chords }) => {
+                const fullChordName = `${note}${chordType}`;
+                const isSupported = chords.includes(fullChordName);
+
+                return (
+                  <Button
+                    key={`${note}${chordType}`}
+                    variant="secondary"
+                    className={cn(
+                      'w-20 h-20',
+                      isSupported
+                        ? 'hover:bg-primary hover:text-primary-foreground'
+                        : 'opacity-25 cursor-not-allowed',
+                    )}
+                    disabled={!isSupported}
+                    onClick={() => isSupported && onChordClick(fullChordName)}
+                  >
+                    {fullChordName}
+                  </Button>
+                );
+              })}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
