@@ -12,6 +12,7 @@ import ChordSelectionControls from '~/components/ChordSelectionControls';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
+import ScaleChordGrid from '~/components/ScaleChordGrid';
 
 const RandomPlayer: React.FC = () => {
   const { selectedKey } = useHighlightedNotes();
@@ -82,6 +83,13 @@ const RandomPlayer: React.FC = () => {
     setShowNotes(!showNotes);
   };
 
+  const playChord = (chordName: string) => {
+    const chordNotes = Chord.get(chordName).notes;
+    const notesWithOctave = chordNotes.map(note => `${note}4`);
+    setCurrentChord(notesWithOctave);
+    setCurrentChordName(chordName);
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -109,6 +117,14 @@ const RandomPlayer: React.FC = () => {
               </p>
             </div>
           )}
+
+          <ScaleChordGrid
+            onChordClick={playChord}
+            enabledChordTypes={getActiveChordTypes(selectedChordGroups)}
+            showNoteRow={selectedChordGroups.some(
+              group => group.label === INDIVIDUAL_NOTES,
+            )}
+          />
         </div>
         <Player notes={currentChord} />
       </CardContent>
