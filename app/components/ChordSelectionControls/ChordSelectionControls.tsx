@@ -68,19 +68,20 @@ const ChordSelectionControls: React.FC<ChordSelectionControlsProps> = ({
   return (
     <div className="space-y-4">
       <div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-foreground">Key:</span>
-          <span className="text-sm text-foreground">
-            {selectedKey || 'Select a Key at the top of the page'}
-          </span>
-        </div>
+        {!selectedKey && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-foreground">
+              {selectedKey || 'Select a Key at the top of the page'}
+            </span>
+          </div>
+        )}
       </div>
 
-      <div>
-        <div className="mb-2 text-sm font-medium text-foreground">
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium text-foreground">
           Chord Types:
-        </div>
-        <div className="w-[300px]">
+        </span>
+        <div className="w-[500px]">
           <Select
             isMulti
             closeMenuOnSelect={false}
