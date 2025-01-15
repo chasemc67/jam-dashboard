@@ -1,15 +1,18 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { ScaleChordGrid } from './ScaleChordGrid';
 import { HighlightedNotesProvider } from '~/contexts/HighlightedNotesContext';
+import { SettingsProvider } from '~/contexts/SettingsContext';
 
 const meta = {
   title: 'Components/ScaleChordGrid',
   component: ScaleChordGrid,
   decorators: [
     Story => (
-      <HighlightedNotesProvider>
-        <Story />
-      </HighlightedNotesProvider>
+      <SettingsProvider>
+        <HighlightedNotesProvider>
+          <Story />
+        </HighlightedNotesProvider>
+      </SettingsProvider>
     ),
   ],
   parameters: {
@@ -53,14 +56,16 @@ export const WithCustomKey: Story = {
   },
   decorators: [
     Story => (
-      <HighlightedNotesProvider>
-        <div className="flex flex-col gap-4">
-          <div className="text-sm text-muted-foreground">
-            Key: C major (set via context)
+      <SettingsProvider>
+        <HighlightedNotesProvider>
+          <div className="flex flex-col gap-4">
+            <div className="text-sm text-muted-foreground">
+              Key: C major (set via context)
+            </div>
+            <Story />
           </div>
-          <Story />
-        </div>
-      </HighlightedNotesProvider>
+        </HighlightedNotesProvider>
+      </SettingsProvider>
     ),
   ],
   play: async () => {
