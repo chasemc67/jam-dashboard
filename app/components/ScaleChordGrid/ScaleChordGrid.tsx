@@ -29,13 +29,13 @@ export const ScaleChordGrid: React.FC<ScaleChordGridProps> = ({
       <div className="min-w-max">
         {/* Grid header with notes */}
         {showNoteRow && (
-          <div className="grid grid-flow-col gap-1 mb-1">
+          <div className="grid grid-flow-col gap-0.5 mb-1">
             {chordsInScale.map(({ note }) => (
               <Button
                 key={note}
                 variant="secondary"
                 className={cn(
-                  'w-20 h-10 text-lg font-bold',
+                  'w-16 h-10 text-lg font-bold',
                   'hover:bg-primary hover:text-primary-foreground',
                 )}
                 onClick={() => onChordClick(note)}
@@ -57,7 +57,7 @@ export const ScaleChordGrid: React.FC<ScaleChordGridProps> = ({
           if (!hasAnySupportedChords) return null;
 
           return (
-            <div key={chordType} className="grid grid-flow-col gap-1 mb-1">
+            <div key={chordType} className="grid grid-flow-col gap-0.5 mb-1">
               {chordsInScale.map(({ note, chords }) => {
                 const fullChordName = `${note}${chordType}`;
                 const isSupported = chords.includes(fullChordName);
@@ -67,7 +67,7 @@ export const ScaleChordGrid: React.FC<ScaleChordGridProps> = ({
                     key={`${note}${chordType}`}
                     variant="secondary"
                     className={cn(
-                      'w-20 h-10',
+                      'w-16 h-10',
                       isSupported
                         ? 'hover:bg-primary hover:text-primary-foreground'
                         : 'opacity-25 cursor-not-allowed',
