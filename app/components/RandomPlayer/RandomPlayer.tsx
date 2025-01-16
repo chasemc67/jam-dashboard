@@ -19,15 +19,16 @@ const RandomPlayer: React.FC = () => {
   const [selectedChordGroups, setSelectedChordGroups] = useState<
     ChordTypeGroup[]
   >([chordTypeGroups[0]]);
-  const [currentChord, setCurrentChord] = useState<string[]>([
-    'C4',
-    'E4',
-    'G4',
-  ]); // C major chord as default
-  const [currentChordName, setCurrentChordName] = useState<string>('C major');
+  const [currentChord, setCurrentChord] = useState<string[]>([]);
+  const [currentChordName, setCurrentChordName] = useState<string>('');
   const [showNotes, setShowNotes] = useState<boolean>(false);
+  const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(
+    null,
+  );
+  const [hasGeneratedChord, setHasGeneratedChord] = useState(false);
 
   const generateRandomChord = () => {
+    setFeedback(null);
     // Get all possible chords in the selected key
     const chordsInKey = getEveryChordInScale(
       selectedKey,
@@ -71,23 +72,27 @@ const RandomPlayer: React.FC = () => {
 
     setCurrentChord(notesWithOctave);
     setCurrentChordName(randomChordWithNotes.chordName);
+    setHasGeneratedChord(true);
+    setShowNotes(false);
   };
 
   const handleChordGroupChange = (
     selectedOptions: readonly ChordTypeGroup[],
   ) => {
     setSelectedChordGroups([...selectedOptions]);
+    setHasGeneratedChord(false);
+    setFeedback(null);
   };
 
   const toggleNotes = () => {
     setShowNotes(!showNotes);
   };
 
-  const playChord = (chordName: string) => {
-    const chordNotes = Chord.get(chordName).notes;
-    const notesWithOctave = chordNotes.map(note => `${note}4`);
-    setCurrentChord(notesWithOctave);
-    setCurrentChordName(chordName);
+  const checkAnswer = (chordName: string) => {
+    if (!hasGeneratedChord) return;
+
+    const isCorrect = chordName === currentChordName;
+    setFeedback(isCorrect ? 'correct' : 'incorrect');
   };
 
   return (
@@ -102,11 +107,20 @@ const RandomPlayer: React.FC = () => {
             onChordGroupsChange={handleChordGroupChange}
           />
 
-          <div className="flex gap-2">
-            <Button onClick={generateRandomChord}>Generate</Button>
-            <Button variant="outline" onClick={toggleNotes}>
-              {showNotes ? 'Hide' : 'Reveal'}
+          <div className="flex gap-2 items-center">
+            <Button onClick={generateRandomChord}>
+              {hasGeneratedChord ? 'Start' : 'Next'}
             </Button>
+            <Button variant="outline" onClick={toggleNotes}>
+              {showNotes ? 'Hide' : 'Peek'}
+            </Button>
+            {feedback && (
+              <span
+                className={`ml-2 font-medium ${feedback === 'correct' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+              >
+                {feedback === 'correct' ? 'Correct!' : 'Incorrect, try again!'}
+              </span>
+            )}
           </div>
 
           {showNotes && (
@@ -119,7 +133,7 @@ const RandomPlayer: React.FC = () => {
           )}
 
           <ScaleChordGrid
-            onChordClick={playChord}
+            onChordClick={checkAnswer}
             enabledChordTypes={getActiveChordTypes(selectedChordGroups)}
             showNoteRow={selectedChordGroups.some(
               group => group.label === INDIVIDUAL_NOTES,
