@@ -97,7 +97,7 @@ const RandomPlayer: React.FC = () => {
   };
 
   return (
-    <Card className="w-full">
+    <Card className="w-full max-w-[750px]">
       <CardHeader>
         <CardTitle>Ear Training</CardTitle>
       </CardHeader>

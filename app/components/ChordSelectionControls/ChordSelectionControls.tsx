@@ -78,9 +78,6 @@ const ChordSelectionControls: React.FC<ChordSelectionControlsProps> = ({
       </div>
 
       <div className="flex items-center gap-2">
-        <span className="text-sm font-medium text-foreground">
-          Chord Types:
-        </span>
         <div className="w-[500px]">
           <Select
             isMulti
