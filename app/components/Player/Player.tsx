@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import * as Tone from 'tone';
 import { Button } from '~/components/ui/button';
+import type { PolySynth, Synth } from 'tone';
 
 export interface PlayerProps {
   notes: string[];
@@ -10,27 +10,26 @@ export interface PlayerProps {
 const Player: React.FC<PlayerProps> = ({ notes, className }) => {
   const [chord, setChord] = useState<string[]>(notes);
   const [isAudioInitialized, setIsAudioInitialized] = useState(false);
-  const synthRef = useRef<Tone.PolySynth | null>(null);
-
-  useEffect(() => {
-    if (!synthRef.current) {
-      synthRef.current = new Tone.PolySynth(Tone.Synth).toDestination();
-    }
-  }, []);
+  const synthRef = useRef<PolySynth<Synth> | null>(null);
 
   useEffect(() => {
     setChord(notes);
   }, [notes]);
 
   const initializeAudio = async () => {
+    const Tone = await import('tone');
     await Tone.start();
+    if (!synthRef.current) {
+      synthRef.current = new Tone.PolySynth(Tone.Synth).toDestination();
+    }
     setIsAudioInitialized(true);
+    return Tone;
   };
 
   const playChordArpeggio = async () => {
-    if (!isAudioInitialized) {
-      await initializeAudio();
-    }
+    const Tone = !isAudioInitialized
+      ? await initializeAudio()
+      : await import('tone');
     const now = Tone.now();
     if (synthRef.current) {
       chord.forEach((note, i) => {
@@ -40,9 +39,9 @@ const Player: React.FC<PlayerProps> = ({ notes, className }) => {
   };
 
   const playChordSimultaneous = async () => {
-    if (!isAudioInitialized) {
-      await initializeAudio();
-    }
+    const Tone = !isAudioInitialized
+      ? await initializeAudio()
+      : await import('tone');
     const now = Tone.now();
     if (synthRef.current) {
       synthRef.current.triggerAttackRelease(chord, '2n', now);
