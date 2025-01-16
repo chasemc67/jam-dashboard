@@ -114,7 +114,7 @@ export const KeyPicker: React.FC = () => {
       </PopoverTrigger>
       <PopoverContent className="w-[350px] p-0">
         <Command filter={filterKeys}>
-          <CommandInput placeholder="Enter notes separated by commas..." />
+          <CommandInput placeholder="Detect key: enter notes separated by commas..." />
           <CommandList>
             <CommandEmpty>No matching keys found.</CommandEmpty>
             <CommandGroup>
