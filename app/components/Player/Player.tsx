@@ -9,6 +9,7 @@ export interface PlayerProps {
 
 const Player: React.FC<PlayerProps> = ({ notes, className }) => {
   const [chord, setChord] = useState<string[]>(notes);
+  const [isAudioInitialized, setIsAudioInitialized] = useState(false);
   const synthRef = useRef<Tone.PolySynth | null>(null);
 
   useEffect(() => {
@@ -21,8 +22,15 @@ const Player: React.FC<PlayerProps> = ({ notes, className }) => {
     setChord(notes);
   }, [notes]);
 
-  const playChordArpeggio = async () => {
+  const initializeAudio = async () => {
     await Tone.start();
+    setIsAudioInitialized(true);
+  };
+
+  const playChordArpeggio = async () => {
+    if (!isAudioInitialized) {
+      await initializeAudio();
+    }
     const now = Tone.now();
     if (synthRef.current) {
       chord.forEach((note, i) => {
@@ -32,7 +40,9 @@ const Player: React.FC<PlayerProps> = ({ notes, className }) => {
   };
 
   const playChordSimultaneous = async () => {
-    await Tone.start();
+    if (!isAudioInitialized) {
+      await initializeAudio();
+    }
     const now = Tone.now();
     if (synthRef.current) {
       synthRef.current.triggerAttackRelease(chord, '2n', now);
@@ -41,12 +51,14 @@ const Player: React.FC<PlayerProps> = ({ notes, className }) => {
 
   return (
     <div className={className}>
-      <Button variant="outline" onClick={playChordSimultaneous}>
-        Play
-      </Button>
-      <Button variant="outline" onClick={playChordArpeggio}>
-        Play Arpeggiated
-      </Button>
+      <div className="flex gap-2">
+        <Button variant="outline" onClick={playChordSimultaneous}>
+          Play
+        </Button>
+        <Button variant="outline" onClick={playChordArpeggio}>
+          Play Arpeggiated
+        </Button>
+      </div>
     </div>
   );
 };
