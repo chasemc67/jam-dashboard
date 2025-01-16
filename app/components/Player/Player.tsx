@@ -41,11 +41,11 @@ const Player: React.FC<PlayerProps> = ({ notes, className }) => {
 
   return (
     <div className={className}>
-      <Button variant="outline" onClick={playChordArpeggio}>
-        Play Arpeggio
-      </Button>
       <Button variant="outline" onClick={playChordSimultaneous}>
-        Play Chord
+        Play
+      </Button>
+      <Button variant="outline" onClick={playChordArpeggio}>
+        Play Arpeggiated
       </Button>
     </div>
   );

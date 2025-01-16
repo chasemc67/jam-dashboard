@@ -11,6 +11,7 @@ import {
 import ChordSelectionControls from '~/components/ChordSelectionControls';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
+import { Separator } from '~/components/ui/separator';
 import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
 import ScaleChordGrid from '~/components/ScaleChordGrid';
 
@@ -107,17 +108,24 @@ const RandomPlayer: React.FC = () => {
             onChordGroupsChange={handleChordGroupChange}
           />
 
-          <div className="flex gap-2 items-center">
-            <Player notes={currentChord} className="flex gap-2" />
-            <Button onClick={generateRandomChord}>
-              {hasGeneratedChord ? 'Next' : 'Start'}
-            </Button>
-            <Button variant="outline" onClick={toggleNotes}>
-              {showNotes ? 'Hide' : 'Peek'}
-            </Button>
+          <div className="flex flex-col gap-4">
+            <div className="flex gap-2">
+              <Button onClick={generateRandomChord}>
+                {hasGeneratedChord ? 'Next' : 'Start'}
+              </Button>
+              {hasGeneratedChord && (
+                <Button variant="outline" onClick={toggleNotes}>
+                  {showNotes ? 'Hide' : 'Peek'}
+                </Button>
+              )}
+            </div>
+            <Separator className="w-full" />
+            {hasGeneratedChord && (
+              <Player notes={currentChord} className="flex gap-2" />
+            )}
             {feedback && (
               <span
-                className={`ml-2 font-medium ${feedback === 'correct' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+                className={`font-medium ${feedback === 'correct' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
               >
                 {feedback === 'correct' ? 'Correct!' : 'Incorrect, try again!'}
               </span>
@@ -126,7 +134,9 @@ const RandomPlayer: React.FC = () => {
 
           {showNotes && (
             <div className="space-y-2 rounded-lg bg-muted p-4">
-              <p className="text-sm font-medium">Chord: {currentChordName}</p>
+              <p className="text-sm font-medium">
+                Chord/Note: {currentChordName}
+              </p>
               <p className="text-sm text-muted-foreground">
                 Notes: {currentChord.map(note => note.slice(0, -1)).join(' - ')}
               </p>
