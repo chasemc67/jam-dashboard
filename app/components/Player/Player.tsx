@@ -4,9 +4,10 @@ import { Button } from '~/components/ui/button';
 
 export interface PlayerProps {
   notes: string[];
+  className?: string;
 }
 
-const Player: React.FC<PlayerProps> = ({ notes }) => {
+const Player: React.FC<PlayerProps> = ({ notes, className }) => {
   const [chord, setChord] = useState<string[]>(notes);
   const synthRef = useRef<Tone.PolySynth | null>(null);
 
@@ -39,7 +40,7 @@ const Player: React.FC<PlayerProps> = ({ notes }) => {
   };
 
   return (
-    <div className="flex gap-2">
+    <div className={className}>
       <Button variant="outline" onClick={playChordArpeggio}>
         Play Arpeggio
       </Button>

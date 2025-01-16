@@ -30,7 +30,6 @@ export const ScaleChordGrid: React.FC<ScaleChordGridProps> = ({
         {/* Grid header with notes */}
         {showNoteRow && (
           <div className="grid grid-flow-col gap-1 mb-1">
-            <div className="w-20" /> {/* Empty cell for chord type labels */}
             {chordsInScale.map(({ note }) => (
               <Button
                 key={note}
@@ -59,9 +58,6 @@ export const ScaleChordGrid: React.FC<ScaleChordGridProps> = ({
 
           return (
             <div key={chordType} className="grid grid-flow-col gap-1 mb-1">
-              <div className="w-20 flex items-center justify-end pr-2 font-medium text-sm">
-                {chordType}
-              </div>
               {chordsInScale.map(({ note, chords }) => {
                 const fullChordName = `${note}${chordType}`;
                 const isSupported = chords.includes(fullChordName);

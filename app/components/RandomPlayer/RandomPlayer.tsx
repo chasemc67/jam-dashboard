@@ -108,8 +108,9 @@ const RandomPlayer: React.FC = () => {
           />
 
           <div className="flex gap-2 items-center">
+            <Player notes={currentChord} className="flex gap-2" />
             <Button onClick={generateRandomChord}>
-              {hasGeneratedChord ? 'Start' : 'Next'}
+              {hasGeneratedChord ? 'Next' : 'Start'}
             </Button>
             <Button variant="outline" onClick={toggleNotes}>
               {showNotes ? 'Hide' : 'Peek'}
@@ -140,7 +141,6 @@ const RandomPlayer: React.FC = () => {
             )}
           />
         </div>
-        <Player notes={currentChord} />
       </CardContent>
     </Card>
   );
