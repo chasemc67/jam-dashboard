@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Separator } from '~/components/ui/separator';
 import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
 import ScaleChordGrid from '~/components/ScaleChordGrid';
+import About from '~/components/About';
 
 const RandomPlayer: React.FC = () => {
   const { selectedKey } = useHighlightedNotes();
@@ -98,8 +99,9 @@ const RandomPlayer: React.FC = () => {
 
   return (
     <Card className="w-full max-w-[750px]">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Ear Training</CardTitle>
+        <About />
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-4">
