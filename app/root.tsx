@@ -8,8 +8,7 @@ import {
 import type { LinksFunction } from '@remix-run/node';
 import { Analytics } from '@vercel/analytics/remix';
 import { SpeedInsights } from '@vercel/speed-insights/remix';
-import { HighlightedNotesProvider } from './contexts/HighlightedNotesContext';
-import { SettingsProvider } from './contexts/SettingsContext';
+import { ContextProviders } from './components/ContextProviders';
 
 import './tailwind.css';
 
@@ -53,9 +52,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body className="bg-background">
         <div id="root" className="bg-background">
-          <SettingsProvider>
-            <HighlightedNotesProvider>{children}</HighlightedNotesProvider>
-          </SettingsProvider>
+          <ContextProviders>{children}</ContextProviders>
           <ScrollRestoration />
           <Scripts />
           <Analytics />
