@@ -24,22 +24,40 @@ export default function About() {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>About Jam Dashboard</DialogTitle>
+          <DialogTitle>About</DialogTitle>
           <DialogDescription>
-            Jam Dashboard is a web application designed to help musicians learn
-            and practice guitar. It features a fretboard visualizer, key picker,
-            and various tools for ear training and music theory practice.
+            Jam Dashboard is a compact tool for practicing advanced guitar
+            concepts.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="space-y-2">
-            <h4 className="font-medium">Key Features</h4>
+            <h4 className="font-medium">How to use</h4>
             <ul className="list-disc pl-4 text-sm text-muted-foreground">
-              <li>Interactive fretboard visualization</li>
-              <li>Key and scale detection</li>
-              <li>Customizable string tunings</li>
-              <li>Note and chord playback</li>
-              <li>Scale and chord suggestions</li>
+              <li>
+                Start with the key selector at the top, this drives the key for
+                the whole page
+              </li>
+              <li>
+                The key selector also doubles as a key detector! Enter a handful
+                of notes in the search box to filter to keys which contain those
+                notes
+              </li>
+              <li>
+                Visualize different types of scales on the fretboard using the
+                Quick Colors in settings. We recommend the pentatonic coloring
+                for learning CAGED shapes, or the major/minor roots coloring to
+                quickly see where the major/minor chords are for a given key
+              </li>
+              <li>
+                Adjust the tuning of each string using the textbox, adjust the
+                number of strings in the settings menu
+              </li>
+              <li>
+                Practice your musical ear in the Ear Training section. Select
+                which type of chords you want included and random chords from
+                the set will be generated for your to identify by ear
+              </li>
             </ul>
           </div>
         </div>
