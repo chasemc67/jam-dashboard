@@ -1,5 +1,6 @@
 import { Info } from 'lucide-react';
 import { Button } from '~/components/ui/button';
+import { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -9,9 +10,40 @@ import {
   DialogTrigger,
 } from '~/components/ui/dialog';
 
-export default function About() {
+// Use this to determine whether to show popup for first visit
+// store actual date rather than just boolean so we can show new feature updates
+const LAST_VISIT_KEY = 'jam-dashboard-lastVisitDate';
+
+const isSameDay = (date1: Date, date2: Date) => {
   return (
-    <Dialog>
+    date1.getFullYear() === date2.getFullYear() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getDate() === date2.getDate()
+  );
+};
+
+export default function About() {
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    const lastVisit = localStorage.getItem(LAST_VISIT_KEY);
+    const today = new Date();
+
+    if (!lastVisit) {
+      // First visit ever
+      setIsOpen(true);
+      localStorage.setItem(LAST_VISIT_KEY, today.toISOString());
+    } else {
+      // Check if last visit was on a different day
+      const lastVisitDate = new Date(lastVisit);
+      if (!isSameDay(lastVisitDate, today)) {
+        localStorage.setItem(LAST_VISIT_KEY, today.toISOString());
+      }
+    }
+  }, []);
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button
           variant="ghost"
