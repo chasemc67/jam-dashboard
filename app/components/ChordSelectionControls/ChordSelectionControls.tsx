@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Select, { StylesConfig } from 'react-select';
 import { ChordTypeGroup, chordTypeGroups } from '../../utils/chordPlayerUtils';
 import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
@@ -13,6 +13,12 @@ const ChordSelectionControls: React.FC<ChordSelectionControlsProps> = ({
   onChordGroupsChange,
 }) => {
   const { selectedKey } = useHighlightedNotes();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    //force client-side rendering because we get some weird issues sometimes due to SSR of react-select
+    setIsMounted(true);
+  }, []);
 
   const selectStyles: StylesConfig<ChordTypeGroup, true> = {
     control: (base, state) => ({
@@ -79,17 +85,22 @@ const ChordSelectionControls: React.FC<ChordSelectionControlsProps> = ({
 
       <div className="flex items-center gap-2">
         <div className="w-[500px]">
-          <Select
-            isMulti
-            closeMenuOnSelect={false}
-            name="chord-types"
-            options={chordTypeGroups}
-            value={selectedChordGroups}
-            onChange={onChordGroupsChange}
-            styles={selectStyles}
-            className="text-sm"
-            classNamePrefix="select"
-          />
+          {isMounted ? (
+            <Select
+              isMulti
+              closeMenuOnSelect={false}
+              name="chord-types"
+              options={chordTypeGroups}
+              value={selectedChordGroups}
+              onChange={onChordGroupsChange}
+              styles={selectStyles}
+              className="text-sm"
+              classNamePrefix="select"
+              instanceId="chord-types-select"
+            />
+          ) : (
+            <div className="h-[38px] w-full bg-muted rounded-md" />
+          )}
         </div>
       </div>
     </div>
