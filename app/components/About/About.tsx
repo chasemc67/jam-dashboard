@@ -86,9 +86,14 @@ export default function About() {
                 number of strings in the settings menu
               </li>
               <li>
-                Practice your musical ear in the Ear Training section. Select
-                which type of chords you want included and random chords from
-                the set will be generated for your to identify by ear
+                The Chord Explorer section lets you easily hear different chords
+                in a key. Use this to help learn the difference between chords,
+                or quickly play with different chord progression ideas
+              </li>
+              <li>
+                Ear training helps you practice your musical ear. Select which
+                type of chords you want included and random chords from the set
+                will be generated for your to identify by ear
               </li>
             </ul>
           </div>
