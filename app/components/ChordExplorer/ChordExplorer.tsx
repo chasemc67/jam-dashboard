@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Chord } from 'tonal';
 import ChordSelectionControls from '~/components/ChordSelectionControls';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import ScaleChordGrid from '~/components/ScaleChordGrid';
 import About from '~/components/About';
 import { playChordSimultaneous } from '~/utils/audioUtils';
@@ -35,28 +34,25 @@ const ChordExplorer: React.FC = () => {
   };
 
   return (
-    <Card className="w-full max-w-[750px]">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Chord Explorer</CardTitle>
+    <div className="space-y-6 p-6">
+      <div className="flex justify-end">
         <About />
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-4">
-          <ChordSelectionControls
-            selectedChordGroups={selectedChordGroups}
-            onChordGroupsChange={handleChordGroupChange}
-          />
+      </div>
+      <div className="space-y-4">
+        <ChordSelectionControls
+          selectedChordGroups={selectedChordGroups}
+          onChordGroupsChange={handleChordGroupChange}
+        />
 
-          <ScaleChordGrid
-            onChordClick={handleChordClick}
-            enabledChordTypes={getActiveChordTypes(selectedChordGroups)}
-            showNoteRow={selectedChordGroups.some(
-              group => group.label === INDIVIDUAL_NOTES,
-            )}
-          />
-        </div>
-      </CardContent>
-    </Card>
+        <ScaleChordGrid
+          onChordClick={handleChordClick}
+          enabledChordTypes={getActiveChordTypes(selectedChordGroups)}
+          showNoteRow={selectedChordGroups.some(
+            group => group.label === INDIVIDUAL_NOTES,
+          )}
+        />
+      </div>
+    </div>
   );
 };
 

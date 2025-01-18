@@ -1,8 +1,7 @@
 import type { MetaFunction } from '@remix-run/node';
 import FretboardControls from '~/components/FretboardControls';
-import RandomPlayer from '~/components/RandomPlayer';
 import Header from '~/components/Header';
-import ChordExplorer from '~/components/ChordExplorer';
+import TabChordView from '~/components/TabChordView';
 
 export const meta: MetaFunction = () => {
   return [
@@ -21,8 +20,7 @@ export default function Index() {
       <Header />
       <div className="container mx-auto flex flex-1 flex-col items-center justify-center gap-8 p-4 pb-20 md:pb-4">
         <FretboardControls />
-        <RandomPlayer />
-        <ChordExplorer />
+        <TabChordView />
       </div>
     </div>
   );

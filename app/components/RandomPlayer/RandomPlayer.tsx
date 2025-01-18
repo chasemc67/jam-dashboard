@@ -10,7 +10,6 @@ import {
 } from '~/utils/chordPlayerUtils';
 import ChordSelectionControls from '~/components/ChordSelectionControls';
 import { Button } from '~/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Separator } from '~/components/ui/separator';
 import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
 import ScaleChordGrid from '~/components/ScaleChordGrid';
@@ -98,63 +97,60 @@ const RandomPlayer: React.FC = () => {
   };
 
   return (
-    <Card className="w-full max-w-[750px]">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Ear Training</CardTitle>
+    <div className="space-y-6 p-6">
+      <div className="flex justify-end">
         <About />
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-4">
-          <ChordSelectionControls
-            selectedChordGroups={selectedChordGroups}
-            onChordGroupsChange={handleChordGroupChange}
-          />
+      </div>
+      <div className="space-y-4">
+        <ChordSelectionControls
+          selectedChordGroups={selectedChordGroups}
+          onChordGroupsChange={handleChordGroupChange}
+        />
 
-          <div className="flex flex-col gap-4">
-            <div className="flex gap-2">
-              <Button onClick={generateRandomChord}>
-                {hasGeneratedChord ? 'Next' : 'Start'}
-              </Button>
-              {hasGeneratedChord && (
-                <Button variant="outline" onClick={toggleNotes}>
-                  {showNotes ? 'Hide' : 'Peek'}
-                </Button>
-              )}
-            </div>
-            <Separator className="w-full" />
+        <div className="flex flex-col gap-4">
+          <div className="flex gap-2">
+            <Button onClick={generateRandomChord}>
+              {hasGeneratedChord ? 'Next' : 'Start'}
+            </Button>
             {hasGeneratedChord && (
-              <Player notes={currentChord} className="flex gap-2" />
-            )}
-            {feedback && (
-              <span
-                className={`font-medium ${feedback === 'correct' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
-              >
-                {feedback === 'correct' ? 'Correct!' : 'Incorrect, try again!'}
-              </span>
+              <Button variant="outline" onClick={toggleNotes}>
+                {showNotes ? 'Hide' : 'Peek'}
+              </Button>
             )}
           </div>
-
-          {showNotes && (
-            <div className="space-y-2 rounded-lg bg-muted p-4">
-              <p className="text-sm font-medium">
-                Chord/Note: {currentChordName}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Notes: {currentChord.map(note => note.slice(0, -1)).join(' - ')}
-              </p>
-            </div>
+          <Separator className="w-full" />
+          {hasGeneratedChord && (
+            <Player notes={currentChord} className="flex gap-2" />
           )}
-
-          <ScaleChordGrid
-            onChordClick={checkAnswer}
-            enabledChordTypes={getActiveChordTypes(selectedChordGroups)}
-            showNoteRow={selectedChordGroups.some(
-              group => group.label === INDIVIDUAL_NOTES,
-            )}
-          />
+          {feedback && (
+            <span
+              className={`font-medium ${feedback === 'correct' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+            >
+              {feedback === 'correct' ? 'Correct!' : 'Incorrect, try again!'}
+            </span>
+          )}
         </div>
-      </CardContent>
-    </Card>
+
+        {showNotes && (
+          <div className="space-y-2 rounded-lg bg-muted p-4">
+            <p className="text-sm font-medium">
+              Chord/Note: {currentChordName}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Notes: {currentChord.map(note => note.slice(0, -1)).join(' - ')}
+            </p>
+          </div>
+        )}
+
+        <ScaleChordGrid
+          onChordClick={checkAnswer}
+          enabledChordTypes={getActiveChordTypes(selectedChordGroups)}
+          showNoteRow={selectedChordGroups.some(
+            group => group.label === INDIVIDUAL_NOTES,
+          )}
+        />
+      </div>
+    </div>
   );
 };
 
