@@ -1,6 +1,7 @@
 import { KeyPicker } from '~/components/KeyPicker/KeyPicker';
 import { cn } from '~/lib/utils';
 import { Settings } from '~/components/Settings';
+import About from '~/components/About';
 
 export default function Header() {
   return (
@@ -20,6 +21,7 @@ export default function Header() {
         <div className="flex flex-1 items-center justify-center space-x-2">
           <KeyPicker />
           <Settings />
+          <About />
         </div>
       </div>
 
@@ -28,6 +30,7 @@ export default function Header() {
         <div className="flex h-full items-center justify-around px-4">
           <KeyPicker />
           <Settings />
+          <About />
         </div>
       </div>
     </header>

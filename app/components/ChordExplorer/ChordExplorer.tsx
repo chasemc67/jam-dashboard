@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Chord } from 'tonal';
 import ChordSelectionControls from '~/components/ChordSelectionControls';
 import ScaleChordGrid from '~/components/ScaleChordGrid';
-import About from '~/components/About';
 import { playChordSimultaneous } from '~/utils/audioUtils';
 import {
   ChordTypeGroup,
@@ -35,9 +34,6 @@ const ChordExplorer: React.FC = () => {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex justify-end">
-        <About />
-      </div>
       <div className="space-y-4">
         <ChordSelectionControls
           selectedChordGroups={selectedChordGroups}

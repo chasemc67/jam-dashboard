@@ -13,7 +13,6 @@ import { Button } from '~/components/ui/button';
 import { Separator } from '~/components/ui/separator';
 import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
 import ScaleChordGrid from '~/components/ScaleChordGrid';
-import About from '~/components/About';
 
 const RandomPlayer: React.FC = () => {
   const { selectedKey } = useHighlightedNotes();
@@ -98,9 +97,6 @@ const RandomPlayer: React.FC = () => {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex justify-end">
-        <About />
-      </div>
       <div className="space-y-4">
         <ChordSelectionControls
           selectedChordGroups={selectedChordGroups}
