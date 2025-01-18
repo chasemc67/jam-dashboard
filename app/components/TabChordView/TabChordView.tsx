@@ -9,18 +9,18 @@ const TabChordView: React.FC = () => {
     <Card className="w-full max-w-[750px]">
       <Tabs defaultValue="ear-training" className="w-full">
         <TabsList className="w-full">
-          <TabsTrigger value="ear-training" className="flex-1">
-            Ear Training
-          </TabsTrigger>
           <TabsTrigger value="chord-explorer" className="flex-1">
             Chord Explorer
           </TabsTrigger>
+          <TabsTrigger value="ear-training" className="flex-1">
+            Ear Training
+          </TabsTrigger>
         </TabsList>
-        <TabsContent value="ear-training">
-          <RandomPlayer />
-        </TabsContent>
         <TabsContent value="chord-explorer">
           <ChordExplorer />
+        </TabsContent>
+        <TabsContent value="ear-training">
+          <RandomPlayer />
         </TabsContent>
       </Tabs>
     </Card>

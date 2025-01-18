@@ -97,11 +97,13 @@ const RandomPlayer: React.FC = () => {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="space-y-4">
-        <ChordSelectionControls
-          selectedChordGroups={selectedChordGroups}
-          onChordGroupsChange={handleChordGroupChange}
-        />
+      <div className="space-y-4 flex flex-col items-center">
+        <div className="w-[90%]">
+          <ChordSelectionControls
+            selectedChordGroups={selectedChordGroups}
+            onChordGroupsChange={handleChordGroupChange}
+          />
+        </div>
 
         <div className="flex flex-col gap-4">
           <div className="flex gap-2">
@@ -138,13 +140,15 @@ const RandomPlayer: React.FC = () => {
           </div>
         )}
 
-        <ScaleChordGrid
-          onChordClick={checkAnswer}
-          enabledChordTypes={getActiveChordTypes(selectedChordGroups)}
-          showNoteRow={selectedChordGroups.some(
-            group => group.label === INDIVIDUAL_NOTES,
-          )}
-        />
+        {hasGeneratedChord && (
+          <ScaleChordGrid
+            onChordClick={checkAnswer}
+            enabledChordTypes={getActiveChordTypes(selectedChordGroups)}
+            showNoteRow={selectedChordGroups.some(
+              group => group.label === INDIVIDUAL_NOTES,
+            )}
+          />
+        )}
       </div>
     </div>
   );
