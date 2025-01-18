@@ -33,7 +33,7 @@ const ChordExplorer: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 px-6 pb-6">
       <div className="space-y-4">
         <ChordSelectionControls
           selectedChordGroups={selectedChordGroups}
