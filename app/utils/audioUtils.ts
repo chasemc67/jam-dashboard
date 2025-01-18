@@ -6,7 +6,25 @@ export const initializeAudio = async () => {
   const Tone = await import('tone');
   await Tone.start();
   if (!synth) {
-    synth = new Tone.PolySynth(Tone.Synth).toDestination();
+    synth = new Tone.PolySynth(Tone.Synth, {
+      oscillator: {
+        type: 'triangle',
+      },
+      envelope: {
+        attack: 0.02,
+        decay: 0.1,
+        sustain: 0.3,
+        release: 1,
+      },
+      volume: -6,
+    }).toDestination();
+
+    const reverb = new Tone.Reverb({
+      decay: 1.5,
+      wet: 0.2,
+    }).toDestination();
+
+    synth.connect(reverb);
   }
   return Tone;
 };
