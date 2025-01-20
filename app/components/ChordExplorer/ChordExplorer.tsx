@@ -9,6 +9,7 @@ import {
   getActiveChordTypes,
   INDIVIDUAL_NOTES,
 } from '~/utils/chordPlayerUtils';
+import { addOctavesToChordNotes } from '~/utils/musicTheoryUtils';
 
 const ChordExplorer: React.FC = () => {
   const [selectedChordGroups, setSelectedChordGroups] = useState<
@@ -25,10 +26,10 @@ const ChordExplorer: React.FC = () => {
     // If it's a chord (contains more than just a note name)
     if (chordName.length > 1 && chordName.match(/[A-G][b#]?[^A-G]/)) {
       const chordNotes = Chord.get(chordName).notes;
-      playChordSimultaneous(chordNotes.map(note => `${note}4`));
+      playChordSimultaneous(addOctavesToChordNotes(chordNotes));
     } else {
       // For single notes
-      playChordSimultaneous([`${chordName}4`]);
+      playChordSimultaneous(addOctavesToChordNotes([chordName]));
     }
   };
 

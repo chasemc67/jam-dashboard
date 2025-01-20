@@ -8,6 +8,7 @@ import {
   getActiveChordTypes,
   INDIVIDUAL_NOTES,
 } from '~/utils/chordPlayerUtils';
+import { addOctavesToChordNotes } from '~/utils/musicTheoryUtils';
 import ChordSelectionControls from '~/components/ChordSelectionControls';
 import { Button } from '~/components/ui/button';
 import { Separator } from '~/components/ui/separator';
@@ -67,8 +68,7 @@ const RandomPlayer: React.FC = () => {
         Math.floor(Math.random() * allPossibleChordsWithNotes.length)
       ];
 
-    // Convert to the format needed by the Player (adding octave 4)
-    const notesWithOctave = randomChordWithNotes.notes.map(note => `${note}4`);
+    const notesWithOctave = addOctavesToChordNotes(randomChordWithNotes.notes);
 
     setCurrentChord(notesWithOctave);
     setCurrentChordName(randomChordWithNotes.chordName);
