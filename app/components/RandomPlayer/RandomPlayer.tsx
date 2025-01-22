@@ -43,11 +43,6 @@ const RandomPlayer: React.FC = () => {
       setIncorrectGuesses(0);
       setCurrentRound(1);
       setFeedback(null);
-    } else {
-      // Move to next round if there are guesses
-      if (feedback !== null) {
-        setCurrentRound(prev => prev + 1);
-      }
     }
 
     // Get all possible chords in the selected key
@@ -124,7 +119,6 @@ const RandomPlayer: React.FC = () => {
     // End game if we've reached the total rounds
     if (currentRound >= TOTAL_ROUNDS) {
       setGameInProgress(false);
-      setIsWaitingForNext(false);
     } else {
       // Use different timeouts based on whether the answer was correct
       const timeoutDuration = isCorrect ? CORRECT_TIMEOUT : INCORRECT_TIMEOUT;
@@ -135,6 +129,16 @@ const RandomPlayer: React.FC = () => {
         generateRandomChord();
       }, timeoutDuration);
     }
+  };
+
+  const handlePlayAgain = () => {
+    setFeedback(null);
+    setIsWaitingForNext(false);
+    setGameInProgress(false);
+    setCurrentRound(0);
+    setCorrectGuesses(0);
+    setIncorrectGuesses(0);
+    generateRandomChord();
   };
 
   return (
@@ -150,12 +154,15 @@ const RandomPlayer: React.FC = () => {
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-4">
             <div className="flex gap-2">
-              {!gameInProgress && (
+              {!gameInProgress && currentRound === 0 && (
                 <Button onClick={generateRandomChord}>Start</Button>
+              )}
+              {!gameInProgress && currentRound >= TOTAL_ROUNDS && (
+                <Button onClick={handlePlayAgain}>Play Again</Button>
               )}
             </div>
           </div>
-          {gameInProgress && (
+          {(gameInProgress || currentRound >= TOTAL_ROUNDS) && (
             <>
               <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-4">
                 <Player notes={currentChord} className="flex gap-2" />
@@ -187,7 +194,7 @@ const RandomPlayer: React.FC = () => {
           )}
         </div>
 
-        {gameInProgress && (
+        {(gameInProgress || currentRound >= TOTAL_ROUNDS) && (
           <ScaleChordGrid
             onChordClick={checkAnswer}
             enabledChordTypes={getActiveChordTypes(selectedChordGroups)}
