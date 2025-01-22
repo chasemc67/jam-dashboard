@@ -107,16 +107,15 @@ const RandomPlayer: React.FC = () => {
     setIncorrectGuesses(0);
   };
 
-  const toggleNotes = () => {
-    setShowNotes(!showNotes);
-  };
-
   const checkAnswer = (chordName: string) => {
     if (!gameInProgress || isWaitingForNext) return;
 
     const isCorrect = chordName === currentChordName;
     setFeedback(isCorrect ? 'correct' : 'incorrect');
     setIsWaitingForNext(true);
+
+    // Show notes if incorrect
+    setShowNotes(!isCorrect);
 
     if (isCorrect) {
       setCorrectGuesses(prev => prev + 1);
@@ -129,13 +128,16 @@ const RandomPlayer: React.FC = () => {
       setGameInProgress(false);
       setIsWaitingForNext(false);
     } else {
-      // Automatically move to next round after 1 second
+      // Use different timeouts based on whether the answer was correct
+      const timeoutDuration = isCorrect ? 1000 : 3000;
+
       setTimeout(() => {
         setCurrentRound(prev => prev + 1);
         setFeedback(null);
         setIsWaitingForNext(false);
+        setShowNotes(false);
         generateRandomChord();
-      }, 1000);
+      }, timeoutDuration);
     }
   };
 
@@ -154,11 +156,6 @@ const RandomPlayer: React.FC = () => {
             <div className="flex gap-2">
               {!gameInProgress && (
                 <Button onClick={generateRandomChord}>Start</Button>
-              )}
-              {gameInProgress && (
-                <Button variant="outline" onClick={toggleNotes}>
-                  {showNotes ? 'Hide' : 'Peek'}
-                </Button>
               )}
             </div>
 
