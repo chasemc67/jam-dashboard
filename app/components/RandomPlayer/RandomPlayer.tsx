@@ -15,6 +15,8 @@ import { Separator } from '~/components/ui/separator';
 import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
 import ScaleChordGrid from '~/components/ScaleChordGrid';
 
+const TOTAL_ROUNDS = 10;
+
 const RandomPlayer: React.FC = () => {
   const { selectedKey } = useHighlightedNotes();
   const [selectedChordGroups, setSelectedChordGroups] = useState<
@@ -26,9 +28,27 @@ const RandomPlayer: React.FC = () => {
   const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(
     null,
   );
-  const [hasGeneratedChord, setHasGeneratedChord] = useState(false);
+
+  // Game state
+  const [gameInProgress, setGameInProgress] = useState(false);
+  const [correctGuesses, setCorrectGuesses] = useState(0);
+  const [incorrectGuesses, setIncorrectGuesses] = useState(0);
+  const [currentRound, setCurrentRound] = useState(0);
 
   const generateRandomChord = () => {
+    if (!gameInProgress) {
+      // Start new game
+      setGameInProgress(true);
+      setCorrectGuesses(0);
+      setIncorrectGuesses(0);
+      setCurrentRound(1);
+    } else {
+      // Move to next round if there are guesses
+      if (feedback !== null) {
+        setCurrentRound(prev => prev + 1);
+      }
+    }
+
     setFeedback(null);
     // Get all possible chords in the selected key
     const chordsInKey = getEveryChordInScale(
@@ -72,7 +92,6 @@ const RandomPlayer: React.FC = () => {
 
     setCurrentChord(notesWithOctave);
     setCurrentChordName(randomChordWithNotes.chordName);
-    setHasGeneratedChord(true);
     setShowNotes(false);
   };
 
@@ -80,8 +99,11 @@ const RandomPlayer: React.FC = () => {
     selectedOptions: readonly ChordTypeGroup[],
   ) => {
     setSelectedChordGroups([...selectedOptions]);
-    setHasGeneratedChord(false);
     setFeedback(null);
+    setGameInProgress(false);
+    setCurrentRound(0);
+    setCorrectGuesses(0);
+    setIncorrectGuesses(0);
   };
 
   const toggleNotes = () => {
@@ -89,10 +111,21 @@ const RandomPlayer: React.FC = () => {
   };
 
   const checkAnswer = (chordName: string) => {
-    if (!hasGeneratedChord) return;
+    if (!gameInProgress) return;
 
     const isCorrect = chordName === currentChordName;
     setFeedback(isCorrect ? 'correct' : 'incorrect');
+
+    if (isCorrect) {
+      setCorrectGuesses(prev => prev + 1);
+    } else {
+      setIncorrectGuesses(prev => prev + 1);
+    }
+
+    // End game if we've reached the total rounds
+    if (currentRound >= TOTAL_ROUNDS) {
+      setGameInProgress(false);
+    }
   };
 
   return (
@@ -106,18 +139,35 @@ const RandomPlayer: React.FC = () => {
         </div>
 
         <div className="flex flex-col gap-4">
-          <div className="flex gap-2">
-            <Button onClick={generateRandomChord}>
-              {hasGeneratedChord ? 'Next' : 'Start'}
-            </Button>
-            {hasGeneratedChord && (
-              <Button variant="outline" onClick={toggleNotes}>
-                {showNotes ? 'Hide' : 'Peek'}
+          <div className="flex items-center gap-4">
+            <div className="flex gap-2">
+              <Button onClick={generateRandomChord}>
+                {!gameInProgress ? 'Start' : 'Next'}
               </Button>
+              {gameInProgress && (
+                <Button variant="outline" onClick={toggleNotes}>
+                  {showNotes ? 'Hide' : 'Peek'}
+                </Button>
+              )}
+            </div>
+
+            {/* Game Progress Display */}
+            {gameInProgress && (
+              <div className="flex items-center gap-4 text-sm">
+                <span className="text-green-600 dark:text-green-400 font-medium">
+                  {correctGuesses} ✓
+                </span>
+                <span className="text-red-600 dark:text-red-400 font-medium">
+                  {incorrectGuesses} ✗
+                </span>
+                <span className="text-muted-foreground">
+                  {currentRound}/{TOTAL_ROUNDS}
+                </span>
+              </div>
             )}
           </div>
           <Separator className="w-full" />
-          {hasGeneratedChord && (
+          {gameInProgress && (
             <Player notes={currentChord} className="flex gap-2" />
           )}
           {feedback && (
@@ -140,7 +190,7 @@ const RandomPlayer: React.FC = () => {
           </div>
         )}
 
-        {hasGeneratedChord && (
+        {gameInProgress && (
           <ScaleChordGrid
             onChordClick={checkAnswer}
             enabledChordTypes={getActiveChordTypes(selectedChordGroups)}
