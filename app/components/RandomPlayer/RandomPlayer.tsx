@@ -152,16 +152,6 @@ const RandomPlayer: React.FC = () => {
         </div>
 
         <div className="flex flex-col gap-4">
-          <div className="flex items-center gap-4">
-            <div className="flex gap-2">
-              {!gameInProgress && currentRound === 0 && (
-                <Button onClick={generateRandomChord}>Start</Button>
-              )}
-              {!gameInProgress && currentRound >= TOTAL_ROUNDS && (
-                <Button onClick={handlePlayAgain}>Play Again</Button>
-              )}
-            </div>
-          </div>
           {(gameInProgress || currentRound >= TOTAL_ROUNDS) && (
             <>
               <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -192,9 +182,19 @@ const RandomPlayer: React.FC = () => {
               </div>
             </>
           )}
+          <div className="flex items-center gap-4">
+            <div className="flex gap-2">
+              {!gameInProgress && currentRound === 0 && (
+                <Button onClick={generateRandomChord}>Start</Button>
+              )}
+              {!gameInProgress && currentRound >= TOTAL_ROUNDS && (
+                <Button onClick={handlePlayAgain}>Play Again</Button>
+              )}
+            </div>
+          </div>
         </div>
 
-        {(gameInProgress || currentRound >= TOTAL_ROUNDS) && (
+        {gameInProgress && (
           <ScaleChordGrid
             onChordClick={checkAnswer}
             enabledChordTypes={getActiveChordTypes(selectedChordGroups)}
