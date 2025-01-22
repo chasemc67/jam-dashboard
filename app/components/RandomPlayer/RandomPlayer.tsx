@@ -157,7 +157,7 @@ const RandomPlayer: React.FC = () => {
           </div>
           {gameInProgress && (
             <>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-4">
                 <Player notes={currentChord} className="flex gap-2" />
                 {/* Game Progress Display */}
                 <div className="flex items-center gap-4 text-sm">
