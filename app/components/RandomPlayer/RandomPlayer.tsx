@@ -158,32 +158,34 @@ const RandomPlayer: React.FC = () => {
                 <Button onClick={generateRandomChord}>Start</Button>
               )}
             </div>
-
-            {/* Game Progress Display */}
-            {gameInProgress && (
-              <div className="flex items-center gap-4 text-sm">
-                <span className="text-green-600 dark:text-green-400 font-medium">
-                  {correctGuesses} ✓
-                </span>
-                <span className="text-red-600 dark:text-red-400 font-medium">
-                  {incorrectGuesses} ✗
-                </span>
-                <span className="text-muted-foreground">
-                  {currentRound}/{TOTAL_ROUNDS}
-                </span>
-              </div>
-            )}
           </div>
-          <Separator className="w-full" />
           {gameInProgress && (
-            <Player notes={currentChord} className="flex gap-2" />
-          )}
-          {feedback && (
-            <span
-              className={`font-medium ${feedback === 'correct' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
-            >
-              {feedback === 'correct' ? 'Correct!' : 'Incorrect, try again!'}
-            </span>
+            <>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <Player notes={currentChord} className="flex gap-2" />
+                {/* Game Progress Display */}
+                <div className="flex items-center gap-4 text-sm">
+                  <span className="text-green-600 dark:text-green-400 font-medium">
+                    {correctGuesses} ✓
+                  </span>
+                  <span className="text-red-600 dark:text-red-400 font-medium">
+                    {incorrectGuesses} ✗
+                  </span>
+                  <span className="text-muted-foreground">
+                    {currentRound}/{TOTAL_ROUNDS}
+                  </span>
+                </div>
+              </div>
+              {feedback && (
+                <span
+                  className={`font-medium ${feedback === 'correct' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+                >
+                  {feedback === 'correct'
+                    ? 'Correct!'
+                    : 'Incorrect, try again!'}
+                </span>
+              )}
+            </>
           )}
         </div>
 
