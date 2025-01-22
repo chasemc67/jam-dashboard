@@ -9,12 +9,14 @@ export interface ScaleChordGridProps {
   onChordClick?: (chord: string) => void;
   enabledChordTypes?: string[];
   showNoteRow?: boolean;
+  disabled?: boolean;
 }
 
 export const ScaleChordGrid: React.FC<ScaleChordGridProps> = ({
   onChordClick = (chord: string) => console.log(`Clicked chord: ${chord}`),
   enabledChordTypes,
   showNoteRow = true,
+  disabled = false,
 }) => {
   const { selectedKey } = useHighlightedNotes();
   const chordsInScale = selectedKey ? getEveryChordInScale(selectedKey) : [];
@@ -37,7 +39,9 @@ export const ScaleChordGrid: React.FC<ScaleChordGridProps> = ({
                 className={cn(
                   'w-16 h-10 text-lg font-bold',
                   'hover:bg-primary hover:text-primary-foreground',
+                  disabled && 'opacity-50 cursor-not-allowed',
                 )}
+                disabled={disabled}
                 onClick={() => onChordClick(note)}
               >
                 {note}
@@ -71,8 +75,9 @@ export const ScaleChordGrid: React.FC<ScaleChordGridProps> = ({
                       isSupported
                         ? 'hover:bg-primary hover:text-primary-foreground'
                         : 'opacity-25 cursor-not-allowed',
+                      disabled && 'opacity-50 cursor-not-allowed',
                     )}
-                    disabled={!isSupported}
+                    disabled={!isSupported || disabled}
                     onClick={() => isSupported && onChordClick(fullChordName)}
                   >
                     {fullChordName}

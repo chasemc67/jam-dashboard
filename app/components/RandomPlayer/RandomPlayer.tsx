@@ -28,6 +28,7 @@ const RandomPlayer: React.FC = () => {
   const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(
     null,
   );
+  const [isWaitingForNext, setIsWaitingForNext] = useState(false);
 
   // Game state
   const [gameInProgress, setGameInProgress] = useState(false);
@@ -111,10 +112,11 @@ const RandomPlayer: React.FC = () => {
   };
 
   const checkAnswer = (chordName: string) => {
-    if (!gameInProgress) return;
+    if (!gameInProgress || isWaitingForNext) return;
 
     const isCorrect = chordName === currentChordName;
     setFeedback(isCorrect ? 'correct' : 'incorrect');
+    setIsWaitingForNext(true);
 
     if (isCorrect) {
       setCorrectGuesses(prev => prev + 1);
@@ -125,6 +127,15 @@ const RandomPlayer: React.FC = () => {
     // End game if we've reached the total rounds
     if (currentRound >= TOTAL_ROUNDS) {
       setGameInProgress(false);
+      setIsWaitingForNext(false);
+    } else {
+      // Automatically move to next round after 1 second
+      setTimeout(() => {
+        setCurrentRound(prev => prev + 1);
+        setFeedback(null);
+        setIsWaitingForNext(false);
+        generateRandomChord();
+      }, 1000);
     }
   };
 
@@ -141,9 +152,9 @@ const RandomPlayer: React.FC = () => {
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-4">
             <div className="flex gap-2">
-              <Button onClick={generateRandomChord}>
-                {!gameInProgress ? 'Start' : 'Next'}
-              </Button>
+              {!gameInProgress && (
+                <Button onClick={generateRandomChord}>Start</Button>
+              )}
               {gameInProgress && (
                 <Button variant="outline" onClick={toggleNotes}>
                   {showNotes ? 'Hide' : 'Peek'}
@@ -197,6 +208,7 @@ const RandomPlayer: React.FC = () => {
             showNoteRow={selectedChordGroups.some(
               group => group.label === INDIVIDUAL_NOTES,
             )}
+            disabled={isWaitingForNext}
           />
         )}
       </div>
