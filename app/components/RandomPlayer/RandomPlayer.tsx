@@ -183,7 +183,7 @@ const RandomPlayer: React.FC = () => {
             </>
           )}
           <div className="flex items-center gap-4">
-            <div className="flex gap-2">
+            <div className="flex w-full justify-center gap-2">
               {!gameInProgress && currentRound === 0 && (
                 <Button onClick={generateRandomChord}>Start</Button>
               )}
