@@ -170,15 +170,19 @@ const RandomPlayer: React.FC = () => {
                   <span className="text-muted-foreground">
                     {currentRound}/{TOTAL_ROUNDS}
                   </span>
+                  {feedback && (
+                    <span
+                      className={`font-medium ${
+                        feedback.startsWith('Correct')
+                          ? 'text-green-600 dark:text-green-400'
+                          : 'text-red-600 dark:text-red-400'
+                      }`}
+                    >
+                      {feedback}
+                    </span>
+                  )}
                 </div>
               </div>
-              {feedback && (
-                <span
-                  className={`font-medium ${feedback === 'correct' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
-                >
-                  {feedback}
-                </span>
-              )}
             </>
           )}
         </div>
