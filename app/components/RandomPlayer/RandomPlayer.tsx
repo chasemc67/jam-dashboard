@@ -23,10 +23,7 @@ const RandomPlayer: React.FC = () => {
   >([chordTypeGroups[0]]);
   const [currentChord, setCurrentChord] = useState<string[]>([]);
   const [currentChordName, setCurrentChordName] = useState<string>('');
-  const [showNotes, setShowNotes] = useState<boolean>(false);
-  const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(
-    null,
-  );
+  const [feedback, setFeedback] = useState<string | null>(null);
   const [isWaitingForNext, setIsWaitingForNext] = useState(false);
 
   // Game state
@@ -35,6 +32,9 @@ const RandomPlayer: React.FC = () => {
   const [incorrectGuesses, setIncorrectGuesses] = useState(0);
   const [currentRound, setCurrentRound] = useState(0);
 
+  const CORRECT_TIMEOUT = 1000;
+  const INCORRECT_TIMEOUT = 1000;
+
   const generateRandomChord = () => {
     if (!gameInProgress) {
       // Start new game
@@ -42,6 +42,7 @@ const RandomPlayer: React.FC = () => {
       setCorrectGuesses(0);
       setIncorrectGuesses(0);
       setCurrentRound(1);
+      setFeedback(null);
     } else {
       // Move to next round if there are guesses
       if (feedback !== null) {
@@ -49,7 +50,6 @@ const RandomPlayer: React.FC = () => {
       }
     }
 
-    setFeedback(null);
     // Get all possible chords in the selected key
     const chordsInKey = getEveryChordInScale(
       selectedKey,
@@ -92,14 +92,12 @@ const RandomPlayer: React.FC = () => {
 
     setCurrentChord(notesWithOctave);
     setCurrentChordName(randomChordWithNotes.chordName);
-    setShowNotes(false);
   };
 
   const handleChordGroupChange = (
     selectedOptions: readonly ChordTypeGroup[],
   ) => {
     setSelectedChordGroups([...selectedOptions]);
-    setFeedback(null);
     setGameInProgress(false);
     setCurrentRound(0);
     setCorrectGuesses(0);
@@ -110,11 +108,12 @@ const RandomPlayer: React.FC = () => {
     if (!gameInProgress || isWaitingForNext) return;
 
     const isCorrect = chordName === currentChordName;
-    setFeedback(isCorrect ? 'correct' : 'incorrect');
+    setFeedback(
+      isCorrect
+        ? `Correct: ${currentChordName}`
+        : `Incorrect: ${currentChordName}`,
+    );
     setIsWaitingForNext(true);
-
-    // Show notes if incorrect
-    setShowNotes(!isCorrect);
 
     if (isCorrect) {
       setCorrectGuesses(prev => prev + 1);
@@ -128,13 +127,11 @@ const RandomPlayer: React.FC = () => {
       setIsWaitingForNext(false);
     } else {
       // Use different timeouts based on whether the answer was correct
-      const timeoutDuration = isCorrect ? 1000 : 3000;
+      const timeoutDuration = isCorrect ? CORRECT_TIMEOUT : INCORRECT_TIMEOUT;
 
       setTimeout(() => {
         setCurrentRound(prev => prev + 1);
-        setFeedback(null);
         setIsWaitingForNext(false);
-        setShowNotes(false);
         generateRandomChord();
       }, timeoutDuration);
     }
@@ -179,25 +176,12 @@ const RandomPlayer: React.FC = () => {
                 <span
                   className={`font-medium ${feedback === 'correct' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
                 >
-                  {feedback === 'correct'
-                    ? 'Correct!'
-                    : 'Incorrect, try again!'}
+                  {feedback}
                 </span>
               )}
             </>
           )}
         </div>
-
-        {showNotes && (
-          <div className="space-y-2 rounded-lg bg-muted p-4">
-            <p className="text-sm font-medium">
-              Chord/Note: {currentChordName}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Notes: {currentChord.map(note => note.slice(0, -1)).join(' - ')}
-            </p>
-          </div>
-        )}
 
         {gameInProgress && (
           <ScaleChordGrid
