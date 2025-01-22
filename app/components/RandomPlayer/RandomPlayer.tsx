@@ -11,7 +11,6 @@ import {
 import { addOctavesToChordNotes } from '~/utils/musicTheoryUtils';
 import ChordSelectionControls from '~/components/ChordSelectionControls';
 import { Button } from '~/components/ui/button';
-import { Separator } from '~/components/ui/separator';
 import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
 import ScaleChordGrid from '~/components/ScaleChordGrid';
 
