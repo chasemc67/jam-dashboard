@@ -68,7 +68,7 @@ export const ScaleChordGrid: React.FC<ScaleChordGridProps> = ({
 
                 return (
                   <Button
-                    key={`${note}${chordType}`}
+                    key={`${note}-${chordType}`}
                     variant="secondary"
                     className={cn(
                       'w-16 h-10',

@@ -74,7 +74,6 @@ export const chordTypesCurated = [
   'maj9#5',
   '9#5',
   '9b13',
-  'Madd9',
   'maj13',
   'M7add13',
   '13',
