@@ -15,6 +15,10 @@ const ChordExplorer: React.FC = () => {
   const [selectedChordGroups, setSelectedChordGroups] = useState<
     ChordTypeGroup[]
   >([chordTypeGroups[0]]);
+  const [lastClickedChord, setLastClickedChord] = useState<{
+    name: string;
+    notes: string[];
+  } | null>(null);
 
   const handleChordGroupChange = (
     selectedOptions: readonly ChordTypeGroup[],
@@ -26,9 +30,11 @@ const ChordExplorer: React.FC = () => {
     // If it's a chord (contains more than just a note name)
     if (chordName.length > 1 && chordName.match(/[A-G][b#]?[^A-G]/)) {
       const chordNotes = Chord.get(chordName).notes;
+      setLastClickedChord({ name: chordName, notes: chordNotes });
       playChordSimultaneous(addOctavesToChordNotes(chordNotes));
     } else {
       // For single notes
+      setLastClickedChord({ name: chordName, notes: [chordName] });
       playChordSimultaneous(addOctavesToChordNotes([chordName]));
     }
   };
@@ -40,6 +46,17 @@ const ChordExplorer: React.FC = () => {
           selectedChordGroups={selectedChordGroups}
           onChordGroupsChange={handleChordGroupChange}
         />
+
+        {lastClickedChord && (
+          <div className="flex items-center justify-center gap-4 text-sm">
+            <span className="text-muted-foreground font-medium">
+              {lastClickedChord.name}:
+            </span>
+            <span className="text-green-600 dark:text-green-400 font-medium">
+              {lastClickedChord.notes.join(' - ')}
+            </span>
+          </div>
+        )}
 
         <ScaleChordGrid
           onChordClick={handleChordClick}
