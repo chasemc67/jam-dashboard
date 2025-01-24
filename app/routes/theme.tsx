@@ -15,6 +15,7 @@ const colorGroups = {
     'bg-accent-foreground',
   ],
   'State Colors': ['bg-destructive', 'bg-destructive-foreground'],
+  'Feedback Colors': ['bg-feedback-correct', 'bg-feedback-incorrect'],
   'Border & Input': ['bg-border', 'bg-input', 'bg-ring'],
   'Chart Colors': [
     'bg-chart-1',
@@ -88,6 +89,8 @@ export default function Theme() {
             <p className="rounded bg-destructive p-2 text-destructive-foreground">
               Destructive Foreground
             </p>
+            <p className="text-feedback-correct">Feedback Correct</p>
+            <p className="text-feedback-incorrect">Feedback Incorrect</p>
           </div>
         </div>
       </div>

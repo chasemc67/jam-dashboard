@@ -171,8 +171,8 @@ const RandomPlayer: React.FC = () => {
                     <span
                       className={`font-medium ${
                         feedback.startsWith('Correct')
-                          ? 'text-green-600 dark:text-green-400'
-                          : 'text-red-600 dark:text-red-400'
+                          ? 'text-feedback-correct'
+                          : 'text-feedback-incorrect'
                       }`}
                     >
                       {feedback}

@@ -52,7 +52,7 @@ const ChordExplorer: React.FC = () => {
             <span className="text-muted-foreground font-medium">
               {lastClickedChord.name}:
             </span>
-            <span className="text-green-600 dark:text-green-400 font-medium">
+            <span className="text-feedback-correct font-medium">
               {lastClickedChord.notes.join(' - ')}
             </span>
           </div>

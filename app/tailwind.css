@@ -46,6 +46,8 @@ body {
     --note-orange: 27 95% 55%;
     --note-purple: 270 70% 60%;
     --note-pink: 330 85% 62%;
+    --feedback-correct: 142 70% 45%;
+    --feedback-incorrect: 0 84% 60%;
   }
 
   .dark {
@@ -81,6 +83,8 @@ body {
     --note-orange: 27 90% 45%;
     --note-purple: 270 65% 50%;
     --note-pink: 330 80% 52%;
+    --feedback-correct: 142 65% 35%;
+    --feedback-incorrect: 0 70% 50%;
   }
 }
 
