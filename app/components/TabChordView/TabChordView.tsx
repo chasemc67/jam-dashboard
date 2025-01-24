@@ -7,7 +7,7 @@ import ChordExplorer from '~/components/ChordExplorer';
 const TabChordView: React.FC = () => {
   return (
     <Card className="w-full max-w-[750px]">
-      <Tabs defaultValue="ear-training" className="w-full">
+      <Tabs defaultValue="chord-explorer" className="w-full">
         <TabsList className="w-full">
           <TabsTrigger value="chord-explorer" className="flex-1">
             Chord Explorer
