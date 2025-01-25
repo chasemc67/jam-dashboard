@@ -54,6 +54,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div id="root" className="bg-background">
           <ContextProviders>{children}</ContextProviders>
           <ScrollRestoration />
+          {/* Silent audio element for iOS audio unblocking - not meant for user interaction */}
+          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+          <audio id="silent-audio" preload="auto" loop>
+            <source src="/assets/silent.mp3" type="audio/mp3" />
+          </audio>
           <Scripts />
           <Analytics />
           <SpeedInsights />

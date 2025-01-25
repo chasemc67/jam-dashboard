@@ -1,9 +1,27 @@
 import type { PolySynth, Synth } from 'tone';
 
 let synth: PolySynth<Synth> | null = null;
+let hasUnblocked = false;
+
+const unblockAudio = () => {
+  if (hasUnblocked) return;
+
+  // Create and play silent audio to unblock iOS audio
+  const audio = new Audio('/assets/silent.mp3');
+  audio.setAttribute('x-webkit-airplay', 'deny');
+  audio.setAttribute('preload', 'auto');
+  audio.loop = true;
+  audio.play().catch(console.error);
+
+  hasUnblocked = true;
+};
 
 export const initializeAudio = async () => {
   const Tone = await import('tone');
+
+  // Always try to unblock audio first
+  unblockAudio();
+
   await Tone.start();
   if (!synth) {
     synth = new Tone.PolySynth(Tone.Synth, {
