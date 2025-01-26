@@ -5,7 +5,7 @@ let hasUnblocked = false;
 let silentAudio: HTMLAudioElement | null = null;
 let cleanupTimeout: NodeJS.Timeout | null = null;
 
-const CLEANUP_DELAY = 5000; // 5 seconds after last audio play
+const CLEANUP_DELAY = 3000; // 3 seconds after last audio play
 
 const cleanupAudio = () => {
   if (synth) {
