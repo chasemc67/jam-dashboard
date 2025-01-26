@@ -15,6 +15,7 @@ import {
 } from '~/utils/musicTheoryUtils';
 import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
 import { getNoteColorClass } from '~/utils/noteColors';
+import { useSettings } from '~/contexts/SettingsContext';
 
 const ChordExplorer: React.FC = () => {
   const [selectedChordGroups, setSelectedChordGroups] = useState<
@@ -25,6 +26,7 @@ const ChordExplorer: React.FC = () => {
     notes: string[];
   } | null>(null);
   const { highlightedNotes } = useHighlightedNotes();
+  const { updateSettings } = useSettings();
 
   const handleChordGroupChange = (
     selectedOptions: readonly ChordTypeGroup[],
@@ -33,6 +35,9 @@ const ChordExplorer: React.FC = () => {
   };
 
   const handleChordClick = (chordName: string) => {
+    // Update quickColors to "scale"
+    updateSettings({ quickColors: 'scale' });
+
     // If it's a chord (contains more than just a note name)
     if (chordName.length > 1 && chordName.match(/[A-G][b#]?[^A-G]/)) {
       const chordNotes = Chord.get(chordName).notes;
