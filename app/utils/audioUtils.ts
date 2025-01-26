@@ -13,7 +13,6 @@ const cleanupAudio = () => {
     silentAudio.src = '';
     silentAudio.remove();
     silentAudio = null;
-    hasUnblocked = false;
   }
 };
 
@@ -70,7 +69,7 @@ export const initializeAudio = async () => {
 
 export const playChordSimultaneous = async (notes: string[]) => {
   const Tone = await import('tone');
-  if (!synth) {
+  if (!synth || !hasUnblocked) {
     await initializeAudio();
   }
   const now = Tone.now();
@@ -81,7 +80,7 @@ export const playChordSimultaneous = async (notes: string[]) => {
 
 export const playChordArpeggio = async (notes: string[]) => {
   const Tone = await import('tone');
-  if (!synth) {
+  if (!synth || !hasUnblocked) {
     await initializeAudio();
   }
   const now = Tone.now();
