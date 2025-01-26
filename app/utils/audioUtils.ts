@@ -2,16 +2,37 @@ import type { PolySynth, Synth } from 'tone';
 
 let synth: PolySynth<Synth> | null = null;
 let hasUnblocked = false;
+let silentAudio: HTMLAudioElement | null = null;
+let cleanupTimeout: NodeJS.Timeout | null = null;
+
+const CLEANUP_DELAY = 5000; // 5 seconds after last audio play
+
+const cleanupAudio = () => {
+  if (silentAudio) {
+    silentAudio.pause();
+    silentAudio.src = '';
+    silentAudio.remove();
+    silentAudio = null;
+    hasUnblocked = false;
+  }
+};
+
+const debouncedCleanup = () => {
+  if (cleanupTimeout) {
+    clearTimeout(cleanupTimeout);
+  }
+  cleanupTimeout = setTimeout(cleanupAudio, CLEANUP_DELAY);
+};
 
 const unblockAudio = () => {
   if (hasUnblocked) return;
 
   // Create and play silent audio to unblock iOS audio
-  const audio = new Audio('/assets/silent.mp3');
-  audio.setAttribute('x-webkit-airplay', 'deny');
-  audio.setAttribute('preload', 'auto');
-  audio.loop = true;
-  audio.play().catch(console.error);
+  silentAudio = new Audio('/assets/silent.mp3');
+  silentAudio.setAttribute('x-webkit-airplay', 'deny');
+  silentAudio.setAttribute('preload', 'auto');
+  silentAudio.loop = true;
+  silentAudio.play().catch(console.error);
 
   hasUnblocked = true;
 };
@@ -55,6 +76,7 @@ export const playChordSimultaneous = async (notes: string[]) => {
   const now = Tone.now();
   const duration = 1; // 1 second duration
   synth?.triggerAttackRelease(notes, duration, now);
+  debouncedCleanup();
 };
 
 export const playChordArpeggio = async (notes: string[]) => {
@@ -67,4 +89,5 @@ export const playChordArpeggio = async (notes: string[]) => {
   notes.forEach((note, i) => {
     synth?.triggerAttackRelease(note, noteDuration, now + 0.25 * i);
   });
+  debouncedCleanup();
 };
