@@ -8,11 +8,16 @@ let cleanupTimeout: NodeJS.Timeout | null = null;
 const CLEANUP_DELAY = 5000; // 5 seconds after last audio play
 
 const cleanupAudio = () => {
+  if (synth) {
+    synth.dispose();
+    synth = null;
+  }
   if (silentAudio) {
     silentAudio.pause();
     silentAudio.src = '';
     silentAudio.remove();
     silentAudio = null;
+    hasUnblocked = false;
   }
 };
 
@@ -24,7 +29,7 @@ const debouncedCleanup = () => {
 };
 
 const unblockAudio = () => {
-  if (hasUnblocked) return;
+  if (hasUnblocked && silentAudio) return;
 
   // Create and play silent audio to unblock iOS audio
   silentAudio = new Audio('/assets/silent.mp3');
