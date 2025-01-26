@@ -9,7 +9,12 @@ import {
   getActiveChordTypes,
   INDIVIDUAL_NOTES,
 } from '~/utils/chordPlayerUtils';
-import { addOctavesToChordNotes } from '~/utils/musicTheoryUtils';
+import {
+  addOctavesToChordNotes,
+  areNotesEquivalent,
+} from '~/utils/musicTheoryUtils';
+import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
+import { getNoteColorClass } from '~/utils/noteColors';
 
 const ChordExplorer: React.FC = () => {
   const [selectedChordGroups, setSelectedChordGroups] = useState<
@@ -19,6 +24,7 @@ const ChordExplorer: React.FC = () => {
     name: string;
     notes: string[];
   } | null>(null);
+  const { highlightedNotes } = useHighlightedNotes();
 
   const handleChordGroupChange = (
     selectedOptions: readonly ChordTypeGroup[],
@@ -52,9 +58,26 @@ const ChordExplorer: React.FC = () => {
             <span className="text-muted-foreground font-medium">
               {lastClickedChord.name}:
             </span>
-            <span className="text-feedback-correct font-medium">
-              {lastClickedChord.notes.join(' - ')}
-            </span>
+            <div className="flex items-center gap-2">
+              {lastClickedChord.notes.map((note, index) => {
+                // Find matching highlighted note to get its color
+                const highlightedNote = highlightedNotes.find(hn =>
+                  areNotesEquivalent(hn.note, note),
+                );
+                return (
+                  <span
+                    key={index}
+                    className={`rounded-md w-5 h-5 flex items-center justify-center text-muted ${
+                      highlightedNote
+                        ? getNoteColorClass(highlightedNote.color, 'background')
+                        : 'bg-note-grey'
+                    }`}
+                  >
+                    {note}
+                  </span>
+                );
+              })}
+            </div>
           </div>
         )}
 
