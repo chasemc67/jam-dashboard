@@ -31,6 +31,44 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Jam Dashboard - Guitar Learning & Practice Tools</title>
+        <meta
+          name="description"
+          content="Interactive guitar learning tools including ear training exercises, fretboard visualization, and chord explorer"
+        />
+
+        {/* Open Graph / Social Media */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://jam-dashboard.vercel.app" />
+        <meta
+          property="og:title"
+          content="Jam Dashboard - Guitar Learning & Practice Tools"
+        />
+        <meta
+          property="og:description"
+          content="Interactive guitar learning tools including ear training exercises, fretboard visualization, and chord explorer"
+        />
+        <meta
+          property="og:image"
+          content="https://jam-dashboard.vercel.app/assets/og-image.png"
+        />
+
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:url" content="https://jam-dashboard.vercel.app" />
+        <meta
+          name="twitter:title"
+          content="Jam Dashboard - Guitar Learning & Practice Tools"
+        />
+        <meta
+          name="twitter:description"
+          content="Interactive guitar learning tools including fretboard visualization, chord explorer, and ear training exercises"
+        />
+        <meta
+          name="twitter:image"
+          content="https://jam-dashboard.vercel.app/assets/og-image.png"
+        />
+
         <Meta />
         <Links />
         <style
