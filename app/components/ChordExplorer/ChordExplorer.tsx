@@ -19,7 +19,7 @@ import { getNoteColorClass } from '~/utils/noteColors';
 const ChordExplorer: React.FC = () => {
   const [selectedChordGroups, setSelectedChordGroups] = useState<
     ChordTypeGroup[]
-  >([chordTypeGroups[0]]);
+  >([chordTypeGroups[0], chordTypeGroups[1]]);
   const [lastClickedChord, setLastClickedChord] = useState<{
     name: string;
     notes: string[];
