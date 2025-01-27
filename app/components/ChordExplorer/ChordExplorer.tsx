@@ -15,6 +15,7 @@ import {
 } from '~/utils/musicTheoryUtils';
 import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
 import { getNoteColorClass } from '~/utils/noteColors';
+import { Button } from '~/components/ui/button';
 
 const ChordExplorer: React.FC = () => {
   const [selectedChordGroups, setSelectedChordGroups] = useState<
@@ -24,7 +25,8 @@ const ChordExplorer: React.FC = () => {
     name: string;
     notes: string[];
   } | null>(null);
-  const { highlightedNotes, setChordHighlighting } = useHighlightedNotes();
+  const { highlightedNotes, setChordHighlighting, clearChordHighlighting } =
+    useHighlightedNotes();
 
   const handleChordGroupChange = (
     selectedOptions: readonly ChordTypeGroup[],
@@ -80,6 +82,16 @@ const ChordExplorer: React.FC = () => {
                 );
               })}
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                clearChordHighlighting();
+                setLastClickedChord(null);
+              }}
+            >
+              Clear
+            </Button>
           </div>
         )}
 
