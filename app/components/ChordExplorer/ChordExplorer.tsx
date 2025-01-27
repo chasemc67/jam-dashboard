@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Chord } from 'tonal';
+import { Volume2, VolumeX } from 'lucide-react';
 import ChordSelectionControls from '~/components/ChordSelectionControls';
 import ScaleChordGrid from '~/components/ScaleChordGrid';
 import { playChordSimultaneous } from '~/utils/audioUtils';
@@ -25,6 +26,7 @@ const ChordExplorer: React.FC = () => {
     name: string;
     notes: string[];
   } | null>(null);
+  const [isMuted, setIsMuted] = useState(false);
   const { highlightedNotes, setChordHighlighting, clearChordHighlighting } =
     useHighlightedNotes();
 
@@ -40,22 +42,42 @@ const ChordExplorer: React.FC = () => {
       const chordNotes = Chord.get(chordName).notes;
       setLastClickedChord({ name: chordName, notes: chordNotes });
       setChordHighlighting(chordNotes);
-      playChordSimultaneous(addOctavesToChordNotes(chordNotes));
+      if (!isMuted) {
+        playChordSimultaneous(addOctavesToChordNotes(chordNotes));
+      }
     } else {
       // For single notes
       setLastClickedChord({ name: chordName, notes: [chordName] });
       setChordHighlighting([chordName]);
-      playChordSimultaneous(addOctavesToChordNotes([chordName]));
+      if (!isMuted) {
+        playChordSimultaneous(addOctavesToChordNotes([chordName]));
+      }
     }
   };
 
   return (
     <div className="space-y-6 px-6 pb-6">
       <div className="space-y-4">
-        <ChordSelectionControls
-          selectedChordGroups={selectedChordGroups}
-          onChordGroupsChange={handleChordGroupChange}
-        />
+        <div className="flex items-start gap-2">
+          <div className="flex-1">
+            <ChordSelectionControls
+              selectedChordGroups={selectedChordGroups}
+              onChordGroupsChange={handleChordGroupChange}
+            />
+          </div>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setIsMuted(!isMuted)}
+            className="mt-4"
+          >
+            {isMuted ? (
+              <VolumeX className="h-4 w-4" />
+            ) : (
+              <Volume2 className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
 
         {lastClickedChord && (
           <div className="flex items-center justify-center gap-4 text-sm">

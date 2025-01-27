@@ -83,26 +83,22 @@ const ChordSelectionControls: React.FC<ChordSelectionControlsProps> = ({
         )}
       </div>
 
-      <div className="flex items-center gap-2">
-        <div className="w-[90%]">
-          {isMounted ? (
-            <Select
-              isMulti
-              closeMenuOnSelect={false}
-              name="chord-types"
-              options={chordTypeGroups}
-              value={selectedChordGroups}
-              onChange={onChordGroupsChange}
-              styles={selectStyles}
-              className="text-sm"
-              classNamePrefix="select"
-              instanceId="chord-types-select"
-            />
-          ) : (
-            <div className="h-[38px] w-full bg-muted rounded-md" />
-          )}
-        </div>
-      </div>
+      {isMounted ? (
+        <Select
+          isMulti
+          closeMenuOnSelect={false}
+          name="chord-types"
+          options={chordTypeGroups}
+          value={selectedChordGroups}
+          onChange={onChordGroupsChange}
+          styles={selectStyles}
+          className="text-sm"
+          classNamePrefix="select"
+          instanceId="chord-types-select"
+        />
+      ) : (
+        <div className="h-[38px] w-full bg-muted rounded-md" />
+      )}
     </div>
   );
 };
