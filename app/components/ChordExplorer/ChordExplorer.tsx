@@ -15,7 +15,6 @@ import {
 } from '~/utils/musicTheoryUtils';
 import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
 import { getNoteColorClass } from '~/utils/noteColors';
-import { useSettings } from '~/contexts/SettingsContext';
 
 const ChordExplorer: React.FC = () => {
   const [selectedChordGroups, setSelectedChordGroups] = useState<
@@ -25,8 +24,7 @@ const ChordExplorer: React.FC = () => {
     name: string;
     notes: string[];
   } | null>(null);
-  const { highlightedNotes } = useHighlightedNotes();
-  const { updateSettings } = useSettings();
+  const { highlightedNotes, setChordHighlighting } = useHighlightedNotes();
 
   const handleChordGroupChange = (
     selectedOptions: readonly ChordTypeGroup[],
@@ -35,17 +33,16 @@ const ChordExplorer: React.FC = () => {
   };
 
   const handleChordClick = (chordName: string) => {
-    // Update quickColors to "scale"
-    updateSettings({ quickColors: 'scale' });
-
     // If it's a chord (contains more than just a note name)
     if (chordName.length > 1 && chordName.match(/[A-G][b#]?[^A-G]/)) {
       const chordNotes = Chord.get(chordName).notes;
       setLastClickedChord({ name: chordName, notes: chordNotes });
+      setChordHighlighting(chordNotes);
       playChordSimultaneous(addOctavesToChordNotes(chordNotes));
     } else {
       // For single notes
       setLastClickedChord({ name: chordName, notes: [chordName] });
+      setChordHighlighting([chordName]);
       playChordSimultaneous(addOctavesToChordNotes([chordName]));
     }
   };

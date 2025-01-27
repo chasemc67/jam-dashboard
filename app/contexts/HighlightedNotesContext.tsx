@@ -9,6 +9,7 @@ interface HighlightedNotesContextType {
   selectedKey: string;
   setSelectedKey: (key: string) => void;
   setKeyAndNotes: (key: string, scale: string[]) => void;
+  setChordHighlighting: (chordNotes: string[]) => void;
 }
 
 const HighlightedNotesContext = createContext<
@@ -53,6 +54,16 @@ export function HighlightedNotesProvider({
     setHighlightedNotes(newHighlightedNotes);
   };
 
+  const setChordHighlighting = (chordNotes: string[]) => {
+    const newHighlightedNotes = highlightedNotes.map((note, index) => ({
+      note: note.note,
+      color: chordNotes.includes(note.note)
+        ? getColorForDegree('scale', index + 1)
+        : 'grey',
+    }));
+    setHighlightedNotes(newHighlightedNotes);
+  };
+
   return (
     <HighlightedNotesContext.Provider
       value={{
@@ -61,6 +72,7 @@ export function HighlightedNotesProvider({
         selectedKey,
         setSelectedKey,
         setKeyAndNotes,
+        setChordHighlighting,
       }}
     >
       {children}
