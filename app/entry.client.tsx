@@ -22,6 +22,15 @@ function PosthogInit() {
         maskTextSelector: '[data-ph-mask]',
       },
     });
+
+    if (
+      window.location.hostname === 'localhost' ||
+      process.env.NODE_ENV === 'development'
+    ) {
+      posthog.people.set({ opt_in_site_apps: true });
+      // You can also add other properties to identify internal users
+      posthog.people.set({ internal_user: true });
+    }
   }, []);
 
   return null;
