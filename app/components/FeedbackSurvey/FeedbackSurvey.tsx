@@ -16,10 +16,17 @@ export default function FeedbackSurvey() {
 
   const handleSubmit = async () => {
     try {
-      setIsSubmitting(true);
-      await posthog.capture('feedback_submitted', {
-        feedback_text: feedback,
-      });
+      await Promise.all([
+        posthog.capture('survey responded', {
+          $survey_id: '0194af0c-102d-0000-edc8-947d9e250a07', // Get this from PostHog UI
+          $survey_response: feedback,
+          $survey_name: 'Open feedback',
+        }),
+        // Keep the custom event if you want additional tracking
+        posthog.capture('feedback_submitted', {
+          feedback_text: feedback,
+        }),
+      ]);
       setFeedback('');
       setIsOpen(false);
     } finally {
