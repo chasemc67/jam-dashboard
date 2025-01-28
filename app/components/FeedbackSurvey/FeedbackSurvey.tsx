@@ -20,6 +20,7 @@ export default function FeedbackSurvey() {
         $survey_id: '0194af0c-102d-0000-edc8-947d9e250a07',
         $survey_response: feedback,
         $survey_name: 'Open feedback',
+        response: feedback,
       });
       setFeedback('');
       setIsOpen(false);
