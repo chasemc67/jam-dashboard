@@ -17,6 +17,8 @@ function PosthogInit() {
       capture_pageleave: true,
       capture_pageview: true,
       autocapture: true,
+      capture_dead_clicks: true,
+      enable_heatmaps: true,
       session_recording: {
         maskAllInputs: false,
         maskTextSelector: '[data-ph-mask]',
