@@ -14,6 +14,9 @@ function PosthogInit() {
     posthog.init('phc_yb2fmLa3KE8pZQbZXysKt5AoVruBMGGaPHJhkQ36ymF', {
       api_host: 'https://us.i.posthog.com',
       person_profiles: 'always', // or 'always' to create profiles for anonymous users as well
+      capture_pageleave: true,
+      capture_pageview: true,
+      autocapture: true,
       session_recording: {
         maskAllInputs: false,
         maskTextSelector: '[data-ph-mask]',
