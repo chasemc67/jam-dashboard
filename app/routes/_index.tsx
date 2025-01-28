@@ -2,6 +2,7 @@ import type { MetaFunction } from '@remix-run/node';
 import FretboardControls from '~/components/FretboardControls';
 import Header from '~/components/Header';
 import TabChordView from '~/components/TabChordView';
+import Footer from '~/components/Footer';
 
 export const meta: MetaFunction = () => {
   return [
@@ -22,6 +23,7 @@ export default function Index() {
         <FretboardControls />
         <TabChordView />
       </div>
+      <Footer />
     </div>
   );
 }
