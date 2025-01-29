@@ -45,7 +45,7 @@ export default function FeedbackSurvey() {
         <div className="space-y-4">
           <h4 className="font-medium leading-none">Share Your Feedback</h4>
           <p className="text-sm text-muted-foreground">
-            Help us improve by sharing your thoughts!
+            Help me make Jam Dashboard even better!
           </p>
           <Textarea
             placeholder="What's on your mind?"
