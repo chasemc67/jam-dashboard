@@ -1,8 +1,11 @@
 # Jam Dashboard
 
-Jam dashboard is a simply highly-configurable tooling for finding/visualizing specific notes on a guitar fretboard with arbitrary tunings.  
-Most other tools either don't support custom tunings, or will only show entire scales/arpegios/etc.  
-With Jam Dashboard you can highlight just the notes you need, in any tuning, and with specific colors per-note
+Jam dashboard is a simply highly-configurable tooling for guitar players.
+
+It includes:
+- Fretboard note visualizer supporting arbitrary tunings and number of strings
+- Ear training tests including individual notes and different chord types
+- Chord explorer which includes a quick way to hear different chords, and to visualize voicings on the fretboard
 
 ![Screenshot 2025-01-29 at 12 29 28 PM](https://github.com/user-attachments/assets/6f94ec65-8921-437a-a072-cce6a1e3ce30)
 
