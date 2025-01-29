@@ -23,3 +23,8 @@ npm run format     # prettier
 ## Deployment
 
 Changes merged to main will auto-deploy to vercel
+
+
+## About
+
+See the [.cursorrules](./.cursorrules) file for an in-depth description of where to find things and how they're built
