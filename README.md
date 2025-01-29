@@ -1,4 +1,4 @@
-# [Jam Dashboard](jamdashboard.com)
+# [Jam Dashboard](https://www.jamdashboard.com)
 
 Jam dashboard is a simply highly-configurable tooling for guitar players.
 
