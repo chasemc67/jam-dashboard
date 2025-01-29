@@ -1,21 +1,28 @@
-jam-dashboard is a react website to help with learning and playing guitar.
+jam-dashboard is a website/tool to help with guitar music theory.
+
+Specifically, it contains the following features:
+- a global key picker which drives the key for the whole page
+- a fretboard visualizer, which lets you easily see where a collection of notes are on the fretboard
+- an ear-training game which lets you pick a set of chord types to test against
+- a chord explorer, which will both play the chords and show their voicings on the fretboard 
 
 It's built with:
-
+- React
 - Remix
 - Tailwind
 - ShadCN
+- Tonal.js (for music-theory related utils)
+- Tone.js (for playing the chords/notes etc)
+
+And we also use:
+- Vercel (for deployment and some analytics)
+- Posthog (for feedback, and advanced analytics)
+- BuyMeACoffee (for accepting tips)
 
 The way color theming works is:
 
 - Colors are defined in tailwind.css, and the inital theme (colors) are taken from a ShadCN
 - theres a `/theme` route where we can preview the colors
-
-Specifically, it contains the following features:
-
-- a global key picker which drives the key for the whole page
-- a fretboard visualizer, which lets you easily see where a collection of notes are on the fretboard
-- a note and chord generator and player, to help with ear training
 
 The fretboard visulizer has a number of advanced features, including:
 
