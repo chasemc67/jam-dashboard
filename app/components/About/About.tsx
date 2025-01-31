@@ -54,7 +54,7 @@ export default function About() {
           <Info className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[600px] md:max-w-[750px]">
         <DialogHeader>
           <DialogTitle>About</DialogTitle>
           <DialogDescription>
@@ -63,6 +63,15 @@ export default function About() {
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
+          <div className="aspect-video w-full">
+            <iframe
+              className="w-full h-full rounded-lg"
+              src="https://www.youtube.com/embed/62qhKTmeL3E"
+              title="Jam Dashboard Tutorial"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
           <div className="space-y-2">
             <h4 className="font-medium">How to use</h4>
             <ul className="list-disc pl-4 text-sm text-muted-foreground">
