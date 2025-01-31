@@ -23,6 +23,16 @@ const pentatonicMinorPattern = {
   7: 'pink',
 };
 
+const majorMinorChordsMinorPattern = {
+  1: 'blue',
+  2: 'green',
+  3: 'red',
+  4: 'blue',
+  5: 'blue',
+  6: 'red',
+  7: 'red',
+};
+
 export const noteColoringPatterns: Record<
   ColoringPatternType,
   Record<number, keyof typeof noteColorClasses>
@@ -94,6 +104,13 @@ export const getColorForDegree = (
     return (
       pentatonicMinorPattern[degree as keyof typeof pentatonicMinorPattern] ||
       'grey'
+    );
+  }
+  if (isMinorKey && pattern == 'major/minor roots') {
+    return (
+      majorMinorChordsMinorPattern[
+        degree as keyof typeof majorMinorChordsMinorPattern
+      ] || 'grey'
     );
   }
   return (
