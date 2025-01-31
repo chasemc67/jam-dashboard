@@ -54,7 +54,7 @@ export default function About() {
           <Info className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px] md:max-w-[750px]">
+      <DialogContent className="sm:max-w-[600px] md:max-w-[750px] h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>About</DialogTitle>
           <DialogDescription>
@@ -62,7 +62,7 @@ export default function About() {
             concepts.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
+        <div className="grid gap-4 py-4 overflow-y-auto">
           <div className="aspect-video w-full">
             <iframe
               className="w-full h-full rounded-lg"
