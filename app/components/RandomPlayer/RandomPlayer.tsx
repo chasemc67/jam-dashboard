@@ -13,6 +13,7 @@ import ChordSelectionControls from '~/components/ChordSelectionControls';
 import { Button } from '~/components/ui/button';
 import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
 import ScaleChordGrid from '~/components/ScaleChordGrid';
+import { playChordSimultaneous } from '~/utils/audioUtils';
 
 const TOTAL_ROUNDS = 10;
 
@@ -87,6 +88,7 @@ const RandomPlayer: React.FC = () => {
 
     setCurrentChord(notesWithOctave);
     setCurrentChordName(randomChordWithNotes.chordName);
+    playChordSimultaneous(notesWithOctave);
   };
 
   const handleChordGroupChange = (
