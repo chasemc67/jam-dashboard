@@ -39,7 +39,7 @@ export function HighlightedNotesProvider({
     if (highlightedNotes.length > 0) {
       const updatedNotes = highlightedNotes.map((note, index) => ({
         note: note.note,
-        color: getColorForDegree(settings.quickColors, index + 1),
+        color: getColorForDegree(settings.quickColors, index + 1, selectedKey),
       }));
       setHighlightedNotes(updatedNotes);
     }
@@ -50,7 +50,7 @@ export function HighlightedNotesProvider({
     setSelectedKey(key);
     const newHighlightedNotes = scale.map((note, index) => ({
       note,
-      color: getColorForDegree(settings.quickColors, index + 1),
+      color: getColorForDegree(settings.quickColors, index + 1, key),
     }));
     setHighlightedNotes(newHighlightedNotes);
   };
@@ -59,7 +59,7 @@ export function HighlightedNotesProvider({
     const newHighlightedNotes = highlightedNotes.map((note, index) => ({
       note: note.note,
       color: chordNotes.includes(note.note)
-        ? getColorForDegree('scale', index + 1)
+        ? getColorForDegree('scale', index + 1, selectedKey)
         : 'grey',
     }));
     setHighlightedNotes(newHighlightedNotes);
@@ -68,7 +68,7 @@ export function HighlightedNotesProvider({
   const clearChordHighlighting = () => {
     const newHighlightedNotes = highlightedNotes.map((note, index) => ({
       note: note.note,
-      color: getColorForDegree(settings.quickColors, index + 1),
+      color: getColorForDegree(settings.quickColors, index + 1, selectedKey),
     }));
     setHighlightedNotes(newHighlightedNotes);
   };

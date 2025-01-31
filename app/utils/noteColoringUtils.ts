@@ -10,6 +10,19 @@ export const COLORING_PATTERN_CHOICES = [
 ] as const;
 export type ColoringPatternType = (typeof COLORING_PATTERN_CHOICES)[number];
 
+// Pentatonic has a diff pattern for minor keys, and so we're just
+// using this as a quick hack to fix the bug if pentatonic highlighting
+// not working right now
+const pentatonicMinorPattern = {
+  1: 'red',
+  2: 'grey',
+  3: 'green',
+  4: 'yellow',
+  5: 'orange',
+  6: 'grey',
+  7: 'pink',
+};
+
 export const noteColoringPatterns: Record<
   ColoringPatternType,
   Record<number, keyof typeof noteColorClasses>
@@ -73,8 +86,16 @@ export const noteColoringPatterns: Record<
 export const getColorForDegree = (
   pattern: ColoringPatternType,
   degree: number,
+  selectedKey?: string,
 ): keyof typeof noteColorClasses => {
   const colorPattern = noteColoringPatterns[pattern];
+  const isMinorKey = selectedKey?.toLowerCase().includes('minor');
+  if (isMinorKey && pattern == 'pentatonic') {
+    return (
+      pentatonicMinorPattern[degree as keyof typeof pentatonicMinorPattern] ||
+      'grey'
+    );
+  }
   return (
     (colorPattern as Record<number, keyof typeof noteColorClasses>)[degree] ||
     'grey'
