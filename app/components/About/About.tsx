@@ -66,7 +66,7 @@ export default function About() {
           <div className="aspect-video w-full">
             <iframe
               className="w-full h-full rounded-lg"
-              src="https://www.youtube.com/embed/62qhKTmeL3E"
+              src="https://www.youtube.com/embed/p4JH-LFFVDo"
               title="Jam Dashboard Tutorial"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
