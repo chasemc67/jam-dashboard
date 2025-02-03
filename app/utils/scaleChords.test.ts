@@ -191,5 +191,25 @@ describe('Scale Chord Functions', () => {
         { note: 'B#', chords: ['B#dim'] },
       ]);
     });
+
+    test('returns correct chords for C minor scale', () => {
+      const result = getEveryChordInScale('C minor', [
+        'maj',
+        'min',
+        '7',
+        'maj7',
+        'min7',
+        'dim',
+      ]);
+      expect(result).toEqual([
+        { note: 'C', chords: ['Cmin', 'Cmin7'] },
+        { note: 'D', chords: ['Ddim'] },
+        { note: 'Eb', chords: ['Ebmaj', 'Ebmaj7'] },
+        { note: 'F', chords: ['Fmin', 'Fmin7'] },
+        { note: 'G', chords: ['Gmin', 'Gmin7'] },
+        { note: 'Ab', chords: ['Abmaj', 'Abmaj7'] },
+        { note: 'Bb', chords: ['Bbmaj', 'Bb7'] },
+      ]);
+    });
   });
 });
