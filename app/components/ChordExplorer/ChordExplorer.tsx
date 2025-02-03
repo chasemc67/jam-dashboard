@@ -37,20 +37,21 @@ const ChordExplorer: React.FC = () => {
   };
 
   const handleChordClick = (chordName: string) => {
-    // If it's a chord (contains more than just a note name)
-    if (chordName.length > 1 && chordName.match(/[A-G][b#]?[^A-G]/)) {
-      const chordNotes = Chord.get(chordName).notes;
-      setLastClickedChord({ name: chordName, notes: chordNotes });
-      setChordHighlighting(chordNotes);
-      if (!isMuted) {
-        playChordSimultaneous(addOctavesToChordNotes(chordNotes));
-      }
-    } else {
+    // Check if it's a single note (letter A-G followed by optional sharps/flats)
+    if (chordName.match(/^[A-G][#b]*$/)) {
       // For single notes
       setLastClickedChord({ name: chordName, notes: [chordName] });
       setChordHighlighting([chordName]);
       if (!isMuted) {
         playChordSimultaneous(addOctavesToChordNotes([chordName]));
+      }
+    } else {
+      // For chords
+      const chordNotes = Chord.get(chordName).notes;
+      setLastClickedChord({ name: chordName, notes: chordNotes });
+      setChordHighlighting(chordNotes);
+      if (!isMuted) {
+        playChordSimultaneous(addOctavesToChordNotes(chordNotes));
       }
     }
   };
