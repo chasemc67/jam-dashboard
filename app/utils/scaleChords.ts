@@ -1,6 +1,6 @@
 // get every chord that fits a scale
-import { Scale, Chord } from 'tonal';
-import { chordTypesCurated } from '~/utils/chordTypesCurated';
+import { Scale, Chord, Note } from 'tonal';
+import { chordTypesCurated } from './chordTypesCurated';
 
 export const getEveryNoteInScale = (scaleName: string) => {
   return Scale.get(scaleName).notes;
@@ -12,9 +12,15 @@ export const getEveryChordInScale = (
 ) => {
   const scale = Scale.get(scaleName).notes; // ['D', 'E', 'F#', 'G', 'A', 'B', 'C#'] for D major
 
+  // Function to normalize note names for comparison
+  const normalizeNote = (note: string) => Note.simplify(note);
+
   // Function to check if a chord fits within the scale
   const isChordInScale = (chordNotes: string[], scaleNotes: string[]) => {
-    return chordNotes.every((note: string) => scaleNotes.includes(note)); // All chord notes must be in scale
+    const normalizedScaleNotes = scaleNotes.map(normalizeNote);
+    return chordNotes.every((note: string) =>
+      normalizedScaleNotes.includes(normalizeNote(note)),
+    );
   };
 
   // Use custom chord types if provided, otherwise get all available chord types
