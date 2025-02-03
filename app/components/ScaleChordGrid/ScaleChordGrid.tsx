@@ -54,7 +54,12 @@ export const ScaleChordGrid: React.FC<ScaleChordGridProps> = ({
         {displayedChordTypes.map(chordType => {
           // Check if any chord in this row is supported
           const hasAnySupportedChords = chordsInScale.some(({ chords }) =>
-            chords.includes(`${chords[0]?.charAt(0)}${chordType}`),
+            chords.some(chord => {
+              if (!chord) return false;
+              // Match the root note (letter + optional sharp/flat) and get everything after
+              const match = chord.match(/^[A-G][#b]?(.*)/);
+              return match && match[1] === chordType;
+            }),
           );
 
           // Skip rendering the row if no chords are supported
@@ -64,7 +69,11 @@ export const ScaleChordGrid: React.FC<ScaleChordGridProps> = ({
             <div key={chordType} className="grid grid-flow-col gap-0.5 mb-1">
               {chordsInScale.map(({ note, chords }) => {
                 const fullChordName = `${note}${chordType}`;
-                const isSupported = chords.includes(fullChordName);
+                const isSupported = chords.some(chord => {
+                  if (!chord) return false;
+                  const match = chord.match(/^[A-G][#b]?(.*)/);
+                  return match && match[1] === chordType;
+                });
 
                 return (
                   <Button
