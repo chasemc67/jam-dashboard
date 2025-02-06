@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { HighlightedNote } from '~/components/Fret';
 import { getColorForDegree } from '~/utils/noteColoringUtils';
 import { useSettings } from './SettingsContext';
+import { Scale } from 'tonal';
 
 interface HighlightedNotesContextType {
   highlightedNotes: HighlightedNote[];
@@ -11,6 +12,8 @@ interface HighlightedNotesContextType {
   setKeyAndNotes: (key: string, scale: string[]) => void;
   setChordHighlighting: (chordNotes: string[]) => void;
   clearChordHighlighting: () => void;
+  get_notes_in_scale: () => string[];
+  get_pentatonic_notes_in_scale: () => string[];
 }
 
 const HighlightedNotesContext = createContext<
@@ -73,6 +76,14 @@ export function HighlightedNotesProvider({
     setHighlightedNotes(newHighlightedNotes);
   };
 
+  const get_notes_in_scale = () => {
+    return Scale.get(selectedKey).notes;
+  };
+
+  const get_pentatonic_notes_in_scale = () => {
+    return Scale.get(`${selectedKey} pentatonic`).notes;
+  };
+
   return (
     <HighlightedNotesContext.Provider
       value={{
@@ -83,6 +94,8 @@ export function HighlightedNotesProvider({
         setKeyAndNotes,
         setChordHighlighting,
         clearChordHighlighting,
+        get_notes_in_scale,
+        get_pentatonic_notes_in_scale,
       }}
     >
       {children}
