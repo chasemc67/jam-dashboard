@@ -7,7 +7,7 @@ interface ShapeHighEConfig {
 }
 
 // Assuming we have an array of the notes in the pentatonic scale intervals
-// like [1, 2, 3, 5, 6]
+// like [C, D, E, G, A]
 // These numbers indicate their position in that array
 // (So for C major pentatonic, A shape 3, 4) is notes G, A
 // Configuration for each CAGED shape's high E string notes
