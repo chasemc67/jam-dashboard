@@ -39,7 +39,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         {/* Open Graph / Social Media */}
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://jam-dashboard.vercel.app" />
+        <meta property="og:url" content="https://jamdashboard.com" />
         <meta
           property="og:title"
           content="Jam Dashboard - Guitar Learning & Practice Tools"
@@ -50,12 +50,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
         />
         <meta
           property="og:image"
-          content="https://jam-dashboard.vercel.app/assets/og-image.png"
+          content="https://jamdashboard.com/assets/og-image.png"
         />
 
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:url" content="https://jam-dashboard.vercel.app" />
+        <meta name="twitter:url" content="https://jamdashboard.com" />
         <meta
           name="twitter:title"
           content="Jam Dashboard - Guitar Learning & Practice Tools"
@@ -66,7 +66,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         />
         <meta
           name="twitter:image"
-          content="https://jam-dashboard.vercel.app/assets/og-image.png"
+          content="https://jamdashboard.com/assets/og-image.png"
         />
 
         <Meta />
