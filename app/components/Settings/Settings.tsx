@@ -129,10 +129,10 @@ export default function Settings() {
                     <TooltipTrigger>
                       <Info className="h-4 w-4 text-accent-foreground" />
                     </TooltipTrigger>
-                    <TooltipContent className="bg-accent text-accent-foreground">
+                    <TooltipContent className="bg-accent text-accent-foreground max-w-[200px]">
                       <p>
                         CAGED mode does a best-effort coloring for alternate
-                        tunings, but works best with standard tunings
+                        tunings, but works best with standard tuning
                       </p>
                     </TooltipContent>
                   </Tooltip>
