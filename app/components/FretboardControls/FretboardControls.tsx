@@ -88,7 +88,7 @@ const FretboardControls: React.FC = () => {
         <input
           value={note}
           onChange={e => handleInputChange(index, e.target.value)}
-          className={`w-[30px] h-[30px] text-center border-[5px] ${getOutlineColor(note, index)}`}
+          className={`w-[30px] h-[30px] text-center border-[5px] bg-background [color-scheme:dark] ${getOutlineColor(note, index)}`}
         />
       </div>
     ));
