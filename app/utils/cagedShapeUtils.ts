@@ -7,6 +7,7 @@ interface ShapeHighEConfig {
 }
 
 // Assuming we have an array of the notes in the pentatonic scale intervals
+// [1, 2, 3, X, 5, 6, X]
 // like [C, D, E, G, A]
 // These numbers indicate their position in that array
 // (So for C major pentatonic, A shape 3, 4) is notes G, A
@@ -44,12 +45,12 @@ export function getNotesForStringInShape(
 
   // For other strings, we need to walk backwards from the high E configuration
   // Each string moves back one position in the pentatonic scale for each note
-  const offset = normalizedString - 1;
+  const offset = normalizedString;
   const [firstNote, secondNote] = baseConfig.noteIndices;
 
   // Calculate new indices with wraparound (modulo 5 since pentatonic has 5 notes)
-  const newFirstNote = (firstNote - offset + 5) % 5;
-  const newSecondNote = (secondNote - offset + 5) % 5;
+  const newFirstNote = (firstNote + (offset - 1) * 3) % 5;
+  const newSecondNote = (secondNote + (offset - 1) * 3) % 5;
 
   return [newFirstNote, newSecondNote];
 }

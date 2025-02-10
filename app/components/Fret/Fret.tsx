@@ -55,7 +55,7 @@ const Fret: React.FC<FretProps> = ({
   fretNumber,
   highlightedNotes,
   showTextNotes,
-  isCaged = false,
+  isCaged = true,
   cagedShape = 'C',
 }) => {
   const widths = getFretWidth(fretNumber);
