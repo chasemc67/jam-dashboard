@@ -132,7 +132,8 @@ export default function Settings() {
                   <PopoverContent className="w-[200px]">
                     <p className="text-sm">
                       CAGED mode does a best-effort coloring for alternate
-                      tunings, but works best with standard tuning
+                      tunings, but works best with standard tuning and major
+                      scales
                     </p>
                   </PopoverContent>
                 </Popover>
