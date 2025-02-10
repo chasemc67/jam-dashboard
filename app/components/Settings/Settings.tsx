@@ -109,6 +109,37 @@ export default function Settings() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="caged-mode"
+                  checked={settings.cagedModeEnabled}
+                  onCheckedChange={checked =>
+                    updateSettings({ cagedModeEnabled: checked === true })
+                  }
+                />
+                <Label htmlFor="caged-mode">Enable CAGED Mode</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Label htmlFor="caged-shape">CAGED Shape:</Label>
+                <Select
+                  value={settings.cagedShape}
+                  onValueChange={(value: 'C' | 'A' | 'G' | 'E' | 'D') =>
+                    updateSettings({ cagedShape: value })
+                  }
+                  disabled={!settings.cagedModeEnabled}
+                >
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue placeholder="Select shape" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {['C', 'A', 'G', 'E', 'D'].map(shape => (
+                      <SelectItem key={shape} value={shape}>
+                        {shape}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         </div>

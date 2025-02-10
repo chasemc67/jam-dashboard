@@ -7,6 +7,8 @@ interface Settings {
   numberOfStrings: number;
   showTextNotes: boolean;
   quickColors: ColoringPatternType;
+  cagedModeEnabled: boolean;
+  cagedShape: 'C' | 'A' | 'G' | 'E' | 'D';
 }
 
 interface SettingsContextType {
@@ -22,6 +24,8 @@ const defaultSettings: Settings = {
   numberOfStrings: 6,
   showTextNotes: true,
   quickColors: 'scale',
+  cagedModeEnabled: false,
+  cagedShape: 'C',
 };
 
 // Helper function to safely parse stored settings
