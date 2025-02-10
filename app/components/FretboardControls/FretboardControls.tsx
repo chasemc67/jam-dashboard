@@ -5,6 +5,8 @@ import FretBoard from '../FretBoard';
 import { getNoteColorClass } from '~/utils/noteColors';
 import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
 import { useSettings } from '~/contexts/SettingsContext';
+import { getNotesForStringInShape } from '~/utils/cagedShapeUtils';
+import { getCagedNoteColor } from '~/utils/cagedColorUtils';
 
 const DEFAULT_TUNING_PATTERN = ['E', 'B', 'G', 'D', 'A'];
 
@@ -17,7 +19,11 @@ const getDefaultTuning = (numberOfStrings: number): string[] => {
 };
 
 const FretboardControls: React.FC = () => {
-  const { highlightedNotes } = useHighlightedNotes();
+  const {
+    highlightedNotes,
+    get_notes_in_scale,
+    get_pentatonic_notes_in_scale,
+  } = useHighlightedNotes();
   const { settings } = useSettings();
   const [rootNotes, setRootNotes] = useState(() =>
     getDefaultTuning(settings.numberOfStrings),
@@ -48,7 +54,22 @@ const FretboardControls: React.FC = () => {
     setRootNotes(updatedRootNotes);
   };
 
-  const getOutlineColor = (note: string) => {
+  const getOutlineColor = (note: string, stringIndex: number) => {
+    if (settings.cagedModeEnabled) {
+      const stringNumber = stringIndex + 1;
+      const noteColor = getCagedNoteColor(
+        note,
+        stringNumber,
+        settings.cagedShape,
+        get_notes_in_scale(),
+        get_pentatonic_notes_in_scale(),
+        getNotesForStringInShape,
+      );
+      return noteColor
+        ? getNoteColorClass(noteColor, 'border')
+        : 'border-black';
+    }
+
     const foundNote = highlightedNotes.find(n => n.note === note);
     return foundNote
       ? getNoteColorClass(foundNote.color, 'border')
@@ -67,7 +88,7 @@ const FretboardControls: React.FC = () => {
         <input
           value={note}
           onChange={e => handleInputChange(index, e.target.value)}
-          className={`w-[30px] h-[30px] text-center border-[5px] ${getOutlineColor(note)}`}
+          className={`w-[30px] h-[30px] text-center border-[5px] ${getOutlineColor(note, index)}`}
         />
       </div>
     ));

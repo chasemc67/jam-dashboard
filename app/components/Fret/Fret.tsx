@@ -14,6 +14,7 @@ import {
 } from '~/utils/cagedShapeUtils';
 import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
 import { useSettings } from '~/contexts/SettingsContext';
+import { getCagedNoteColor } from '~/utils/cagedColorUtils';
 import '~/tailwind.css';
 
 export type HighlightedNote = {
@@ -26,15 +27,6 @@ export type FretProps = {
   fretNumber: number;
   highlightedNotes: HighlightedNote[];
   showTextNotes?: boolean;
-};
-
-// CAGED shape colors
-const CAGED_COLORS: Record<CAGEDShape, string> = {
-  C: 'red',
-  A: 'blue',
-  G: 'green',
-  E: 'yellow',
-  D: 'orange',
 };
 
 const getFretWidth = (
@@ -67,33 +59,24 @@ const Fret: React.FC<FretProps> = ({
     return rootNotes.map((rootNote, stringIndex) => {
       const stringNumber = stringIndex + 1; // Convert to 1-based index
       const currentNote = getNoteAtFret(rootNote, fretNumber);
-      const [firstPentatonicIndex, secondPentatonicIndex] =
-        getNotesForStringInShape(stringNumber, settings.cagedShape);
 
-      // Get the actual notes from the pentatonic scale that should be highlighted for this string
-      const shapePentatonicNotes = [
-        pentatonicNotes[firstPentatonicIndex],
-        pentatonicNotes[secondPentatonicIndex],
-      ];
-
-      // Check if the current note is in the scale
-      const isInScale = scaleNotes.some(note =>
-        areNotesEquivalent(note, currentNote),
+      const noteColor = getCagedNoteColor(
+        currentNote,
+        stringNumber,
+        settings.cagedShape,
+        scaleNotes,
+        pentatonicNotes,
+        getNotesForStringInShape,
       );
 
-      if (isInScale) {
-        // Check if the note is part of the CAGED shape (matches one of the pentatonic positions)
-        const isInShape = shapePentatonicNotes.some(note =>
-          areNotesEquivalent(note, currentNote),
-        );
-
+      if (noteColor) {
         return (
           <div
             key={stringIndex}
             className="h-[2px] bg-[#808080] relative z-[2]"
           >
             <div
-              className={`rounded-md w-5 h-5 absolute -top-[9px] left-[calc(50%-10px)] flex items-center justify-center text-muted z-[3] ${getNoteColorClass(isInShape ? CAGED_COLORS[settings.cagedShape] : 'grey', 'background')}`}
+              className={`rounded-md w-5 h-5 absolute -top-[9px] left-[calc(50%-10px)] flex items-center justify-center text-muted z-[3] ${getNoteColorClass(noteColor, 'background')}`}
             >
               {showTextNotes && currentNote}
             </div>
