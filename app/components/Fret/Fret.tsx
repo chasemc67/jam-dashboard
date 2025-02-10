@@ -13,6 +13,7 @@ import {
   type CAGEDShape,
 } from '~/utils/cagedShapeUtils';
 import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
+import { useSettings } from '~/contexts/SettingsContext';
 import '~/tailwind.css';
 
 export type HighlightedNote = {
@@ -25,8 +26,6 @@ export type FretProps = {
   fretNumber: number;
   highlightedNotes: HighlightedNote[];
   showTextNotes?: boolean;
-  isCaged?: boolean;
-  cagedShape?: CAGEDShape;
 };
 
 // CAGED shape colors
@@ -55,12 +54,11 @@ const Fret: React.FC<FretProps> = ({
   fretNumber,
   highlightedNotes,
   showTextNotes,
-  isCaged = false,
-  cagedShape = 'C',
 }) => {
   const widths = getFretWidth(fretNumber);
   const { get_notes_in_scale, get_pentatonic_notes_in_scale } =
     useHighlightedNotes();
+  const { settings } = useSettings();
 
   const renderCagedStrings = () => {
     const scaleNotes = get_notes_in_scale();
@@ -70,7 +68,7 @@ const Fret: React.FC<FretProps> = ({
       const stringNumber = stringIndex + 1; // Convert to 1-based index
       const currentNote = getNoteAtFret(rootNote, fretNumber);
       const [firstPentatonicIndex, secondPentatonicIndex] =
-        getNotesForStringInShape(stringNumber, cagedShape);
+        getNotesForStringInShape(stringNumber, settings.cagedShape);
 
       // Get the actual notes from the pentatonic scale that should be highlighted for this string
       const shapePentatonicNotes = [
@@ -95,7 +93,7 @@ const Fret: React.FC<FretProps> = ({
             className="h-[2px] bg-[#808080] relative z-[2]"
           >
             <div
-              className={`rounded-md w-5 h-5 absolute -top-[9px] left-[calc(50%-10px)] flex items-center justify-center text-muted z-[3] ${getNoteColorClass(isInShape ? CAGED_COLORS[cagedShape] : 'grey', 'background')}`}
+              className={`rounded-md w-5 h-5 absolute -top-[9px] left-[calc(50%-10px)] flex items-center justify-center text-muted z-[3] ${getNoteColorClass(isInShape ? CAGED_COLORS[settings.cagedShape] : 'grey', 'background')}`}
             >
               {showTextNotes && currentNote}
             </div>
@@ -145,7 +143,7 @@ const Fret: React.FC<FretProps> = ({
       }}
       className="flex flex-col justify-between bg-accent border border-card p-2.5 relative h-[300px] md:!w-[var(--fret-desktop-width)]"
     >
-      {isCaged ? renderCagedStrings() : renderNormalStrings()}
+      {settings.cagedModeEnabled ? renderCagedStrings() : renderNormalStrings()}
       {fretMarkers.includes(fretNumber) && (
         <div
           className={`bg-background w-3/4 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[1] ${tallMarkerFrets.includes(fretNumber) ? 'h-1/2' : 'h-1/4'}`}
