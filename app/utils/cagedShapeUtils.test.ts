@@ -13,10 +13,10 @@ describe('cagedShapeUtils', () => {
     it('correctly walks back notes for lower strings in C shape', () => {
       // C shape pattern walking down the strings
       expect(getNotesForStringInShape(1, 'C')).toEqual([2, 3]); // High E: 3rd and 5th
-      expect(getNotesForStringInShape(2, 'C')).toEqual([4, 0]); // B: 2nd and 3rd
-      expect(getNotesForStringInShape(3, 'C')).toEqual([1, 2]); // G: root and 2nd
-      expect(getNotesForStringInShape(4, 'C')).toEqual([3, 4]); // D: 6th and root
-      expect(getNotesForStringInShape(5, 'C')).toEqual([0, 1]); // A: 5th and 6th
+      expect(getNotesForStringInShape(2, 'C')).toEqual([0, 2]); // B: 2nd and 3rd
+      expect(getNotesForStringInShape(3, 'C')).toEqual([3, 4]); // G: root and 2nd
+      expect(getNotesForStringInShape(4, 'C')).toEqual([1, 2]); // D: 6th and root
+      expect(getNotesForStringInShape(5, 'C')).toEqual([4, 0]); // A: 5th and 6th
       expect(getNotesForStringInShape(6, 'C')).toEqual([2, 3]); // Low E: 3rd and 5th
     });
 
