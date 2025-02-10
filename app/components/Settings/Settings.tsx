@@ -1,4 +1,4 @@
-import { Settings as SettingsIcon } from 'lucide-react';
+import { Settings as SettingsIcon, Info } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import {
   Popover,
@@ -20,6 +20,12 @@ import {
   COLORING_PATTERN_CHOICES,
   ColoringPatternType,
 } from '~/utils/noteColoringUtils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '~/components/ui/tooltip';
 
 export default function Settings() {
   const { settings, updateSettings } = useSettings();
@@ -118,6 +124,19 @@ export default function Settings() {
                   }
                 />
                 <Label htmlFor="caged-mode">Enable CAGED Mode</Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Info className="h-4 w-4 text-accent-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-accent text-accent-foreground">
+                      <p>
+                        CAGED mode does a best-effort coloring for alternate
+                        tunings, but works best with standard tunings
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
               <div className="flex items-center space-x-2">
                 <Label htmlFor="caged-shape">CAGED Shape:</Label>
