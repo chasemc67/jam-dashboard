@@ -1,4 +1,4 @@
-import { Info } from 'lucide-react';
+import { CircleHelp } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { useEffect, useState } from 'react';
 import {
@@ -51,7 +51,7 @@ export default function About() {
           className="h-7 w-7"
           aria-label="About"
         >
-          <Info className="h-4 w-4" />
+          <CircleHelp className="h-4 w-4" />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px] md:max-w-[750px] h-[90vh] flex flex-col">

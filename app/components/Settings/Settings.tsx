@@ -20,12 +20,6 @@ import {
   COLORING_PATTERN_CHOICES,
   ColoringPatternType,
 } from '~/utils/noteColoringUtils';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '~/components/ui/tooltip';
 
 export default function Settings() {
   const { settings, updateSettings } = useSettings();
@@ -124,19 +118,24 @@ export default function Settings() {
                   }
                 />
                 <Label htmlFor="caged-mode">Enable CAGED Mode</Label>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 p-0"
+                      aria-label="CAGED Mode Info"
+                    >
                       <Info className="h-4 w-4 text-accent-foreground" />
-                    </TooltipTrigger>
-                    <TooltipContent className="bg-accent text-accent-foreground max-w-[200px]">
-                      <p>
-                        CAGED mode does a best-effort coloring for alternate
-                        tunings, but works best with standard tuning
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[200px]">
+                    <p className="text-sm">
+                      CAGED mode does a best-effort coloring for alternate
+                      tunings, but works best with standard tuning
+                    </p>
+                  </PopoverContent>
+                </Popover>
               </div>
               <div className="flex items-center space-x-2">
                 <Label htmlFor="caged-shape">CAGED Shape:</Label>
