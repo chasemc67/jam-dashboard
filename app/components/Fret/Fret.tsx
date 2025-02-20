@@ -8,10 +8,7 @@
 import React from 'react';
 import { getNoteAtFret, areNotesEquivalent } from '~/utils/musicTheoryUtils';
 import { getNoteColorClass } from '~/utils/noteColors';
-import {
-  getNotesForStringInShape,
-  type CAGEDShape,
-} from '~/utils/cagedShapeUtils';
+import { getNotesForStringInShape } from '~/utils/cagedShapeUtils';
 import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
 import { useSettings } from '~/contexts/SettingsContext';
 import { getCagedNoteColor } from '~/utils/cagedColorUtils';
