@@ -9,6 +9,9 @@ interface Settings {
   quickColors: ColoringPatternType;
   cagedModeEnabled: boolean;
   cagedShape: 'C' | 'A' | 'G' | 'E' | 'D';
+  showMajorMinorScales: boolean;
+  showHarmonicMelodicScales: boolean;
+  showModes: boolean;
 }
 
 interface SettingsContextType {
@@ -26,6 +29,9 @@ const defaultSettings: Settings = {
   quickColors: 'scale',
   cagedModeEnabled: false,
   cagedShape: 'C',
+  showMajorMinorScales: true,
+  showHarmonicMelodicScales: false,
+  showModes: false,
 };
 
 // Helper function to safely parse stored settings
