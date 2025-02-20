@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { Note, Scale } from 'tonal';
 import { all_notes } from '~/utils/musicTheoryUtils';
@@ -18,6 +18,8 @@ import {
   PopoverTrigger,
 } from '~/components/ui/popover';
 import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
+import { useSettings } from '~/contexts/SettingsContext';
+import { filteredScaleTypes } from '~/utils/scaleTypes';
 
 interface KeyOption {
   label: string;
@@ -47,11 +49,30 @@ export const parseSearchInput = (input: string): string[] => {
     .filter(note => note.length > 0);
 };
 
-const key_options = generate_key_options(['major', 'minor']);
-
 export const KeyPicker: React.FC = () => {
   const [open, setOpen] = useState(false);
   const { selectedKey, setKeyAndNotes } = useHighlightedNotes();
+  const { settings } = useSettings();
+
+  const key_options = useMemo(() => {
+    const enabledScaleTypes: string[] = [];
+
+    if (settings.showMajorMinorScales) {
+      enabledScaleTypes.push(...filteredScaleTypes.simple);
+    }
+    if (settings.showHarmonicMelodicScales) {
+      enabledScaleTypes.push(...filteredScaleTypes.minors);
+    }
+    if (settings.showModes) {
+      enabledScaleTypes.push(...filteredScaleTypes.modes);
+    }
+
+    return generate_key_options(enabledScaleTypes);
+  }, [
+    settings.showMajorMinorScales,
+    settings.showHarmonicMelodicScales,
+    settings.showModes,
+  ]);
 
   const filterKeys = (value: string, search: string) => {
     const option = key_options.find(opt => opt.value === value);
