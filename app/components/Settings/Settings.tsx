@@ -172,7 +172,32 @@ export default function Settings() {
                     updateSettings({ showMajorMinorScales: checked === true })
                   }
                 />
-                <Label htmlFor="major-minor-scales">Major/Minor</Label>
+                <Label htmlFor="major-minor-scales">
+                  Major/Minor + Pentatonic
+                </Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 p-0"
+                      aria-label="Pentatonic Info"
+                    >
+                      <Info className="h-4 w-4 text-accent-foreground" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[200px]">
+                    <p className="text-sm">
+                      For pentatonic scales, choose a scale in the picker and
+                      then click &quot;pentatonic coloring&quot; below the
+                      fretboard.
+                      <br />
+                      <br />
+                      This button will be available for any scale that also has
+                      a pentatonic version.
+                    </p>
+                  </PopoverContent>
+                </Popover>
               </div>
               <div className="flex items-center space-x-2">
                 <Checkbox
