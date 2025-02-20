@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Check, ChevronsUpDown } from 'lucide-react';
-import { Key, Note } from 'tonal';
+import { Note, Scale } from 'tonal';
 import { all_notes } from '~/utils/musicTheoryUtils';
 import { cn } from '~/lib/utils';
 import { Button } from '~/components/ui/button';
@@ -25,20 +25,16 @@ interface KeyOption {
   scale: string[];
 }
 
-export const generate_key_options = () => {
+export const generate_key_options = (scaleTypes: string[]) => {
   const key_options: KeyOption[] = [];
   all_notes.forEach(note => {
-    const major_scale = [...Key.majorKey(note).scale];
-    const minor_scale = [...Key.minorKey(note).natural.scale];
-    key_options.push({
-      label: `${note} major (${major_scale.join(', ')})`,
-      value: `${note} major`,
-      scale: major_scale,
-    });
-    key_options.push({
-      label: `${note} minor (${minor_scale.join(', ')})`,
-      value: `${note} minor`,
-      scale: minor_scale,
+    scaleTypes.forEach(scaleType => {
+      const scale = Scale.get(`${note} ${scaleType}`).notes;
+      key_options.push({
+        label: `${note} ${scaleType} (${scale.join(', ')})`,
+        value: `${note} ${scaleType}`,
+        scale: scale,
+      });
     });
   });
   return key_options;
@@ -51,7 +47,7 @@ export const parseSearchInput = (input: string): string[] => {
     .filter(note => note.length > 0);
 };
 
-const key_options = generate_key_options();
+const key_options = generate_key_options(['major', 'minor']);
 
 export const KeyPicker: React.FC = () => {
   const [open, setOpen] = useState(false);
