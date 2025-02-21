@@ -5,10 +5,11 @@ interface ScaleKeyContextType {
   key: string;
   scale: string;
   notes: string[];
+  keyScale: string;
   pentatonicNotes: string[];
   setKey: (key: string) => void;
   setScale: (scale: string) => void;
-  setKeyScale: (key: string, scale: string) => void;
+  setKeyScale: (keyScale: string) => void;
 }
 
 const ScaleKeyContext = createContext<ScaleKeyContextType | undefined>(
@@ -44,7 +45,25 @@ export function ScaleKeyProvider({ children }: { children: React.ReactNode }) {
     updateScaleData(key, newScale);
   };
 
-  const handleSetKeyScale = (newKey: string, newScale: string) => {
+  const handleSetKeyScale = (keyScaleString: string) => {
+    if (!keyScaleString) {
+      setKey('');
+      setScale('');
+      setNotes([]);
+      setPentatonicNotes([]);
+      return;
+    }
+
+    // If there's no space, assume major scale
+    if (!keyScaleString.includes(' ')) {
+      setKey(keyScaleString);
+      setScale('major');
+      updateScaleData(keyScaleString, 'major');
+      return;
+    }
+
+    const [newKey, ...scaleParts] = keyScaleString.split(' ');
+    const newScale = scaleParts.join(' ');
     setKey(newKey);
     setScale(newScale);
     updateScaleData(newKey, newScale);
@@ -56,6 +75,7 @@ export function ScaleKeyProvider({ children }: { children: React.ReactNode }) {
         key,
         scale,
         notes,
+        keyScale: `${key} ${scale}`,
         pentatonicNotes,
         setKey: handleSetKey,
         setScale: handleSetScale,

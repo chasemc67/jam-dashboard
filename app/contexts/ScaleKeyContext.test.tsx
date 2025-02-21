@@ -53,7 +53,7 @@ describe('ScaleKeyContext', () => {
     const { result } = renderHook(() => useScaleKey(), { wrapper });
 
     act(() => {
-      result.current.setKeyScale('E', 'dorian');
+      result.current.setKeyScale('E dorian');
     });
 
     expect(result.current.key).toBe('E');
@@ -66,7 +66,7 @@ describe('ScaleKeyContext', () => {
     const { result } = renderHook(() => useScaleKey(), { wrapper });
 
     act(() => {
-      result.current.setKeyScale('F', 'locrian');
+      result.current.setKeyScale('F locrian');
     });
 
     expect(result.current.key).toBe('F');
@@ -94,7 +94,7 @@ describe('ScaleKeyContext', () => {
     const { result } = renderHook(() => useScaleKey(), { wrapper });
 
     act(() => {
-      result.current.setKeyScale('F#', 'major');
+      result.current.setKeyScale('F# major');
     });
 
     expect(result.current.key).toBe('F#');

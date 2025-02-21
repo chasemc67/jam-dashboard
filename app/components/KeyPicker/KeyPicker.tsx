@@ -17,7 +17,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '~/components/ui/popover';
-import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
+import { useScaleKey } from '~/contexts/ScaleKeyContext';
 import { useSettings } from '~/contexts/SettingsContext';
 import { filteredScaleTypes } from '~/utils/scaleTypes';
 
@@ -51,7 +51,7 @@ export const parseSearchInput = (input: string): string[] => {
 
 export const KeyPicker: React.FC = () => {
   const [open, setOpen] = useState(false);
-  const { selectedKey, setKeyAndNotes } = useHighlightedNotes();
+  const { keyScale, setKeyScale } = useScaleKey();
   const { settings } = useSettings();
 
   const key_options = useMemo(() => {
@@ -99,18 +99,9 @@ export const KeyPicker: React.FC = () => {
   };
 
   const handleKeySelect = (currentValue: string) => {
-    const newKey = currentValue === selectedKey ? '' : currentValue;
+    const newValue = currentValue === keyScale ? '' : currentValue;
     setOpen(false);
-
-    // Update both key and notes through context
-    const selectedKeyOption = key_options.find(
-      opt => opt.value === currentValue,
-    );
-    if (selectedKeyOption) {
-      setKeyAndNotes(newKey, selectedKeyOption.scale);
-    } else if (newKey === '') {
-      setKeyAndNotes('', []);
-    }
+    setKeyScale(newValue);
   };
 
   return (
@@ -122,8 +113,8 @@ export const KeyPicker: React.FC = () => {
           aria-expanded={open}
           className="w-[350px] justify-between"
         >
-          {selectedKey
-            ? key_options.find(key_option => key_option.value === selectedKey)
+          {keyScale
+            ? key_options.find(key_option => key_option.value === keyScale)
                 ?.label
             : 'Select key...'}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -144,7 +135,7 @@ export const KeyPicker: React.FC = () => {
                   <Check
                     className={cn(
                       'mr-2 h-4 w-4',
-                      selectedKey === key_option.value
+                      keyScale === key_option.value
                         ? 'opacity-100'
                         : 'opacity-0',
                     )}
