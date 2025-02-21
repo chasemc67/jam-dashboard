@@ -78,9 +78,16 @@ describe('ScaleKeyContext', () => {
   });
 
   it('should throw error when used outside provider', () => {
+    // Temporarily suppress console.error for this test
+    const originalError = console.error;
+    console.error = jest.fn();
+
     expect(() => {
       renderHook(() => useScaleKey());
     }).toThrow('useScaleKey must be used within a ScaleKeyProvider');
+
+    // Restore console.error
+    console.error = originalError;
   });
 
   it('should handle chromatic notes in key', () => {
