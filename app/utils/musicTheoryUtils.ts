@@ -1,6 +1,5 @@
 const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 export const all_notes = [
-  'Cb',
   'C',
   'C#',
   'Db',
@@ -20,6 +19,7 @@ export const all_notes = [
   'Bb',
   'B',
   'B#',
+  'Cb',
 ];
 
 // Map of note modifiers to their semitone offset
