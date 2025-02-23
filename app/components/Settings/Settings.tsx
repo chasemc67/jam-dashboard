@@ -59,7 +59,7 @@ export default function Settings() {
                     updateSettings({ showTextNotes: checked === true })
                   }
                 />
-                <Label htmlFor="show-text-notes">Show Text Notes</Label>
+                <Label htmlFor="show-text-notes">Show Note Names</Label>
               </div>
               <div className="flex items-center space-x-2">
                 <Label htmlFor="number-of-frets">Number of Frets:</Label>

@@ -12,6 +12,7 @@ interface HighlightContextType {
 }
 
 const COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink'];
+export const INTERVALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
 
 const HighlightContext = createContext<HighlightContextType | undefined>(
   undefined,

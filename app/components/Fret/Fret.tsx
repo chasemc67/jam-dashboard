@@ -9,7 +9,7 @@ import React from 'react';
 import { getNoteAtFret, areNotesEquivalent } from '~/utils/musicTheoryUtils';
 import { getNoteColorClass } from '~/utils/noteColors';
 import { getNotesForStringInShape } from '~/utils/cagedShapeUtils';
-import { useHighlight } from '~/contexts/HighlightContext';
+import { useHighlight, INTERVALS } from '~/contexts/HighlightContext';
 import { useSettings } from '~/contexts/SettingsContext';
 import { useScaleKey } from '~/contexts/ScaleKeyContext';
 import { getCagedNoteColor } from '~/utils/cagedColorUtils';
@@ -71,7 +71,9 @@ const Fret: React.FC<FretProps> = ({
             <div
               className={`rounded-md w-5 h-5 absolute -top-[9px] left-[calc(50%-10px)] flex items-center justify-center text-muted z-[3] ${getNoteColorClass(noteColor, 'background')}`}
             >
-              {showTextNotes && currentNote}
+              {showTextNotes
+                ? currentNote
+                : INTERVALS[notes.indexOf(currentNote)]}
             </div>
           </div>
         );
@@ -99,7 +101,9 @@ const Fret: React.FC<FretProps> = ({
             <div
               className={`rounded-md w-6 h-6 absolute -top-[11px] left-[calc(50%-10px)] flex items-center justify-center text-muted z-[3] ${getNoteColorClass(highlightedNote.color, 'background')}`}
             >
-              {showTextNotes && highlightedNote.note}
+              {showTextNotes
+                ? highlightedNote.note
+                : INTERVALS[notes.indexOf(highlightedNote.note)]}
             </div>
           )}
         </div>
