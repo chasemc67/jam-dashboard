@@ -54,7 +54,7 @@ const FretboardControls: React.FC = () => {
   };
 
   const getOutlineColor = (note: string, stringIndex: number) => {
-    if (settings.cagedModeEnabled) {
+    if (settings.cagedModeEnabled && pentatonicNotes.length !== 0) {
       const stringNumber = stringIndex + 1;
       const noteColor = getCagedNoteColor(
         note,

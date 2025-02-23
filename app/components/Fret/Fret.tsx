@@ -111,7 +111,7 @@ const Fret: React.FC<FretProps> = ({
   const tallMarkerFrets = [12, 24];
 
   const shouldRenderCaged =
-    settings.cagedModeEnabled && pentatonicNotes.length === 0;
+    settings.cagedModeEnabled && pentatonicNotes.length !== 0;
 
   return (
     <div
