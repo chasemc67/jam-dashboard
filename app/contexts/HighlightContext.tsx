@@ -1,15 +1,12 @@
 import React, { createContext, useContext, useState } from 'react';
 import type { HighlightedNote } from '~/components/Fret';
 import { useScaleKey } from './ScaleKeyContext';
-
-type HighlightType = 'scale' | 'pentatonic' | 'CAGED';
+import { useSettings } from './SettingsContext';
 
 interface HighlightContextType {
   getHighlightedNotes: () => HighlightedNote[];
   setChordHighlight: (notes: string[]) => void;
   clearChordHighlight: () => void;
-  highlightType: HighlightType;
-  setHighlightType: (type: HighlightType) => void;
   chordHighlightNotes: string[];
 }
 
@@ -21,7 +18,7 @@ const HighlightContext = createContext<HighlightContextType | undefined>(
 
 export function HighlightProvider({ children }: { children: React.ReactNode }) {
   const { notes, pentatonicNotes } = useScaleKey();
-  const [highlightType, setHighlightType] = useState<HighlightType>('scale');
+  const { settings } = useSettings();
   const [chordHighlightNotes, setChordHighlightNotes] = useState<string[]>([]);
 
   const getHighlightedNotes = (): HighlightedNote[] => {
@@ -41,7 +38,15 @@ export function HighlightProvider({ children }: { children: React.ReactNode }) {
       color: COLORS[index % COLORS.length],
     }));
 
-    switch (highlightType) {
+    // If CAGED mode is enabled, override other colorings
+    if (settings.cagedModeEnabled) {
+      return notes.map(note => ({
+        note,
+        color: 'grey',
+      }));
+    }
+
+    switch (settings.quickColors) {
       case 'pentatonic':
         // If no pentatonic notes available, fall back to scale coloring
         if (pentatonicNotes.length === 0) return scaleColoring;
@@ -51,15 +56,6 @@ export function HighlightProvider({ children }: { children: React.ReactNode }) {
           color: pentatonicNotes.includes(note)
             ? COLORS[index % COLORS.length]
             : 'grey',
-        }));
-
-      case 'CAGED':
-        // If no pentatonic notes available, fall back to scale coloring
-        if (pentatonicNotes.length === 0) return scaleColoring;
-
-        return notes.map(note => ({
-          note,
-          color: 'grey',
         }));
 
       case 'scale':
@@ -82,8 +78,6 @@ export function HighlightProvider({ children }: { children: React.ReactNode }) {
         getHighlightedNotes,
         setChordHighlight,
         clearChordHighlight,
-        highlightType,
-        setHighlightType,
         chordHighlightNotes,
       }}
     >
