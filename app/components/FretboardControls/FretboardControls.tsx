@@ -3,10 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import FretBoard from '../FretBoard';
 import { getNoteColorClass } from '~/utils/noteColors';
-import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
 import { useSettings } from '~/contexts/SettingsContext';
 import { getNotesForStringInShape } from '~/utils/cagedShapeUtils';
 import { getCagedNoteColor } from '~/utils/cagedColorUtils';
+import { useHighlight } from '~/contexts/HighlightContext';
+import { useScaleKey } from '~/contexts/ScaleKeyContext';
+import { areNotesEquivalent } from '~/utils/musicTheoryUtils';
 
 const DEFAULT_TUNING_PATTERN = ['E', 'B', 'G', 'D', 'A'];
 
@@ -19,16 +21,19 @@ const getDefaultTuning = (numberOfStrings: number): string[] => {
 };
 
 const FretboardControls: React.FC = () => {
-  const {
-    highlightedNotes,
-    get_notes_in_scale,
-    get_pentatonic_notes_in_scale,
-  } = useHighlightedNotes();
+  const { getHighlightedNotes } = useHighlight();
+  const { notes, pentatonicNotes } = useScaleKey();
   const { settings } = useSettings();
   const [rootNotes, setRootNotes] = useState(() =>
     getDefaultTuning(settings.numberOfStrings),
   );
   const [startingFret] = useState(0);
+
+  const shouldShowWarning =
+    pentatonicNotes.length === 0 &&
+    ((settings.quickColors !== 'scale' &&
+      settings.quickColors !== 'major/minor roots') ||
+      settings.cagedModeEnabled);
 
   // Update tuning when number of strings changes
   useEffect(() => {
@@ -55,14 +60,14 @@ const FretboardControls: React.FC = () => {
   };
 
   const getOutlineColor = (note: string, stringIndex: number) => {
-    if (settings.cagedModeEnabled) {
+    if (settings.cagedModeEnabled && pentatonicNotes.length !== 0) {
       const stringNumber = stringIndex + 1;
       const noteColor = getCagedNoteColor(
         note,
         stringNumber,
         settings.cagedShape,
-        get_notes_in_scale(),
-        get_pentatonic_notes_in_scale(),
+        notes,
+        pentatonicNotes,
         getNotesForStringInShape,
       );
       return noteColor
@@ -70,7 +75,9 @@ const FretboardControls: React.FC = () => {
         : 'border-black';
     }
 
-    const foundNote = highlightedNotes.find(n => n.note === note);
+    const foundNote = getHighlightedNotes().find(n =>
+      areNotesEquivalent(n.note, note),
+    );
     return foundNote
       ? getNoteColorClass(foundNote.color, 'border')
       : 'border-black';
@@ -107,7 +114,6 @@ const FretboardControls: React.FC = () => {
             <div className="inline-flex">
               <FretBoard
                 rootNotes={rootNotes}
-                highlightedNotes={highlightedNotes}
                 numberOfFrets={settings.numberOfFrets}
                 startingFret={startingFret}
                 showTextNotes={settings.showTextNotes}
@@ -117,6 +123,13 @@ const FretboardControls: React.FC = () => {
           </div>
         </div>
       </div>
+      {shouldShowWarning && (
+        <p className="text-feedback-incorrect mt-2 text-sm">
+          The selected scale doesn&apos;t support{' '}
+          {settings.cagedModeEnabled ? 'CAGED' : settings.quickColors} coloring,
+          falling back to normal scale coloring
+        </p>
+      )}
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Select, { StylesConfig } from 'react-select';
 import { ChordTypeGroup, chordTypeGroups } from '../../utils/chordPlayerUtils';
-import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
+import { useScaleKey } from '~/contexts/ScaleKeyContext';
 
 export type ChordSelectionControlsProps = {
   selectedChordGroups: ChordTypeGroup[];
@@ -12,7 +12,7 @@ const ChordSelectionControls: React.FC<ChordSelectionControlsProps> = ({
   selectedChordGroups,
   onChordGroupsChange,
 }) => {
-  const { selectedKey } = useHighlightedNotes();
+  const { keyScale } = useScaleKey();
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -74,10 +74,10 @@ const ChordSelectionControls: React.FC<ChordSelectionControlsProps> = ({
   return (
     <div className="space-y-4">
       <div>
-        {!selectedKey && (
+        {!keyScale && (
           <div className="flex items-center gap-2">
             <span className="text-sm text-foreground">
-              {selectedKey || 'Select a Key at the top of the page'}
+              Select a Key at the top of the page
             </span>
           </div>
         )}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '~/components/ui/button';
-import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
+import { useScaleKey } from '~/contexts/ScaleKeyContext';
 import { getEveryChordInScale } from '~/utils/scaleChords';
 import { cn } from '~/lib/utils';
 import { chordTypesCurated } from '~/utils/chordTypesCurated';
@@ -18,8 +18,8 @@ export const ScaleChordGrid: React.FC<ScaleChordGridProps> = ({
   showNoteRow = true,
   disabled = false,
 }) => {
-  const { selectedKey } = useHighlightedNotes();
-  const chordsInScale = selectedKey ? getEveryChordInScale(selectedKey) : [];
+  const { keyScale } = useScaleKey();
+  const chordsInScale = keyScale ? getEveryChordInScale(keyScale) : [];
 
   // Use chordTypesCurated for ordering, filtered by enabledChordTypes if provided
   const displayedChordTypes = enabledChordTypes

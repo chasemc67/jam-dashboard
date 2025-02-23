@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { ScaleChordGrid } from './ScaleChordGrid';
-import { HighlightedNotesProvider } from '~/contexts/HighlightedNotesContext';
+import { HighlightProvider } from '~/contexts/HighlightContext';
 import { SettingsProvider } from '~/contexts/SettingsContext';
 
 const meta = {
@@ -9,9 +9,9 @@ const meta = {
   decorators: [
     Story => (
       <SettingsProvider>
-        <HighlightedNotesProvider>
+        <HighlightProvider>
           <Story />
-        </HighlightedNotesProvider>
+        </HighlightProvider>
       </SettingsProvider>
     ),
   ],
@@ -57,14 +57,14 @@ export const WithCustomKey: Story = {
   decorators: [
     Story => (
       <SettingsProvider>
-        <HighlightedNotesProvider>
+        <HighlightProvider>
           <div className="flex flex-col gap-4">
             <div className="text-sm text-muted-foreground">
               Key: C major (set via context)
             </div>
             <Story />
           </div>
-        </HighlightedNotesProvider>
+        </HighlightProvider>
       </SettingsProvider>
     ),
   ],

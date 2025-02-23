@@ -1,15 +1,15 @@
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
-import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
+import { useScaleKey } from '~/contexts/ScaleKeyContext';
 import ScaleChordGrid from './ScaleChordGrid';
 
 // Mock the context
-jest.mock('~/contexts/HighlightedNotesContext', () => ({
-  useHighlightedNotes: jest.fn(),
+jest.mock('~/contexts/ScaleKeyContext', () => ({
+  useScaleKey: jest.fn(),
 }));
 
 describe('ScaleChordGrid', () => {
-  const mockUseHighlightedNotes = useHighlightedNotes as jest.Mock;
+  const mockUseScaleKey = useScaleKey as jest.Mock;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -17,8 +17,8 @@ describe('ScaleChordGrid', () => {
 
   test('renders C# major scale with correct chords', () => {
     // Mock the context for C# major
-    mockUseHighlightedNotes.mockReturnValue({
-      selectedKey: 'C# major',
+    mockUseScaleKey.mockReturnValue({
+      keyScale: 'C# major',
     });
 
     render(
@@ -60,8 +60,8 @@ describe('ScaleChordGrid', () => {
 
   test('renders C minor scale with correct chords', () => {
     // Mock the context for C minor
-    mockUseHighlightedNotes.mockReturnValue({
-      selectedKey: 'C minor',
+    mockUseScaleKey.mockReturnValue({
+      keyScale: 'C minor',
     });
 
     render(
@@ -102,8 +102,8 @@ describe('ScaleChordGrid', () => {
   });
 
   test('respects showNoteRow prop', () => {
-    mockUseHighlightedNotes.mockReturnValue({
-      selectedKey: 'C major',
+    mockUseScaleKey.mockReturnValue({
+      keyScale: 'C major',
     });
 
     const { rerender } = render(
@@ -123,8 +123,8 @@ describe('ScaleChordGrid', () => {
   });
 
   test('respects disabled prop', () => {
-    mockUseHighlightedNotes.mockReturnValue({
-      selectedKey: 'C major',
+    mockUseScaleKey.mockReturnValue({
+      keyScale: 'C major',
     });
 
     render(

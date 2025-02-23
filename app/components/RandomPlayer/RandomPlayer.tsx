@@ -11,14 +11,14 @@ import {
 import { addOctavesToChordNotes } from '~/utils/musicTheoryUtils';
 import ChordSelectionControls from '~/components/ChordSelectionControls';
 import { Button } from '~/components/ui/button';
-import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
+import { useScaleKey } from '~/contexts/ScaleKeyContext';
 import ScaleChordGrid from '~/components/ScaleChordGrid';
 import { playChordSimultaneous } from '~/utils/audioUtils';
 
 const TOTAL_ROUNDS = 10;
 
 const RandomPlayer: React.FC = () => {
-  const { selectedKey } = useHighlightedNotes();
+  const { keyScale } = useScaleKey();
   const [selectedChordGroups, setSelectedChordGroups] = useState<
     ChordTypeGroup[]
   >([chordTypeGroups[0]]);
@@ -48,7 +48,7 @@ const RandomPlayer: React.FC = () => {
 
     // Get all possible chords in the selected key
     const chordsInKey = getEveryChordInScale(
-      selectedKey,
+      keyScale,
       getActiveChordTypes(selectedChordGroups),
     );
 
@@ -71,7 +71,7 @@ const RandomPlayer: React.FC = () => {
 
     if (selectedChordGroups.some(group => group.label === INDIVIDUAL_NOTES)) {
       allPossibleChordsWithNotes.push(
-        ...getEveryNoteInScale(selectedKey).map((note: string) => ({
+        ...getEveryNoteInScale(keyScale).map((note: string) => ({
           chordName: note,
           notes: [note],
         })),

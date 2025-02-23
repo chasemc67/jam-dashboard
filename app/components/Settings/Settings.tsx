@@ -161,6 +161,70 @@ export default function Settings() {
               </div>
             </div>
           </div>
+          <div className="space-y-2">
+            <h4 className="font-medium leading-none">Scales</h4>
+            <div className="flex flex-col gap-2 pt-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="major-minor-scales"
+                  checked={settings.showMajorMinorScales}
+                  onCheckedChange={checked =>
+                    updateSettings({ showMajorMinorScales: checked === true })
+                  }
+                />
+                <Label htmlFor="major-minor-scales">
+                  Major/Minor + Pentatonic
+                </Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 p-0"
+                      aria-label="Pentatonic Info"
+                    >
+                      <Info className="h-4 w-4 text-accent-foreground" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[200px]">
+                    <p className="text-sm">
+                      For pentatonic scales, choose a scale in the picker and
+                      then click &quot;pentatonic coloring&quot; below the
+                      fretboard.
+                      <br />
+                      <br />
+                      This button will be available for any scale that also has
+                      a pentatonic version.
+                    </p>
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="harmonic-melodic-scales"
+                  checked={settings.showHarmonicMelodicScales}
+                  onCheckedChange={checked =>
+                    updateSettings({
+                      showHarmonicMelodicScales: checked === true,
+                    })
+                  }
+                />
+                <Label htmlFor="harmonic-melodic-scales">
+                  Harmonic/Melodic Minors
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="modes"
+                  checked={settings.showModes}
+                  onCheckedChange={checked =>
+                    updateSettings({ showModes: checked === true })
+                  }
+                />
+                <Label htmlFor="modes">Modes</Label>
+              </div>
+            </div>
+          </div>
         </div>
       </PopoverContent>
     </Popover>

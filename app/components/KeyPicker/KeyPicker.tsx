@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Check, ChevronsUpDown } from 'lucide-react';
-import { Key, Note } from 'tonal';
+import { Note, Scale } from 'tonal';
 import { all_notes } from '~/utils/musicTheoryUtils';
 import { cn } from '~/lib/utils';
 import { Button } from '~/components/ui/button';
@@ -17,7 +17,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '~/components/ui/popover';
-import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
+import { useScaleKey } from '~/contexts/ScaleKeyContext';
+import { useSettings } from '~/contexts/SettingsContext';
+import { filteredScaleTypes } from '~/utils/scaleTypes';
 
 interface KeyOption {
   label: string;
@@ -25,20 +27,16 @@ interface KeyOption {
   scale: string[];
 }
 
-export const generate_key_options = () => {
+export const generate_key_options = (scaleTypes: string[]) => {
   const key_options: KeyOption[] = [];
   all_notes.forEach(note => {
-    const major_scale = [...Key.majorKey(note).scale];
-    const minor_scale = [...Key.minorKey(note).natural.scale];
-    key_options.push({
-      label: `${note} major (${major_scale.join(', ')})`,
-      value: `${note} major`,
-      scale: major_scale,
-    });
-    key_options.push({
-      label: `${note} minor (${minor_scale.join(', ')})`,
-      value: `${note} minor`,
-      scale: minor_scale,
+    scaleTypes.forEach(scaleType => {
+      const scale = Scale.get(`${note} ${scaleType}`).notes;
+      key_options.push({
+        label: `${note} ${scaleType} (${scale.join(', ')})`,
+        value: `${note} ${scaleType}`,
+        scale: scale,
+      });
     });
   });
   return key_options;
@@ -51,11 +49,30 @@ export const parseSearchInput = (input: string): string[] => {
     .filter(note => note.length > 0);
 };
 
-const key_options = generate_key_options();
-
 export const KeyPicker: React.FC = () => {
   const [open, setOpen] = useState(false);
-  const { selectedKey, setKeyAndNotes } = useHighlightedNotes();
+  const { keyScale, setKeyScale } = useScaleKey();
+  const { settings } = useSettings();
+
+  const key_options = useMemo(() => {
+    const enabledScaleTypes: string[] = [];
+
+    if (settings.showMajorMinorScales) {
+      enabledScaleTypes.push(...filteredScaleTypes.simple);
+    }
+    if (settings.showHarmonicMelodicScales) {
+      enabledScaleTypes.push(...filteredScaleTypes.minors);
+    }
+    if (settings.showModes) {
+      enabledScaleTypes.push(...filteredScaleTypes.modes);
+    }
+
+    return generate_key_options(enabledScaleTypes);
+  }, [
+    settings.showMajorMinorScales,
+    settings.showHarmonicMelodicScales,
+    settings.showModes,
+  ]);
 
   const filterKeys = (value: string, search: string) => {
     const option = key_options.find(opt => opt.value === value);
@@ -82,18 +99,9 @@ export const KeyPicker: React.FC = () => {
   };
 
   const handleKeySelect = (currentValue: string) => {
-    const newKey = currentValue === selectedKey ? '' : currentValue;
+    const newValue = currentValue === keyScale ? '' : currentValue;
     setOpen(false);
-
-    // Update both key and notes through context
-    const selectedKeyOption = key_options.find(
-      opt => opt.value === currentValue,
-    );
-    if (selectedKeyOption) {
-      setKeyAndNotes(newKey, selectedKeyOption.scale);
-    } else if (newKey === '') {
-      setKeyAndNotes('', []);
-    }
+    setKeyScale(newValue);
   };
 
   return (
@@ -105,8 +113,8 @@ export const KeyPicker: React.FC = () => {
           aria-expanded={open}
           className="w-[350px] justify-between"
         >
-          {selectedKey
-            ? key_options.find(key_option => key_option.value === selectedKey)
+          {keyScale
+            ? key_options.find(key_option => key_option.value === keyScale)
                 ?.label
             : 'Select key...'}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -127,7 +135,7 @@ export const KeyPicker: React.FC = () => {
                   <Check
                     className={cn(
                       'mr-2 h-4 w-4',
-                      selectedKey === key_option.value
+                      keyScale === key_option.value
                         ? 'opacity-100'
                         : 'opacity-0',
                     )}
