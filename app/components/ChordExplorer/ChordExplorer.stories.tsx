@@ -1,15 +1,15 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import ChordExplorer from './ChordExplorer';
-import { HighlightedNotesProvider } from '~/contexts/HighlightedNotesContext';
+import { HighlightProvider } from '~/contexts/HighlightContext';
 
 const meta = {
   title: 'Components/ChordExplorer',
   component: ChordExplorer,
   decorators: [
     Story => (
-      <HighlightedNotesProvider>
+      <HighlightProvider>
         <Story />
-      </HighlightedNotesProvider>
+      </HighlightProvider>
     ),
   ],
   parameters: {
