@@ -3,11 +3,18 @@ import { Card } from '~/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
 import RandomPlayer from '~/components/RandomPlayer';
 import ChordExplorer from '~/components/ChordExplorer';
+import { useHighlight } from '~/contexts/HighlightContext';
 
 const TabChordView: React.FC = () => {
+  const { clearChordHighlight } = useHighlight();
+
   return (
     <Card className="w-full max-w-[750px]">
-      <Tabs defaultValue="chord-explorer" className="w-full">
+      <Tabs
+        defaultValue="chord-explorer"
+        className="w-full"
+        onValueChange={() => clearChordHighlight()}
+      >
         <TabsList className="w-full">
           <TabsTrigger value="chord-explorer" className="flex-1">
             Chord Explorer
