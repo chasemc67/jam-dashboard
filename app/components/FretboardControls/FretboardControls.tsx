@@ -31,7 +31,9 @@ const FretboardControls: React.FC = () => {
 
   const shouldShowWarning =
     pentatonicNotes.length === 0 &&
-    (settings.quickColors !== 'scale' || settings.cagedModeEnabled);
+    ((settings.quickColors !== 'scale' &&
+      settings.quickColors !== 'major/minor roots') ||
+      settings.cagedModeEnabled);
 
   // Update tuning when number of strings changes
   useEffect(() => {
