@@ -38,14 +38,6 @@ export function HighlightProvider({ children }: { children: React.ReactNode }) {
       color: COLORS[index % COLORS.length],
     }));
 
-    // If CAGED mode is enabled, override other colorings
-    if (settings.cagedModeEnabled) {
-      return notes.map(note => ({
-        note,
-        color: 'grey',
-      }));
-    }
-
     switch (settings.quickColors) {
       case 'pentatonic':
         // If no pentatonic notes available, fall back to scale coloring

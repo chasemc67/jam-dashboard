@@ -29,6 +29,10 @@ const FretboardControls: React.FC = () => {
   );
   const [startingFret] = useState(0);
 
+  const shouldShowWarning =
+    pentatonicNotes.length === 0 &&
+    (settings.quickColors !== 'scale' || settings.cagedModeEnabled);
+
   // Update tuning when number of strings changes
   useEffect(() => {
     setRootNotes(prev => {
@@ -117,6 +121,13 @@ const FretboardControls: React.FC = () => {
           </div>
         </div>
       </div>
+      {shouldShowWarning && (
+        <p className="text-feedback-incorrect mt-2 text-sm">
+          The selected scale doesn&apos;t support{' '}
+          {settings.cagedModeEnabled ? 'CAGED' : settings.quickColors} coloring,
+          falling back to normal scale coloring
+        </p>
+      )}
     </div>
   );
 };
