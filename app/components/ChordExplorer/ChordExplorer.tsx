@@ -95,7 +95,7 @@ const ChordExplorer: React.FC = () => {
                 return (
                   <span
                     key={index}
-                    className={`rounded-md w-7 h-7 flex items-center justify-center text-muted ${
+                    className={`rounded-md w-6 h-6 flex items-center justify-center text-muted ${
                       highlightedNote
                         ? getNoteColorClass(highlightedNote.color, 'background')
                         : 'bg-note-grey'
