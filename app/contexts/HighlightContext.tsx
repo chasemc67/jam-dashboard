@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState } from 'react';
 import type { HighlightedNote } from '~/components/Fret';
 import { useScaleKey } from './ScaleKeyContext';
 
-type HighlightType = 'scale' | 'pentatonic' | 'CAGED' | 'Chord Roots';
+type HighlightType = 'scale' | 'pentatonic' | 'CAGED';
 
 interface HighlightContextType {
   getHighlightedNotes: () => HighlightedNote[];
@@ -24,14 +24,27 @@ export function HighlightProvider({ children }: { children: React.ReactNode }) {
   const [chordHighlightNotes, setChordHighlightNotes] = useState<string[]>([]);
 
   const getHighlightedNotes = (): HighlightedNote[] => {
-    switch (highlightType) {
-      case 'scale':
-        return notes.map((note, index) => ({
-          note,
-          color: COLORS[index % COLORS.length],
-        }));
+    // If there are chord highlight notes, prioritize those
+    if (chordHighlightNotes.length > 0) {
+      return notes.map((note, index) => ({
+        note,
+        color: chordHighlightNotes.includes(note)
+          ? COLORS[index % COLORS.length]
+          : 'grey',
+      }));
+    }
 
+    // Default scale coloring logic
+    const scaleColoring = notes.map((note, index) => ({
+      note,
+      color: COLORS[index % COLORS.length],
+    }));
+
+    switch (highlightType) {
       case 'pentatonic':
+        // If no pentatonic notes available, fall back to scale coloring
+        if (pentatonicNotes.length === 0) return scaleColoring;
+
         return notes.map((note, index) => ({
           note,
           color: pentatonicNotes.includes(note)
@@ -39,22 +52,18 @@ export function HighlightProvider({ children }: { children: React.ReactNode }) {
             : 'grey',
         }));
 
-      case 'Chord Roots':
-        return notes.map((note, index) => ({
-          note,
-          color: chordHighlightNotes.includes(note)
-            ? COLORS[index % COLORS.length]
-            : 'grey',
-        }));
-
       case 'CAGED':
+        // If no pentatonic notes available, fall back to scale coloring
+        if (pentatonicNotes.length === 0) return scaleColoring;
+
         return notes.map(note => ({
           note,
           color: 'grey',
         }));
 
+      case 'scale':
       default:
-        return [];
+        return scaleColoring;
     }
   };
 
