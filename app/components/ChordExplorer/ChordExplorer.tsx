@@ -14,7 +14,7 @@ import {
   addOctavesToChordNotes,
   areNotesEquivalent,
 } from '~/utils/musicTheoryUtils';
-import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
+import { useHighlight } from '~/contexts/HighlightContext';
 import { getNoteColorClass } from '~/utils/noteColors';
 import { Button } from '~/components/ui/button';
 
@@ -27,8 +27,9 @@ const ChordExplorer: React.FC = () => {
     notes: string[];
   } | null>(null);
   const [isMuted, setIsMuted] = useState(false);
-  const { highlightedNotes, setChordHighlighting, clearChordHighlighting } =
-    useHighlightedNotes();
+  const { getHighlightedNotes, setChordHighlight, clearChordHighlight } =
+    useHighlight();
+  const highlightedNotes = getHighlightedNotes();
 
   const handleChordGroupChange = (
     selectedOptions: readonly ChordTypeGroup[],
@@ -41,7 +42,7 @@ const ChordExplorer: React.FC = () => {
     if (chordName.match(/^[A-G][#b]*$/)) {
       // For single notes
       setLastClickedChord({ name: chordName, notes: [chordName] });
-      setChordHighlighting([chordName]);
+      setChordHighlight([chordName]);
       if (!isMuted) {
         playChordSimultaneous(addOctavesToChordNotes([chordName]));
       }
@@ -49,7 +50,7 @@ const ChordExplorer: React.FC = () => {
       // For chords
       const chordNotes = Chord.get(chordName).notes;
       setLastClickedChord({ name: chordName, notes: chordNotes });
-      setChordHighlighting(chordNotes);
+      setChordHighlight(chordNotes);
       if (!isMuted) {
         playChordSimultaneous(addOctavesToChordNotes(chordNotes));
       }
@@ -109,7 +110,7 @@ const ChordExplorer: React.FC = () => {
               variant="outline"
               size="sm"
               onClick={() => {
-                clearChordHighlighting();
+                clearChordHighlight();
                 setLastClickedChord(null);
               }}
             >

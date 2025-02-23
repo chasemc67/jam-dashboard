@@ -10,6 +10,7 @@ interface HighlightContextType {
   clearChordHighlight: () => void;
   highlightType: HighlightType;
   setHighlightType: (type: HighlightType) => void;
+  chordHighlightNotes: string[];
 }
 
 const COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink'];
@@ -83,6 +84,7 @@ export function HighlightProvider({ children }: { children: React.ReactNode }) {
         clearChordHighlight,
         highlightType,
         setHighlightType,
+        chordHighlightNotes,
       }}
     >
       {children}
