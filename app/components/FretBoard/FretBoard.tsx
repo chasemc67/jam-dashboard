@@ -1,10 +1,9 @@
 // FretBoard.tsx
 import React from 'react';
-import Fret, { HighlightedNote } from '../Fret';
+import Fret from '../Fret';
 
 export type FretBoardProps = {
   rootNotes: string[];
-  highlightedNotes: HighlightedNote[];
   numberOfFrets: number;
   startingFret: number;
   showTextNotes?: boolean;
@@ -13,7 +12,6 @@ export type FretBoardProps = {
 
 const FretBoard: React.FC<FretBoardProps> = ({
   rootNotes,
-  highlightedNotes,
   numberOfFrets,
   startingFret,
   showTextNotes,
@@ -32,7 +30,6 @@ const FretBoard: React.FC<FretBoardProps> = ({
           key={i}
           rootNotes={rootNotes}
           fretNumber={startingFret + i + 1}
-          highlightedNotes={highlightedNotes}
           showTextNotes={showTextNotes}
         />,
       );

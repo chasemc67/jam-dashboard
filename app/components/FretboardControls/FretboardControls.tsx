@@ -3,10 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import FretBoard from '../FretBoard';
 import { getNoteColorClass } from '~/utils/noteColors';
-import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
 import { useSettings } from '~/contexts/SettingsContext';
 import { getNotesForStringInShape } from '~/utils/cagedShapeUtils';
 import { getCagedNoteColor } from '~/utils/cagedColorUtils';
+import { useHighlight } from '~/contexts/HighlightContext';
+import { useScaleKey } from '~/contexts/ScaleKeyContext';
 
 const DEFAULT_TUNING_PATTERN = ['E', 'B', 'G', 'D', 'A'];
 
@@ -19,11 +20,8 @@ const getDefaultTuning = (numberOfStrings: number): string[] => {
 };
 
 const FretboardControls: React.FC = () => {
-  const {
-    highlightedNotes,
-    get_notes_in_scale,
-    get_pentatonic_notes_in_scale,
-  } = useHighlightedNotes();
+  const { getHighlightedNotes } = useHighlight();
+  const { notes, pentatonicNotes } = useScaleKey();
   const { settings } = useSettings();
   const [rootNotes, setRootNotes] = useState(() =>
     getDefaultTuning(settings.numberOfStrings),
@@ -61,8 +59,8 @@ const FretboardControls: React.FC = () => {
         note,
         stringNumber,
         settings.cagedShape,
-        get_notes_in_scale(),
-        get_pentatonic_notes_in_scale(),
+        notes,
+        pentatonicNotes,
         getNotesForStringInShape,
       );
       return noteColor
@@ -70,7 +68,7 @@ const FretboardControls: React.FC = () => {
         : 'border-black';
     }
 
-    const foundNote = highlightedNotes.find(n => n.note === note);
+    const foundNote = getHighlightedNotes().find(n => n.note === note);
     return foundNote
       ? getNoteColorClass(foundNote.color, 'border')
       : 'border-black';
@@ -107,7 +105,6 @@ const FretboardControls: React.FC = () => {
             <div className="inline-flex">
               <FretBoard
                 rootNotes={rootNotes}
-                highlightedNotes={highlightedNotes}
                 numberOfFrets={settings.numberOfFrets}
                 startingFret={startingFret}
                 showTextNotes={settings.showTextNotes}

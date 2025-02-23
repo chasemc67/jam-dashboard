@@ -9,8 +9,9 @@ import React from 'react';
 import { getNoteAtFret, areNotesEquivalent } from '~/utils/musicTheoryUtils';
 import { getNoteColorClass } from '~/utils/noteColors';
 import { getNotesForStringInShape } from '~/utils/cagedShapeUtils';
-import { useHighlightedNotes } from '~/contexts/HighlightedNotesContext';
+import { useHighlight } from '~/contexts/HighlightContext';
 import { useSettings } from '~/contexts/SettingsContext';
+import { useScaleKey } from '~/contexts/ScaleKeyContext';
 import { getCagedNoteColor } from '~/utils/cagedColorUtils';
 import '~/tailwind.css';
 
@@ -22,7 +23,6 @@ export type HighlightedNote = {
 export type FretProps = {
   rootNotes: string[];
   fretNumber: number;
-  highlightedNotes: HighlightedNote[];
   showTextNotes?: boolean;
 };
 
@@ -41,18 +41,14 @@ const getFretWidth = (
 const Fret: React.FC<FretProps> = ({
   rootNotes,
   fretNumber,
-  highlightedNotes,
   showTextNotes,
 }) => {
   const widths = getFretWidth(fretNumber);
-  const { get_notes_in_scale, get_pentatonic_notes_in_scale } =
-    useHighlightedNotes();
+  const { getHighlightedNotes } = useHighlight();
   const { settings } = useSettings();
+  const { notes, pentatonicNotes } = useScaleKey();
 
   const renderCagedStrings = () => {
-    const scaleNotes = get_notes_in_scale();
-    const pentatonicNotes = get_pentatonic_notes_in_scale();
-
     return rootNotes.map((rootNote, stringIndex) => {
       const stringNumber = stringIndex + 1; // Convert to 1-based index
       const currentNote = getNoteAtFret(rootNote, fretNumber);
@@ -61,7 +57,7 @@ const Fret: React.FC<FretProps> = ({
         currentNote,
         stringNumber,
         settings.cagedShape,
-        scaleNotes,
+        notes,
         pentatonicNotes,
         getNotesForStringInShape,
       );
@@ -93,7 +89,7 @@ const Fret: React.FC<FretProps> = ({
   const renderNormalStrings = () => {
     return rootNotes.map((rootNote, index) => {
       const currentNote = getNoteAtFret(rootNote, fretNumber);
-      const highlightedNote = highlightedNotes.find(hn =>
+      const highlightedNote = getHighlightedNotes().find(hn =>
         areNotesEquivalent(hn.note, currentNote),
       );
 
@@ -114,6 +110,9 @@ const Fret: React.FC<FretProps> = ({
   const fretMarkers = [3, 5, 7, 9, 12, 15, 17, 19, 24];
   const tallMarkerFrets = [12, 24];
 
+  const shouldRenderCaged =
+    settings.cagedModeEnabled && pentatonicNotes.length === 0;
+
   return (
     <div
       style={{
@@ -123,7 +122,7 @@ const Fret: React.FC<FretProps> = ({
       }}
       className="flex flex-col justify-between bg-accent border border-card p-2.5 relative h-[300px] md:!w-[var(--fret-desktop-width)]"
     >
-      {settings.cagedModeEnabled ? renderCagedStrings() : renderNormalStrings()}
+      {shouldRenderCaged ? renderCagedStrings() : renderNormalStrings()}
       {fretMarkers.includes(fretNumber) && (
         <div
           className={`bg-background w-3/4 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[1] ${tallMarkerFrets.includes(fretNumber) ? 'h-1/2' : 'h-1/4'}`}
