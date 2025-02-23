@@ -8,6 +8,7 @@ import { getNotesForStringInShape } from '~/utils/cagedShapeUtils';
 import { getCagedNoteColor } from '~/utils/cagedColorUtils';
 import { useHighlight } from '~/contexts/HighlightContext';
 import { useScaleKey } from '~/contexts/ScaleKeyContext';
+import { areNotesEquivalent } from '~/utils/musicTheoryUtils';
 
 const DEFAULT_TUNING_PATTERN = ['E', 'B', 'G', 'D', 'A'];
 
@@ -68,7 +69,9 @@ const FretboardControls: React.FC = () => {
         : 'border-black';
     }
 
-    const foundNote = getHighlightedNotes().find(n => n.note === note);
+    const foundNote = getHighlightedNotes().find(n =>
+      areNotesEquivalent(n.note, note),
+    );
     return foundNote
       ? getNoteColorClass(foundNote.color, 'border')
       : 'border-black';
