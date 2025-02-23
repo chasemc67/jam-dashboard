@@ -1,18 +1,22 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { ColoringPatternType } from '~/utils/noteColoringUtils';
+import { z } from 'zod';
+import { COLORING_PATTERN_CHOICES } from '~/utils/noteColoringUtils';
 
-interface Settings {
-  isLefty: boolean;
-  numberOfFrets: number;
-  numberOfStrings: number;
-  showTextNotes: boolean;
-  quickColors: ColoringPatternType;
-  cagedModeEnabled: boolean;
-  cagedShape: 'C' | 'A' | 'G' | 'E' | 'D';
-  showMajorMinorScales: boolean;
-  showHarmonicMelodicScales: boolean;
-  showModes: boolean;
-}
+// Define Zod schema for our settings
+const SettingsSchema = z.object({
+  isLefty: z.boolean(),
+  numberOfFrets: z.number().min(1).max(24),
+  numberOfStrings: z.number().min(4).max(8),
+  showTextNotes: z.boolean(),
+  quickColors: z.enum(COLORING_PATTERN_CHOICES),
+  cagedModeEnabled: z.boolean(),
+  cagedShape: z.enum(['C', 'A', 'G', 'E', 'D']),
+  showMajorMinorScales: z.boolean(),
+  showHarmonicMelodicScales: z.boolean(),
+  showModes: z.boolean(),
+});
+
+type Settings = z.infer<typeof SettingsSchema>;
 
 interface SettingsContextType {
   settings: Settings;
@@ -40,12 +44,20 @@ const getStoredSettings = (): Settings => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (!stored) return defaultSettings;
 
-    // Merge stored settings with defaults to ensure all fields exist
-    const parsedSettings = JSON.parse(stored);
-    return {
-      ...defaultSettings,
-      ...parsedSettings,
-    };
+    const parsedJson = JSON.parse(stored);
+
+    // Validate the parsed data against our schema
+    const validationResult = SettingsSchema.safeParse({
+      ...defaultSettings, // Include defaults first
+      ...parsedJson, // Then overlay stored values
+    });
+
+    if (!validationResult.success) {
+      console.warn('Invalid settings in localStorage:', validationResult.error);
+      return defaultSettings;
+    }
+
+    return validationResult.data;
   } catch (error) {
     console.error('Error reading settings from localStorage:', error);
     return defaultSettings;
