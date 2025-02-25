@@ -9,6 +9,7 @@ import type { LinksFunction } from '@remix-run/node';
 import { Analytics } from '@vercel/analytics/remix';
 import { SpeedInsights } from '@vercel/speed-insights/remix';
 import { ContextProviders } from './components/ContextProviders';
+import { GoogleAdsense } from './components/GoogleAdsense/GoogleAdsense';
 
 import './tailwind.css';
 
@@ -129,13 +130,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
           }}
         />
 
-        {/* Google AdSense */}
-        <script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5090338634220885"
-          crossOrigin="anonymous"
-        />
-
         <Meta />
         <Links />
         <style
@@ -167,6 +161,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <Scripts />
           <Analytics />
           <SpeedInsights />
+          <GoogleAdsense />
         </div>
       </body>
     </html>
