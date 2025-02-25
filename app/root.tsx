@@ -23,6 +23,7 @@ export const links: LinksFunction = () => [
     rel: 'stylesheet',
     href: 'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap',
   },
+  { rel: 'canonical', href: 'https://jamdashboard.com' },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -31,22 +32,34 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Jam Dashboard - Guitar Learning & Practice Tools</title>
+
+        {/* Primary Meta Tags */}
+        <title>
+          Jam Dashboard - Guitar Learning Tools | Fretboard, Chords & Ear
+          Training
+        </title>
         <meta
           name="description"
-          content="Interactive guitar learning tools including ear training exercises, fretboard visualization, and chord explorer"
+          content="Free interactive guitar learning tools for all skill levels. Master the fretboard, explore chord voicings, practice CAGED shapes, and improve your ear with our training games."
         />
+        <meta
+          name="keywords"
+          content="guitar learning, fretboard visualizer, guitar chord library, CAGED system, ear training for guitar, chord voicings, guitar practice tools, music theory for guitar"
+        />
+        <meta name="author" content="Jam Dashboard" />
+        <meta name="robots" content="index, follow" />
 
         {/* Open Graph / Social Media */}
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://jamdashboard.com" />
+        <meta property="og:site_name" content="Jam Dashboard" />
         <meta
           property="og:title"
-          content="Jam Dashboard - Guitar Learning & Practice Tools"
+          content="Jam Dashboard - Interactive Guitar Learning & Practice Tools"
         />
         <meta
           property="og:description"
-          content="Interactive guitar learning tools including ear training exercises, fretboard visualization, and chord explorer"
+          content="Free tools to master guitar: visualize scales on the fretboard, explore chord voicings, learn CAGED shapes, and train your ear with interactive exercises."
         />
         <meta
           property="og:image"
@@ -62,11 +75,39 @@ export function Layout({ children }: { children: React.ReactNode }) {
         />
         <meta
           name="twitter:description"
-          content="Interactive guitar learning tools including fretboard visualization, chord explorer, and ear training exercises"
+          content="Master guitar with our fretboard visualizer, chord library, CAGED system viewer, and ear training games. Free interactive tools for all skill levels."
         />
         <meta
           name="twitter:image"
           content="https://jamdashboard.com/assets/og-image.png"
+        />
+
+        {/* Structured data for rich results */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'WebApplication',
+              name: 'Jam Dashboard',
+              url: 'https://jamdashboard.com',
+              description:
+                'Free interactive guitar learning tools for all skill levels. Master the fretboard, explore chord voicings, practice CAGED shapes, and improve your ear with our training games.',
+              applicationCategory: 'EducationalApplication, MusicApplication',
+              operatingSystem: 'Web',
+              offers: {
+                '@type': 'Offer',
+                price: '0',
+                priceCurrency: 'USD',
+                availability: 'https://schema.org/InStock',
+              },
+              isAccessibleForFree: true,
+              author: {
+                '@type': 'Organization',
+                name: 'Jam Dashboard',
+              },
+            }),
+          }}
         />
 
         <Meta />
