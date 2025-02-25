@@ -33,6 +33,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+        {/* Google AdSense Verification */}
+        <meta name="google-adsense-account" content="ca-pub-5090338634220885" />
+
         {/* Primary Meta Tags */}
         <title>
           Jam Dashboard - Guitar Learning Tools | Fretboard, Chords & Ear
@@ -124,6 +127,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
               gtag('config', 'AW-16895491550');
             `,
           }}
+        />
+
+        {/* Google AdSense */}
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5090338634220885"
+          crossOrigin="anonymous"
         />
 
         <Meta />
