@@ -8,7 +8,10 @@ import {
 export default function HowToUse() {
   return (
     <div className="w-full max-w-3xl">
-      <Accordion type="multiple" defaultValue={['scales', 'chordExplorer']}>
+      <Accordion
+        type="multiple"
+        defaultValue={['scales', 'chordExplorer', 'earTraining']}
+      >
         <AccordionItem value="scales">
           <AccordionTrigger>Understanding Guitar Scales</AccordionTrigger>
           <AccordionContent>
@@ -55,7 +58,10 @@ export default function HowToUse() {
                 </p>
                 <ul className="list-disc pl-6 mt-2">
                   <li>Start by selecting a key</li>
-                  <li>Choose a scale type</li>
+                  <li>
+                    Choose a scale type (by default, only major and minor scales
+                    are shown)
+                  </li>
                   <li>
                     Enable CAGED mode in settings to see different scale
                     positions
@@ -66,6 +72,22 @@ export default function HowToUse() {
                     for you
                   </li>
                 </ul>
+                <p className="mt-4">
+                  For more advanced scale exploration, you can enable additional
+                  scale types in settings:
+                </p>
+                <ul className="list-disc pl-6 mt-2">
+                  <li>Modal scales (Dorian, Phrygian, etc.)</li>
+                  <li>Harmonic minor scales</li>
+                  <li>Melodic minor scales</li>
+                </ul>
+                <p className="mt-4">
+                  When working with pentatonic scales, we recommend setting the
+                  Quick Colors to &quot;pentatonic&quot; in settings. This helps
+                  you visualize which notes are being omitted from the major
+                  scale, making it easier to understand the relationship between
+                  pentatonic and major scales.
+                </p>
               </section>
             </div>
           </AccordionContent>
@@ -153,6 +175,79 @@ export default function HowToUse() {
                   better in different musical contexts. Don&apos;t be afraid to
                   experiment - that&apos;s how you&apos;ll develop your own
                   style!
+                </p>
+              </section>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="earTraining">
+          <AccordionTrigger>Ear Training</AccordionTrigger>
+          <AccordionContent>
+            <div className="prose prose-invert max-w-none space-y-6">
+              <section>
+                <h3 className="text-xl font-semibold mb-2">
+                  What is Ear Training?
+                </h3>
+                <p>
+                  Ear training is a fundamental skill for any musician. Our
+                  interactive game helps you develop your ability to recognize
+                  musical notes and chords by ear - an essential skill for
+                  playing music intuitively and learning songs without sheet
+                  music.
+                </p>
+              </section>
+
+              <section>
+                <h3 className="text-xl font-semibold mb-2">How to Practice</h3>
+                <p>For the best results, we recommend:</p>
+                <ul className="list-disc pl-6 mt-2">
+                  <li>Have your guitar ready while playing the game</li>
+                  <li>
+                    When you hear a note or chord, try to find it on your
+                    fretboard before making a guess
+                  </li>
+                  <li>
+                    Start with single notes until you&apos;re comfortable
+                    identifying them
+                  </li>
+                  <li>
+                    Gradually progress to more complex chords as your ear
+                    develops
+                  </li>
+                  <li>
+                    Practice regularly - even just 5-10 minutes a day can make a
+                    big difference
+                  </li>
+                </ul>
+              </section>
+
+              <section>
+                <h3 className="text-xl font-semibold mb-2">
+                  Learning Progression
+                </h3>
+                <p>
+                  We recommend following this progression to build your ear
+                  training skills:
+                </p>
+                <ul className="list-disc pl-6 mt-2">
+                  <li>
+                    Begin with single notes to develop basic pitch recognition
+                  </li>
+                  <li>Move on to basic major and minor chords</li>
+                  <li>
+                    Progress to seventh chords once you&apos;re comfortable with
+                    triads
+                  </li>
+                  <li>
+                    Finally, challenge yourself with more complex chord
+                    variations
+                  </li>
+                </ul>
+                <p className="mt-2">
+                  Remember, the goal isn&apos;t just to win the game, but to
+                  develop a skill that will make you a better musician. Take
+                  your time and focus on accuracy over speed.
                 </p>
               </section>
             </div>
