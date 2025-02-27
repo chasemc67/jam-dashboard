@@ -30,8 +30,8 @@ export default function About() {
     const today = new Date();
 
     if (!lastVisit) {
-      // First visit ever
-      setIsOpen(true);
+      // Disable for now since I think google doesn't like this
+      // setIsOpen(true);
       localStorage.setItem(LAST_VISIT_KEY, today.toISOString());
     } else {
       // Check if last visit was on a different day
