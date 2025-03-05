@@ -2,7 +2,12 @@ import { KeyPicker } from '~/components/KeyPicker/KeyPicker';
 import { cn } from '~/lib/utils';
 import { Settings } from '~/components/Settings';
 import { Button } from '~/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '~/components/ui/sheet';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '~/components/ui/dropdown-menu';
 import { Menu, Guitar, Music, Ear } from 'lucide-react';
 import { Link } from '@remix-run/react';
 
@@ -19,38 +24,33 @@ export default function Header() {
       {/* Desktop Layout */}
       <div className="hidden md:flex container h-14 max-w-none items-center px-8">
         <div className="mr-4 flex items-center gap-4">
-          <Sheet>
-            <SheetTrigger asChild>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="hover:bg-accent">
                 <Menu className="h-5 w-5" />
               </Button>
-            </SheetTrigger>
-            <SheetContent side="left">
-              <nav className="flex flex-col gap-4">
-                <Link
-                  to="/"
-                  className="flex items-center gap-2 text-lg font-semibold hover:text-primary"
-                >
-                  <Guitar className="h-5 w-5" />
-                  Fretboard
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-[200px]">
+              <DropdownMenuItem asChild>
+                <Link to="/" className="flex items-center gap-2">
+                  <Guitar className="h-4 w-4" />
+                  <span>Fretboard</span>
                 </Link>
-                <Link
-                  to="/scales"
-                  className="flex items-center gap-2 text-lg font-semibold hover:text-primary"
-                >
-                  <Music className="h-5 w-5" />
-                  Scales
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/scales" className="flex items-center gap-2">
+                  <Music className="h-4 w-4" />
+                  <span>Scales</span>
                 </Link>
-                <Link
-                  to="/ear-training"
-                  className="flex items-center gap-2 text-lg font-semibold hover:text-primary"
-                >
-                  <Ear className="h-5 w-5" />
-                  Ear Training
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/ear-training" className="flex items-center gap-2">
+                  <Ear className="h-4 w-4" />
+                  <span>Ear Training</span>
                 </Link>
-              </nav>
-            </SheetContent>
-          </Sheet>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <h1 className="text-xl font-bold text-primary">Jam Dashboard</h1>
         </div>
         <div className="flex flex-1 items-center justify-center space-x-2">
@@ -62,8 +62,8 @@ export default function Header() {
       {/* Mobile Layout */}
       <div className="md:hidden container h-14 max-w-none">
         <div className="flex h-full items-center gap-2 px-2">
-          <Sheet>
-            <SheetTrigger asChild>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
@@ -71,33 +71,28 @@ export default function Header() {
               >
                 <Menu className="h-5 w-5" />
               </Button>
-            </SheetTrigger>
-            <SheetContent side="left">
-              <nav className="flex flex-col gap-4">
-                <Link
-                  to="/"
-                  className="flex items-center gap-2 text-lg font-semibold hover:text-primary"
-                >
-                  <Guitar className="h-5 w-5" />
-                  Fretboard
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-[200px]">
+              <DropdownMenuItem asChild>
+                <Link to="/" className="flex items-center gap-2">
+                  <Guitar className="h-4 w-4" />
+                  <span>Fretboard</span>
                 </Link>
-                <Link
-                  to="/scales"
-                  className="flex items-center gap-2 text-lg font-semibold hover:text-primary"
-                >
-                  <Music className="h-5 w-5" />
-                  Scales
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/scales" className="flex items-center gap-2">
+                  <Music className="h-4 w-4" />
+                  <span>Scales</span>
                 </Link>
-                <Link
-                  to="/ear-training"
-                  className="flex items-center gap-2 text-lg font-semibold hover:text-primary"
-                >
-                  <Ear className="h-5 w-5" />
-                  Ear Training
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/ear-training" className="flex items-center gap-2">
+                  <Ear className="h-4 w-4" />
+                  <span>Ear Training</span>
                 </Link>
-              </nav>
-            </SheetContent>
-          </Sheet>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <div className="flex-1 min-w-0">
             <KeyPicker />
           </div>
