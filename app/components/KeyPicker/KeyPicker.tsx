@@ -111,16 +111,18 @@ export const KeyPicker: React.FC = () => {
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-[350px] justify-between"
+          className="w-full md:w-[350px] justify-between truncate"
         >
-          {keyScale
-            ? key_options.find(key_option => key_option.value === keyScale)
-                ?.label
-            : 'Select key...'}
+          <span className="truncate">
+            {keyScale
+              ? key_options.find(key_option => key_option.value === keyScale)
+                  ?.label
+              : 'Select key...'}
+          </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[350px] p-0">
+      <PopoverContent className="w-[350px] p-0" align="start">
         <Command filter={filterKeys}>
           <CommandInput placeholder="Detect key: enter notes separated by commas..." />
           <CommandList>
