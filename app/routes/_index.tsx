@@ -3,7 +3,7 @@ import FretboardControls from '~/components/FretboardControls';
 import Header from '~/components/Header';
 import TabChordView from '~/components/TabChordView';
 import Footer from '~/components/Footer';
-import HowToUse from '~/components/HowToUse';
+// import HowToUse from '~/components/HowToUse';
 
 export const meta: MetaFunction = () => {
   return [
@@ -23,7 +23,7 @@ export default function Index() {
       <div className="container mx-auto flex flex-1 flex-col items-center justify-center gap-8 p-4 pb-20 md:pb-4">
         <FretboardControls />
         <TabChordView />
-        <HowToUse />
+        {/* <HowToUse /> */}
       </div>
       <Footer />
     </div>
