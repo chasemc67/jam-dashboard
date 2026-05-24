@@ -161,73 +161,7 @@ function NoteDetectorUI({ detection }: NoteDetectorUIProps) {
   const { setChordHighlight } = useHighlight();
 
   return (
-    <div className="w-full max-w-2xl space-y-6">
-      {/* Permission gate or device picker + controls */}
-      {!hasPermission ? (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-border bg-card p-6">
-          <Shield className="h-8 w-8 text-muted-foreground" />
-          <p className="text-center text-sm text-muted-foreground">
-            Grant microphone access so we can detect your audio input devices.
-          </p>
-          <Button onClick={requestPermission}>
-            <Mic className="mr-1 h-4 w-4" />
-            Allow Microphone Access
-          </Button>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <Select
-            value={selectedDeviceId ?? undefined}
-            onValueChange={(v) => setSelectedDeviceId(v || null)}
-            disabled={isListening}
-          >
-            <SelectTrigger className="w-full sm:w-64">
-              <SelectValue placeholder="Select audio input..." />
-            </SelectTrigger>
-            <SelectContent>
-              {devices.length > 0 ? (
-                devices.map((d, i) => (
-                  <SelectItem
-                    key={d.deviceId || `device-${i}`}
-                    value={d.deviceId || `device-${i}`}
-                  >
-                    {d.label || `Audio Input ${i + 1}`}
-                  </SelectItem>
-                ))
-              ) : (
-                <SelectItem value="__none" disabled>
-                  No devices found
-                </SelectItem>
-              )}
-            </SelectContent>
-          </Select>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={refreshDevices}
-            disabled={isListening}
-            title="Refresh audio devices"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-
-          <div className="flex gap-2">
-            {isListening ? (
-              <Button variant="destructive" onClick={stop}>
-                <MicOff className="mr-1 h-4 w-4" />
-                Stop
-              </Button>
-            ) : (
-              <Button onClick={start} disabled={isRequesting}>
-                <Mic className="mr-1 h-4 w-4" />
-                {isRequesting ? 'Connecting...' : 'Start Listening'}
-              </Button>
-            )}
-          </div>
-        </div>
-      )}
-
+    <div className="w-full max-w-2xl space-y-4">
       {/* Error display */}
       {error && (
         <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
@@ -235,22 +169,17 @@ function NoteDetectorUI({ detection }: NoteDetectorUIProps) {
         </div>
       )}
 
-      {/* Current note — big display */}
-      <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-card p-8">
-        <span className="mb-2 text-sm text-muted-foreground">
-          {isListening ? 'Current Note' : 'Play a note to begin'}
-        </span>
-        <span className="text-7xl font-bold text-primary tabular-nums">
-          {currentNote ?? '--'}
-        </span>
-      </div>
-
-      {/* Note log */}
-      <div className="space-y-3">
+      {/* Detected notes */}
+      <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-foreground">
-            Detected Notes
-          </h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-medium text-foreground">
+              Detected Notes
+            </h3>
+            <span className="text-lg font-bold text-primary tabular-nums">
+              {currentNote ?? '--'}
+            </span>
+          </div>
           <div className="flex items-center gap-2">
             <SegmentedToggle
               value={showUnique ? 'unique' : 'all'}
@@ -272,7 +201,7 @@ function NoteDetectorUI({ detection }: NoteDetectorUIProps) {
           </div>
         </div>
 
-        <div className="min-h-[3rem] rounded-lg border border-border bg-card p-3">
+        <div className="min-h-[4rem] rounded-lg border border-border bg-card p-3">
           {displayedNotes.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
               {displayedNotes.map((note, i) => (
@@ -298,7 +227,7 @@ function NoteDetectorUI({ detection }: NoteDetectorUIProps) {
       </div>
 
       {/* Key / Chord analysis */}
-      <div className="space-y-3">
+      <div className="space-y-2">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-medium text-foreground">
             Analysis
@@ -313,7 +242,7 @@ function NoteDetectorUI({ detection }: NoteDetectorUIProps) {
           />
         </div>
 
-        <div className="min-h-[3rem] rounded-lg border border-border bg-card p-3">
+        <div className="min-h-[6rem] rounded-lg border border-border bg-card p-3">
           {uniqueNotes.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               Play some notes to detect matching{' '}
@@ -357,6 +286,71 @@ function NoteDetectorUI({ detection }: NoteDetectorUIProps) {
           )}
         </div>
       </div>
+
+      {/* Audio controls — compact, at the bottom */}
+      {!hasPermission ? (
+        <div className="flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-3">
+          <Shield className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">
+            Microphone access required
+          </span>
+          <Button size="sm" onClick={requestPermission}>
+            <Mic className="mr-1 h-3 w-3" />
+            Allow
+          </Button>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2">
+          <Select
+            value={selectedDeviceId ?? undefined}
+            onValueChange={(v) => setSelectedDeviceId(v || null)}
+            disabled={isListening}
+          >
+            <SelectTrigger className="h-8 flex-1 text-xs">
+              <SelectValue placeholder="Select audio input..." />
+            </SelectTrigger>
+            <SelectContent>
+              {devices.length > 0 ? (
+                devices.map((d, i) => (
+                  <SelectItem
+                    key={d.deviceId || `device-${i}`}
+                    value={d.deviceId || `device-${i}`}
+                  >
+                    {d.label || `Audio Input ${i + 1}`}
+                  </SelectItem>
+                ))
+              ) : (
+                <SelectItem value="__none" disabled>
+                  No devices found
+                </SelectItem>
+              )}
+            </SelectContent>
+          </Select>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={refreshDevices}
+            disabled={isListening}
+            title="Refresh audio devices"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+          </Button>
+
+          {isListening ? (
+            <Button variant="destructive" size="sm" className="h-8" onClick={stop}>
+              <MicOff className="mr-1 h-3.5 w-3.5" />
+              Stop
+            </Button>
+          ) : (
+            <Button size="sm" className="h-8" onClick={start} disabled={isRequesting}>
+              <Mic className="mr-1 h-3.5 w-3.5" />
+              {isRequesting ? 'Connecting...' : 'Listen'}
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
