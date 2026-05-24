@@ -158,7 +158,8 @@ function NoteDetectorUI({ detection }: NoteDetectorUIProps) {
 
   const { matchingKeys, matchingChords } = useMatchingKeysAndChords(noteLog);
   const { setKeyScale } = useScaleKey();
-  const { setChordHighlight } = useHighlight();
+  const { setChordHighlight, clearChordHighlight, chordHighlightNotes } =
+    useHighlight();
 
   return (
     <div className="w-full max-w-2xl space-y-4">
@@ -284,9 +285,21 @@ function NoteDetectorUI({ detection }: NoteDetectorUIProps) {
       {/* Key / Chord analysis */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-foreground">
-            Analysis
-          </h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-medium text-foreground">
+              Analysis
+            </h3>
+            {chordHighlightNotes.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-6 text-xs"
+                onClick={clearChordHighlight}
+              >
+                Clear highlight
+              </Button>
+            )}
+          </div>
           <SegmentedToggle
             value={analysisMode}
             onChange={(v) => setAnalysisMode(v as 'keys' | 'chords')}
