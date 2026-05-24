@@ -3,6 +3,7 @@ import {
   listInputDevices,
   createInputStream,
   createAnalyserPipeline,
+  checkMicPermission,
   type AnalyserPipeline,
 } from '~/utils/audioInput';
 import {
@@ -23,11 +24,13 @@ const CONSECUTIVE_FRAMES_REQUIRED = 3;
 export interface UseNoteDetectionReturn {
   status: DetectionStatus;
   error: string | null;
+  hasPermission: boolean;
   devices: MediaDeviceInfo[];
   selectedDeviceId: string | null;
   setSelectedDeviceId: (id: string | null) => void;
   currentNote: string | null;
   noteLog: string[];
+  requestPermission: () => Promise<void>;
   start: () => Promise<void>;
   stop: () => void;
   clearLog: () => void;
@@ -37,6 +40,7 @@ export interface UseNoteDetectionReturn {
 export function useNoteDetection(): UseNoteDetectionReturn {
   const [status, setStatus] = useState<DetectionStatus>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [hasPermission, setHasPermission] = useState(false);
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
   const [currentNote, setCurrentNote] = useState<string | null>(null);
@@ -58,6 +62,24 @@ export function useNoteDetection(): UseNoteDetectionReturn {
       setDevices([]);
     }
   }, []);
+
+  const requestPermission = useCallback(async () => {
+    setError(null);
+    try {
+      const stream = await createInputStream();
+      stream.getTracks().forEach((t) => t.stop());
+      setHasPermission(true);
+      await refreshDevices();
+    } catch (err) {
+      const message =
+        err instanceof DOMException && err.name === 'NotAllowedError'
+          ? 'Microphone permission denied. Please allow access in your browser settings.'
+          : err instanceof Error
+            ? err.message
+            : 'Failed to access audio input';
+      setError(message);
+    }
+  }, [refreshDevices]);
 
   const stop = useCallback(() => {
     if (rafRef.current !== null) {
@@ -84,6 +106,7 @@ export function useNoteDetection(): UseNoteDetectionReturn {
       const pipeline = createAnalyserPipeline(stream);
       pipelineRef.current = pipeline;
 
+      setHasPermission(true);
       await refreshDevices();
 
       setStatus('listening');
@@ -144,7 +167,10 @@ export function useNoteDetection(): UseNoteDetectionReturn {
   }, []);
 
   useEffect(() => {
-    refreshDevices();
+    checkMicPermission().then((granted) => {
+      setHasPermission(granted);
+      if (granted) refreshDevices();
+    });
   }, [refreshDevices]);
 
   useEffect(() => {
@@ -157,11 +183,13 @@ export function useNoteDetection(): UseNoteDetectionReturn {
   return {
     status,
     error,
+    hasPermission,
     devices,
     selectedDeviceId,
     setSelectedDeviceId,
     currentNote,
     noteLog,
+    requestPermission,
     start,
     stop,
     clearLog,

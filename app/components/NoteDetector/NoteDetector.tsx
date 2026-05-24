@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Mic, MicOff, Trash2 } from 'lucide-react';
+import { Mic, MicOff, Shield, Trash2 } from 'lucide-react';
+import { cn } from '~/lib/utils';
 import { Button } from '~/components/ui/button';
 import {
   Select,
@@ -21,6 +22,36 @@ function NoteChip({ note }: { note: string }) {
   );
 }
 
+function SegmentedToggle({
+  value,
+  onChange,
+  options,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { label: string; value: string }[];
+}) {
+  return (
+    <div className="inline-flex rounded-md border border-input bg-background p-0.5">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          type="button"
+          onClick={() => onChange(opt.value)}
+          className={cn(
+            'rounded-sm px-2.5 py-1 text-xs font-medium transition-colors',
+            value === opt.value
+              ? 'bg-secondary text-secondary-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground',
+          )}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 interface NoteDetectorUIProps {
   detection: UseNoteDetectionReturn;
 }
@@ -29,11 +60,13 @@ function NoteDetectorUI({ detection }: NoteDetectorUIProps) {
   const {
     status,
     error,
+    hasPermission,
     devices,
     selectedDeviceId,
     setSelectedDeviceId,
     currentNote,
     noteLog,
+    requestPermission,
     start,
     stop,
     clearLog,
@@ -48,48 +81,61 @@ function NoteDetectorUI({ detection }: NoteDetectorUIProps) {
 
   return (
     <div className="w-full max-w-2xl space-y-6">
-      {/* Device picker + controls */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <Select
-          value={selectedDeviceId ?? undefined}
-          onValueChange={(v) => setSelectedDeviceId(v || null)}
-          disabled={isListening}
-        >
-          <SelectTrigger className="w-full sm:w-64">
-            <SelectValue placeholder="Select audio input..." />
-          </SelectTrigger>
-          <SelectContent>
-            {devices.length > 0 ? (
-              devices.map((d, i) => (
-                <SelectItem
-                  key={d.deviceId || `device-${i}`}
-                  value={d.deviceId || `device-${i}`}
-                >
-                  {d.label || `Audio Input ${i + 1}`}
-                </SelectItem>
-              ))
-            ) : (
-              <SelectItem value="__none" disabled>
-                No devices found
-              </SelectItem>
-            )}
-          </SelectContent>
-        </Select>
-
-        <div className="flex gap-2">
-          {isListening ? (
-            <Button variant="destructive" onClick={stop}>
-              <MicOff className="mr-1 h-4 w-4" />
-              Stop
-            </Button>
-          ) : (
-            <Button onClick={start} disabled={isRequesting}>
-              <Mic className="mr-1 h-4 w-4" />
-              {isRequesting ? 'Connecting...' : 'Start Listening'}
-            </Button>
-          )}
+      {/* Permission gate or device picker + controls */}
+      {!hasPermission ? (
+        <div className="flex flex-col items-center gap-3 rounded-lg border border-border bg-card p-6">
+          <Shield className="h-8 w-8 text-muted-foreground" />
+          <p className="text-center text-sm text-muted-foreground">
+            Grant microphone access so we can detect your audio input devices.
+          </p>
+          <Button onClick={requestPermission}>
+            <Mic className="mr-1 h-4 w-4" />
+            Allow Microphone Access
+          </Button>
         </div>
-      </div>
+      ) : (
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Select
+            value={selectedDeviceId ?? undefined}
+            onValueChange={(v) => setSelectedDeviceId(v || null)}
+            disabled={isListening}
+          >
+            <SelectTrigger className="w-full sm:w-64">
+              <SelectValue placeholder="Select audio input..." />
+            </SelectTrigger>
+            <SelectContent>
+              {devices.length > 0 ? (
+                devices.map((d, i) => (
+                  <SelectItem
+                    key={d.deviceId || `device-${i}`}
+                    value={d.deviceId || `device-${i}`}
+                  >
+                    {d.label || `Audio Input ${i + 1}`}
+                  </SelectItem>
+                ))
+              ) : (
+                <SelectItem value="__none" disabled>
+                  No devices found
+                </SelectItem>
+              )}
+            </SelectContent>
+          </Select>
+
+          <div className="flex gap-2">
+            {isListening ? (
+              <Button variant="destructive" onClick={stop}>
+                <MicOff className="mr-1 h-4 w-4" />
+                Stop
+              </Button>
+            ) : (
+              <Button onClick={start} disabled={isRequesting}>
+                <Mic className="mr-1 h-4 w-4" />
+                {isRequesting ? 'Connecting...' : 'Start Listening'}
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Error display */}
       {error && (
@@ -114,14 +160,15 @@ function NoteDetectorUI({ detection }: NoteDetectorUIProps) {
           <h3 className="text-sm font-medium text-foreground">
             Detected Notes
           </h3>
-          <div className="flex gap-2">
-            <Button
-              variant={showUnique ? 'secondary' : 'outline'}
-              size="sm"
-              onClick={() => setShowUnique(!showUnique)}
-            >
-              {showUnique ? 'Unique' : 'All'}
-            </Button>
+          <div className="flex items-center gap-2">
+            <SegmentedToggle
+              value={showUnique ? 'unique' : 'all'}
+              onChange={(v) => setShowUnique(v === 'unique')}
+              options={[
+                { label: 'All', value: 'all' },
+                { label: 'Unique', value: 'unique' },
+              ]}
+            />
             <Button
               variant="ghost"
               size="sm"

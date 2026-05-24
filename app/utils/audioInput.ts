@@ -6,6 +6,20 @@ export interface AnalyserPipeline {
   cleanup: () => void;
 }
 
+export async function checkMicPermission(): Promise<boolean> {
+  if (typeof navigator === 'undefined' || !navigator.permissions?.query) {
+    return false;
+  }
+  try {
+    const result = await navigator.permissions.query({
+      name: 'microphone' as PermissionName,
+    });
+    return result.state === 'granted';
+  } catch {
+    return false;
+  }
+}
+
 export async function listInputDevices(): Promise<MediaDeviceInfo[]> {
   if (
     typeof navigator === 'undefined' ||

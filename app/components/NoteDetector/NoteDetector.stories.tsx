@@ -6,6 +6,7 @@ import '~/tailwind.css';
 const baseMock: UseNoteDetectionReturn = {
   status: 'idle',
   error: null,
+  hasPermission: true,
   devices: [
     { deviceId: 'dev1', label: 'Focusrite Scarlett 2i2', kind: 'audioinput', groupId: 'g1', toJSON: () => ({}) },
     { deviceId: 'dev2', label: 'Built-in Microphone', kind: 'audioinput', groupId: 'g2', toJSON: () => ({}) },
@@ -14,6 +15,7 @@ const baseMock: UseNoteDetectionReturn = {
   setSelectedDeviceId: () => {},
   currentNote: null,
   noteLog: [],
+  requestPermission: async () => {},
   start: async () => {},
   stop: () => {},
   clearLog: () => {},
@@ -70,6 +72,17 @@ export const NoDevices: Story = {
   args: {
     detection: {
       ...baseMock,
+      devices: [],
+      selectedDeviceId: null,
+    },
+  },
+};
+
+export const NoPermission: Story = {
+  args: {
+    detection: {
+      ...baseMock,
+      hasPermission: false,
       devices: [],
       selectedDeviceId: null,
     },
