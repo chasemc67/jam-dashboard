@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Mic, MicOff, Shield, Trash2 } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Mic, MicOff, RefreshCw, Shield, Trash2, X } from 'lucide-react';
+import { Note, Chord } from 'tonal';
 import { cn } from '~/lib/utils';
 import { Button } from '~/components/ui/button';
 import {
@@ -13,11 +14,42 @@ import {
   useNoteDetection,
   type UseNoteDetectionReturn,
 } from '~/hooks/useNoteDetection';
+import { generate_key_options } from '~/components/KeyPicker/KeyPicker';
+import { useSettings } from '~/contexts/SettingsContext';
+import { useScaleKey } from '~/contexts/ScaleKeyContext';
+import { useHighlight } from '~/contexts/HighlightContext';
+import { filteredScaleTypes } from '~/utils/scaleTypes';
 
-function NoteChip({ note }: { note: string }) {
+function NoteChip({
+  note,
+  onRemove,
+  onClick,
+}: {
+  note: string;
+  onRemove?: () => void;
+  onClick?: () => void;
+}) {
   return (
-    <span className="inline-flex items-center rounded-md bg-secondary px-2.5 py-1 text-sm font-medium text-secondary-foreground">
+    <span
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={onClick ? (e) => { if (e.key === 'Enter') onClick(); } : undefined}
+      className={cn(
+        'group inline-flex items-center rounded-md bg-secondary px-2.5 py-1 text-sm font-medium text-secondary-foreground',
+        onClick && 'cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors',
+      )}
+    >
       {note}
+      {onRemove && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onRemove(); }}
+          className="ml-1 hidden rounded-sm opacity-60 hover:opacity-100 group-hover:inline-flex"
+        >
+          <X className="h-3 w-3" />
+        </button>
+      )}
     </span>
   );
 }
@@ -56,6 +88,47 @@ interface NoteDetectorUIProps {
   detection: UseNoteDetectionReturn;
 }
 
+function useMatchingKeysAndChords(notes: string[]) {
+  const { settings } = useSettings();
+
+  const uniqueNotes = useMemo(() => Array.from(new Set(notes)), [notes]);
+
+  const matchingKeys = useMemo(() => {
+    if (uniqueNotes.length === 0) return [];
+
+    const enabledScaleTypes: string[] = [];
+    if (settings.showMajorMinorScales) {
+      enabledScaleTypes.push(...filteredScaleTypes.simple);
+    }
+    if (settings.showHarmonicMelodicScales) {
+      enabledScaleTypes.push(...filteredScaleTypes.minors);
+    }
+    if (settings.showModes) {
+      enabledScaleTypes.push(...filteredScaleTypes.modes);
+    }
+    if (enabledScaleTypes.length === 0) {
+      enabledScaleTypes.push(...filteredScaleTypes.simple);
+    }
+
+    const allOptions = generate_key_options(enabledScaleTypes);
+    return allOptions.filter((option) =>
+      uniqueNotes.every((searchNote) =>
+        option.scale.some(
+          (scaleNote) =>
+            Note.simplify(scaleNote) === Note.simplify(searchNote),
+        ),
+      ),
+    );
+  }, [uniqueNotes, settings.showMajorMinorScales, settings.showHarmonicMelodicScales, settings.showModes]);
+
+  const matchingChords = useMemo(() => {
+    if (uniqueNotes.length < 2) return [];
+    return Chord.detect(uniqueNotes);
+  }, [uniqueNotes]);
+
+  return { matchingKeys, matchingChords };
+}
+
 function NoteDetectorUI({ detection }: NoteDetectorUIProps) {
   const {
     status,
@@ -70,14 +143,22 @@ function NoteDetectorUI({ detection }: NoteDetectorUIProps) {
     start,
     stop,
     clearLog,
+    removeNoteAtIndex,
+    removeAllOfNote,
+    refreshDevices,
   } = detection;
 
   const [showUnique, setShowUnique] = useState(false);
+  const [analysisMode, setAnalysisMode] = useState<'keys' | 'chords'>('keys');
   const isListening = status === 'listening';
   const isRequesting = status === 'requesting';
 
   const uniqueNotes = Array.from(new Set(noteLog));
   const displayedNotes = showUnique ? uniqueNotes : noteLog;
+
+  const { matchingKeys, matchingChords } = useMatchingKeysAndChords(noteLog);
+  const { setKeyScale } = useScaleKey();
+  const { setChordHighlight } = useHighlight();
 
   return (
     <div className="w-full max-w-2xl space-y-6">
@@ -120,6 +201,16 @@ function NoteDetectorUI({ detection }: NoteDetectorUIProps) {
               )}
             </SelectContent>
           </Select>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={refreshDevices}
+            disabled={isListening}
+            title="Refresh audio devices"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
 
           <div className="flex gap-2">
             {isListening ? (
@@ -185,7 +276,15 @@ function NoteDetectorUI({ detection }: NoteDetectorUIProps) {
           {displayedNotes.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
               {displayedNotes.map((note, i) => (
-                <NoteChip key={`${note}-${i}`} note={note} />
+                <NoteChip
+                  key={`${note}-${i}`}
+                  note={note}
+                  onRemove={
+                    showUnique
+                      ? () => removeAllOfNote(note)
+                      : () => removeNoteAtIndex(i)
+                  }
+                />
               ))}
             </div>
           ) : (
@@ -193,6 +292,67 @@ function NoteDetectorUI({ detection }: NoteDetectorUIProps) {
               {isListening
                 ? 'Waiting for notes...'
                 : 'Start listening to detect notes'}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Key / Chord analysis */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-medium text-foreground">
+            Analysis
+          </h3>
+          <SegmentedToggle
+            value={analysisMode}
+            onChange={(v) => setAnalysisMode(v as 'keys' | 'chords')}
+            options={[
+              { label: 'Keys', value: 'keys' },
+              { label: 'Chords', value: 'chords' },
+            ]}
+          />
+        </div>
+
+        <div className="min-h-[3rem] rounded-lg border border-border bg-card p-3">
+          {uniqueNotes.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Play some notes to detect matching{' '}
+              {analysisMode === 'keys' ? 'keys' : 'chords'}
+            </p>
+          ) : analysisMode === 'keys' ? (
+            matchingKeys.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5">
+                {matchingKeys.map((k) => (
+                  <NoteChip
+                    key={k.value}
+                    note={k.value}
+                    onClick={() => setKeyScale(k.value)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No matching keys found
+              </p>
+            )
+          ) : matchingChords.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {matchingChords.map((c) => (
+                <NoteChip
+                  key={c}
+                  note={c}
+                  onClick={() => {
+                    const chordNotes = Chord.get(c).notes;
+                    if (chordNotes.length > 0) setChordHighlight(chordNotes);
+                  }}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {uniqueNotes.length < 2
+                ? 'Play at least 2 notes to detect chords'
+                : 'No matching chords found'}
             </p>
           )}
         </div>

@@ -34,6 +34,8 @@ export interface UseNoteDetectionReturn {
   start: () => Promise<void>;
   stop: () => void;
   clearLog: () => void;
+  removeNoteAtIndex: (index: number) => void;
+  removeAllOfNote: (note: string) => void;
   refreshDevices: () => Promise<void>;
 }
 
@@ -166,6 +168,14 @@ export function useNoteDetection(): UseNoteDetectionReturn {
     consecutiveRef.current = { note: '', count: 0 };
   }, []);
 
+  const removeNoteAtIndex = useCallback((index: number) => {
+    setNoteLog((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const removeAllOfNote = useCallback((note: string) => {
+    setNoteLog((prev) => prev.filter((n) => n !== note));
+  }, []);
+
   useEffect(() => {
     checkMicPermission().then((granted) => {
       setHasPermission(granted);
@@ -193,6 +203,8 @@ export function useNoteDetection(): UseNoteDetectionReturn {
     start,
     stop,
     clearLog,
+    removeNoteAtIndex,
+    removeAllOfNote,
     refreshDevices,
   };
 }
