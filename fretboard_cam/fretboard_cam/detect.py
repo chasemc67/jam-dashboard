@@ -9,7 +9,7 @@ import cv2
 import numpy as np
 
 from .geometry import order_fretboard_corners, quad_from_contour
-from .neck import neck_quad_from_lines, neck_quad_from_mask
+from .neck import neck_quad_from_lines, neck_quad_from_mask, neck_quad_from_ridge
 
 
 @dataclass
@@ -79,8 +79,9 @@ def box_to_detection(
 ) -> Detection:
     """Turn a detector box into a neck quad.
 
-    Prefer a bundle of parallel string/neck lines. Fall back to GrabCut plus
-    a thin-region profile, then the box itself.
+    Prefer a bright maple ridge (neck on a dark shirt), then parallel
+    string/neck lines. Fall back to GrabCut plus a thin-region profile, then
+    the box itself.
     """
     h, w = frame.shape[:2]
     x1, y1, x2, y2 = [int(round(v)) for v in box_xyxy]
@@ -91,6 +92,15 @@ def box_to_detection(
             np.array([[x1, y2], [x2, y2], [x2, y1], [x1, y1]], dtype=np.float32)
         )
         return Detection(corners=corners, confidence=confidence, label=label, box_xyxy=box_xyxy)
+
+    ridge_quad = neck_quad_from_ridge(frame, box_xyxy)
+    if ridge_quad is not None:
+        return Detection(
+            corners=ridge_quad,
+            confidence=confidence,
+            label=f"{label}-ridge",
+            box_xyxy=box_xyxy,
+        )
 
     line_quad = neck_quad_from_lines(frame, box_xyxy)
     if line_quad is not None:
@@ -194,6 +204,18 @@ class ContourDetector:
             return None
         corners = quad_from_contour(contour)
         return Detection(corners=corners, confidence=0.6, label="contour")
+
+
+class RidgeDetector:
+    """Lock onto a maple neck as a bright ridge on a dark shirt. No neural net."""
+
+    name = "ridge"
+
+    def detect(self, frame: np.ndarray) -> Detection | None:
+        quad = neck_quad_from_ridge(frame)
+        if quad is None:
+            return None
+        return Detection(corners=quad, confidence=0.7, label="ridge")
 
 
 class YoloWorldDetector:
@@ -304,6 +326,8 @@ def build_detector(name: str, corners: np.ndarray | None = None) -> Detector:
         return ManualDetector(corners)
     if key == "contour":
         return ContourDetector()
+    if key == "ridge":
+        return RidgeDetector()
     if key in {"yolo-world", "yoloworld", "world"}:
         return YoloWorldDetector()
     if key in {"yolo-coco", "yolo", "coco"}:

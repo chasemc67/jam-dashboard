@@ -214,8 +214,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--detector",
         default="yolo-world",
-        choices=["yolo-world", "yolo-coco", "contour", "manual"],
+        choices=["yolo-world", "yolo-coco", "contour", "ridge", "manual"],
         help="yolo-world uses open-vocabulary prompts (no training). "
+        "ridge fits a maple neck on a dark shirt. "
         "manual requires --corners. contour is for high-contrast / synthetic necks.",
     )
     parser.add_argument(
