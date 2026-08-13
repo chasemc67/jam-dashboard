@@ -9,6 +9,7 @@ import cv2
 import numpy as np
 
 from .geometry import order_fretboard_corners, quad_from_contour
+from .neck import neck_quad_from_lines, neck_quad_from_mask
 
 
 @dataclass
@@ -62,7 +63,11 @@ def box_to_detection(
     confidence: float,
     label: str,
 ) -> Detection:
-    """Turn an axis-aligned box into a quad, refined with GrabCut when possible."""
+    """Turn a detector box into a neck quad.
+
+    Prefer a bundle of parallel string/neck lines. Fall back to GrabCut plus
+    a thin-region profile, then the box itself.
+    """
     h, w = frame.shape[:2]
     x1, y1, x2, y2 = [int(round(v)) for v in box_xyxy]
     x1, y1 = max(0, x1), max(0, y1)
@@ -73,13 +78,32 @@ def box_to_detection(
         )
         return Detection(corners=corners, confidence=confidence, label=label, box_xyxy=box_xyxy)
 
+    line_quad = neck_quad_from_lines(frame, box_xyxy)
+    if line_quad is not None:
+        return Detection(
+            corners=line_quad,
+            confidence=confidence,
+            label=f"{label}-lines",
+            box_xyxy=box_xyxy,
+        )
+
     rect = (x1, y1, x2 - x1, y2 - y1)
     mask = np.zeros(frame.shape[:2], np.uint8)
     bgd = np.zeros((1, 65), np.float64)
     fgd = np.zeros((1, 65), np.float64)
     try:
         cv2.grabCut(frame, mask, rect, bgd, fgd, 3, cv2.GC_INIT_WITH_RECT)
-        fg = np.where((mask == cv2.GC_FGD) | (mask == cv2.GC_PR_FGD), 255, 0).astype(np.uint8)
+        fg = np.where((mask == cv2.GC_FGD) | (mask == cv2.GC_PR_FGD), 255, 0).astype(
+            np.uint8
+        )
+        neck = neck_quad_from_mask(fg)
+        if neck is not None:
+            return Detection(
+                corners=neck,
+                confidence=confidence,
+                label=f"{label}-neck",
+                box_xyxy=box_xyxy,
+            )
         detection = mask_to_detection(
             fg, confidence=confidence, label=label, box_xyxy=box_xyxy
         )

@@ -75,7 +75,15 @@ cd fretboard_cam
 python -m pytest -q
 ```
 
-Tests cover fret math, corner ordering, overlay painting, contour detection on a synthetic neck, and optical-flow tracking. They do not download YOLO weights.
+Tests cover fret math, corner ordering, overlay painting, contour detection on a synthetic neck, optical-flow tracking, and neck isolation from a guitar-shaped mask. They do not download YOLO weights.
+
+This prototype was run on:
+
+- A moving synthetic neck (contour lock, numbered cells stay on the board)
+- A public PLOS ONE electric-guitar clip (YOLO-World `guitar` + parallel string lines, lock held for the processed take)
+- The Drive demo recording you shared (same pipeline; that clip already has a dense HUD, so a clean practice-cam take will be a better lock)
+
+`--corners` is the escape hatch if auto-detect is off on your guitar/camera.
 
 ## Layout
 
