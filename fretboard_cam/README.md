@@ -8,8 +8,8 @@ This is intentionally *not* wired into the existing Remix/TypeScript app. The ov
 
 We avoided training a CNN for this pass. The pipeline is:
 
-1. **Detect a neck box** with a pretrained open-vocabulary model ([YOLO-World](https://docs.ultralytics.com/models/yolo-world/)), prompted with `guitar neck` / `guitar fretboard` / `guitar`. COCO YOLOv8 (`guitar` class) is a fallback. Neither requires labeling data.
-2. **Turn the box into a quad** with GrabCut + a min-area rectangle / polygon approximation. That gives four corners: nut-bass, body-bass, body-treble, nut-treble.
+1. **Detect a guitar box** with a pretrained open-vocabulary model ([YOLO-World](https://docs.ultralytics.com/models/yolo-world/)), prompted with `guitar neck` / `guitar fretboard` / `guitar`. COCO YOLOv8 (`guitar` class) is a fallback. Neither requires labeling data.
+2. **Turn the box into a neck quad** by clustering parallel string/neck-edge lines, then keeping the bundle whose *interior is maple-bright* (not the dark pickguard) and whose width looks like a neck. The longest maple run along that band is the fretboard; it stops where the wood hits the pickguard or a lamp flare. Fallbacks: GrabCut + a thin-region profile, then `--corners`.
 3. **Track** those corners with Lucas-Kanade optical flow and a light blend so the overlay does not jump every frame.
 4. **Overlay** a perspective-correct grid. Fret spacing uses the standard 12-TET formula `1 - 2^(-n/12)`. Highlighted cells are hardcoded fret numbers.
 
@@ -91,7 +91,7 @@ This prototype was run on:
 
 - A moving synthetic neck (contour lock, numbered cells stay on the board)
 - A public PLOS ONE electric-guitar clip (YOLO-World `guitar` + parallel string lines, lock held for the processed take)
-- The Drive demo recording you shared (same pipeline; that clip already has a dense HUD, so a clean practice-cam take will be a better lock)
+- The author's FaceTime Telecaster clip in `testdata/chase-tele-20260812/` (maple neck vs black pickguard; the fitter now scores light-wood interiors so it does not treat pickguard strings as the fretboard)
 
 `--corners` is the escape hatch if auto-detect is off on your guitar/camera.
 
