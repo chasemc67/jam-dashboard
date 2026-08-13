@@ -26,3 +26,13 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 *storybook.log
+
+# python (fretboard_cam)
+__pycache__/
+*.py[cod]
+.venv/
+*.pt
+*.onnx
+fretboard_cam/output/
+fretboard_cam/.pytest_cache/
+fretboard_cam/*.egg-info/

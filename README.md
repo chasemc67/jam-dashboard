@@ -25,6 +25,10 @@ npm run format     # prettier
 Changes merged to main will auto-deploy to vercel
 
 
+## Next: live fretboard overlay
+
+The next version of this project is a local camera overlay on a real guitar neck, plus a modular dashboard later. See [ROADMAP.md](./ROADMAP.md) and the standalone Python prototype in [`fretboard_cam/`](./fretboard_cam).
+
 ## About
 
 See the [.cursorrules](./.cursorrules) file for an in-depth description of where to find things and how they're built

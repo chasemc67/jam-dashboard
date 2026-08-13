@@ -1,0 +1,13 @@
+# fretboard_cam
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.pt
+*.onnx
+output/
+runs/
+.pytest_cache/
+*.egg-info/
+dist/
+build/
