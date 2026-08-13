@@ -56,12 +56,26 @@ def mask_to_detection(
     )
 
 
+def _torch_device() -> str:
+    try:
+        import torch
+
+        if torch.backends.mps.is_available():
+            return "mps"
+        if torch.cuda.is_available():
+            return "cuda"
+    except Exception:
+        pass
+    return "cpu"
+
+
 def box_to_detection(
     frame: np.ndarray,
     box_xyxy: np.ndarray,
     *,
     confidence: float,
     label: str,
+    use_grabcut: bool = False,
 ) -> Detection:
     """Turn a detector box into a neck quad.
 
@@ -87,30 +101,31 @@ def box_to_detection(
             box_xyxy=box_xyxy,
         )
 
-    rect = (x1, y1, x2 - x1, y2 - y1)
-    mask = np.zeros(frame.shape[:2], np.uint8)
-    bgd = np.zeros((1, 65), np.float64)
-    fgd = np.zeros((1, 65), np.float64)
-    try:
-        cv2.grabCut(frame, mask, rect, bgd, fgd, 3, cv2.GC_INIT_WITH_RECT)
-        fg = np.where((mask == cv2.GC_FGD) | (mask == cv2.GC_PR_FGD), 255, 0).astype(
-            np.uint8
-        )
-        neck = neck_quad_from_mask(fg)
-        if neck is not None:
-            return Detection(
-                corners=neck,
-                confidence=confidence,
-                label=f"{label}-neck",
-                box_xyxy=box_xyxy,
+    if use_grabcut:
+        rect = (x1, y1, x2 - x1, y2 - y1)
+        mask = np.zeros(frame.shape[:2], np.uint8)
+        bgd = np.zeros((1, 65), np.float64)
+        fgd = np.zeros((1, 65), np.float64)
+        try:
+            cv2.grabCut(frame, mask, rect, bgd, fgd, 3, cv2.GC_INIT_WITH_RECT)
+            fg = np.where((mask == cv2.GC_FGD) | (mask == cv2.GC_PR_FGD), 255, 0).astype(
+                np.uint8
             )
-        detection = mask_to_detection(
-            fg, confidence=confidence, label=label, box_xyxy=box_xyxy
-        )
-        if detection is not None:
-            return detection
-    except cv2.error:
-        pass
+            neck = neck_quad_from_mask(fg)
+            if neck is not None:
+                return Detection(
+                    corners=neck,
+                    confidence=confidence,
+                    label=f"{label}-neck",
+                    box_xyxy=box_xyxy,
+                )
+            detection = mask_to_detection(
+                fg, confidence=confidence, label=label, box_xyxy=box_xyxy
+            )
+            if detection is not None:
+                return detection
+        except cv2.error:
+            pass
 
     crop_mask = np.zeros(frame.shape[:2], np.uint8)
     crop_mask[y1:y2, x1:x2] = 255
@@ -206,12 +221,20 @@ class YoloWorldDetector:
             "guitar",
         ]
         self.conf = conf
+        self.imgsz = 384
+        self.device = _torch_device()
         self.model = YOLOWorld(model_name)
         self.model.set_classes(self.prompts)
         self._preferred = {"guitar neck", "guitar fretboard", "fretboard"}
 
     def detect(self, frame: np.ndarray) -> Detection | None:
-        results = self.model.predict(frame, conf=self.conf, verbose=False)
+        results = self.model.predict(
+            frame,
+            conf=self.conf,
+            verbose=False,
+            imgsz=self.imgsz,
+            device=self.device,
+        )
         if not results:
             return None
         result = results[0]
@@ -244,7 +267,7 @@ class YoloCocoGuitarDetector:
 
     name = "yolo-coco"
 
-    def __init__(self, conf: float = 0.2, model_name: str = "yolov8s.pt"):
+    def __init__(self, conf: float = 0.2, model_name: str = "yolov8n.pt"):
         try:
             from ultralytics import YOLO
         except ImportError as exc:
@@ -253,10 +276,19 @@ class YoloCocoGuitarDetector:
                 "Install with: pip install -r fretboard_cam/requirements-ml.txt"
             ) from exc
         self.conf = conf
+        self.imgsz = 384
+        self.device = _torch_device()
         self.model = YOLO(model_name)
 
     def detect(self, frame: np.ndarray) -> Detection | None:
-        results = self.model.predict(frame, conf=self.conf, verbose=False, classes=[74])
+        results = self.model.predict(
+            frame,
+            conf=self.conf,
+            verbose=False,
+            classes=[74],
+            imgsz=self.imgsz,
+            device=self.device,
+        )
         if not results or results[0].boxes is None or len(results[0].boxes) == 0:
             return None
         box = results[0].boxes.xyxy[0].cpu().numpy()

@@ -34,5 +34,6 @@ __pycache__/
 *.pt
 *.onnx
 fretboard_cam/output/
+fretboard_cam/recordings/
 fretboard_cam/.pytest_cache/
 fretboard_cam/*.egg-info/

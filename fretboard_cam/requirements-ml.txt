@@ -1,2 +1,3 @@
 -r requirements.txt
 ultralytics>=8.2.0
+clip @ git+https://github.com/ultralytics/CLIP.git

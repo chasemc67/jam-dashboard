@@ -11,7 +11,6 @@ import numpy as np
 from .geometry import (
     NUM_STRINGS,
     canonical_to_image,
-    cell_canonical_center,
     cell_canonical_quad,
     fretboard_homography,
     normalized_fret_xs,
@@ -54,17 +53,6 @@ class OverlayConfig:
     label: str = "DEMO  numbered frets"
 
 
-def _blend_poly(
-    frame: np.ndarray,
-    points: np.ndarray,
-    color: tuple[int, int, int],
-    alpha: float,
-) -> None:
-    overlay = frame.copy()
-    cv2.fillConvexPoly(overlay, np.round(points).astype(np.int32), color)
-    cv2.addWeighted(overlay, alpha, frame, 1.0 - alpha, 0, dst=frame)
-
-
 def _draw_polyline(
     frame: np.ndarray,
     points: np.ndarray,
@@ -73,7 +61,9 @@ def _draw_polyline(
     closed: bool = False,
 ) -> None:
     pts = np.round(points).astype(np.int32)
-    cv2.polylines(frame, [pts], isClosed=closed, color=color, thickness=thickness, lineType=cv2.LINE_AA)
+    cv2.polylines(
+        frame, [pts], isClosed=closed, color=color, thickness=thickness, lineType=cv2.LINE_AA
+    )
 
 
 def draw_fretboard_overlay(
@@ -108,6 +98,7 @@ def draw_fretboard_overlay(
             )
             _draw_polyline(out, line, GRID_COLOR, thickness=1)
 
+    cells: list[tuple[np.ndarray, int]] = []
     for string_number, fret in cfg.highlights:
         if not 1 <= string_number <= cfg.num_strings:
             continue
@@ -119,16 +110,19 @@ def draw_fretboard_overlay(
             ),
             homography,
         )
-        _blend_poly(out, cell, HIGHLIGHT_FILL, cfg.alpha)
-        _draw_polyline(out, cell, HIGHLIGHT_FILL, thickness=1, closed=True)
+        cells.append((cell, fret))
 
-        if cfg.draw_labels:
-            center = canonical_to_image(
-                cell_canonical_center(
-                    string_number, fret, cfg.visible_frets, cfg.num_strings
-                ).reshape(1, 2),
-                homography,
-            )[0]
+    if cells:
+        wash = out.copy()
+        for cell, _fret in cells:
+            cv2.fillConvexPoly(wash, np.round(cell).astype(np.int32), HIGHLIGHT_FILL)
+        cv2.addWeighted(wash, cfg.alpha, out, 1.0 - cfg.alpha, 0, dst=out)
+        for cell, _fret in cells:
+            _draw_polyline(out, cell, HIGHLIGHT_FILL, thickness=1, closed=True)
+
+    if cfg.draw_labels:
+        for cell, fret in cells:
+            center = cell.mean(axis=0)
             radius = max(8, int(round(np.linalg.norm(cell[0] - cell[1]) * 0.18)))
             cx, cy = int(round(center[0])), int(round(center[1]))
             cv2.circle(out, (cx, cy), radius, (30, 30, 30), -1, lineType=cv2.LINE_AA)
@@ -169,8 +163,7 @@ def draw_hud(
     confidence: float | None,
     extra_lines: Iterable[str] = (),
 ) -> np.ndarray:
-    """Draw a small status block in the lower-left, similar in spirit to the demo HUD."""
-    out = frame.copy()
+    """Draw a small status block in the lower-left. Mutates `frame` and returns it."""
     lines = [
         f"detector: {detector}",
         f"lock: {'yes' if tracked else 'lost'}",
@@ -178,10 +171,10 @@ def draw_hud(
     if confidence is not None:
         lines.append(f"conf: {confidence:.2f}")
     lines.extend(extra_lines)
-    x, y0 = 16, out.shape[0] - 18 * (len(lines) + 1)
+    x, y0 = 16, frame.shape[0] - 18 * (len(lines) + 1)
     for i, line in enumerate(lines):
         cv2.putText(
-            out,
+            frame,
             line,
             (x, y0 + i * 18),
             cv2.FONT_HERSHEY_SIMPLEX,
@@ -190,4 +183,4 @@ def draw_hud(
             1,
             cv2.LINE_AA,
         )
-    return out
+    return frame

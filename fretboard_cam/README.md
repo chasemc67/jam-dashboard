@@ -31,11 +31,21 @@ On a machine with a display, install `opencv-python` instead of `opencv-python-h
 
 ## Run
 
-Webcam (local machine):
+Webcam (local machine, live window):
 
 ```bash
-python -m fretboard_cam --source 0 --detector yolo-world --output overlay.mp4
+python -m fretboard_cam --source 0 --detector yolo-world --debug
 ```
+
+A window opens. Point the camera at a guitar neck.
+
+- Click **REC** (top right) or press **R** to start/stop recording
+- Each take writes `recordings/<timestamp>/raw.mp4` (no overlay) and `overlay.mp4` (with overlay)
+- Press **Q** to quit
+
+On a Mac, grant camera access to Terminal (or Cursor) if macOS asks.
+
+`--no-preview` skips the window (useful for file-only processing). `--output overlay.mp4` also records the overlay stream from the CLI.
 
 Video file:
 
