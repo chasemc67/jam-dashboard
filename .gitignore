@@ -26,3 +26,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 *storybook.log
+
+# Desktop build products
+/desktop/renderer/
+/desktop/native/.build/
+/desktop/native/dist/
+/release/

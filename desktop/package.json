@@ -1,0 +1,9 @@
+{
+  "name": "jam-dashboard-desktop",
+  "version": "0.1.0",
+  "description": "Guitar practice tools and local YouTube music analysis",
+  "author": "Chase McMahon",
+  "private": true,
+  "main": "main.cjs",
+  "type": "module"
+}
