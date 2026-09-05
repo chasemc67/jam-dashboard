@@ -2,10 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import FretBoard from '../FretBoard';
-import { getNoteColorClass } from '~/utils/noteColors';
+import { getNoteColorClass, getSplitBorderClasses } from '~/utils/noteColors';
 import { useSettings } from '~/contexts/SettingsContext';
-import { getNotesForStringInShape } from '~/utils/cagedShapeUtils';
-import { getCagedNoteColor } from '~/utils/cagedColorUtils';
+import { getCagedNoteColors, orientCagedColors } from '~/utils/cagedColorUtils';
 import { useHighlight } from '~/contexts/HighlightContext';
 import { useScaleKey } from '~/contexts/ScaleKeyContext';
 import { areNotesEquivalent } from '~/utils/musicTheoryUtils';
@@ -62,16 +61,18 @@ const FretboardControls: React.FC = () => {
   const getOutlineColor = (note: string, stringIndex: number) => {
     if (settings.cagedModeEnabled && pentatonicNotes.length !== 0) {
       const stringNumber = stringIndex + 1;
-      const noteColor = getCagedNoteColor(
+      const noteColors = getCagedNoteColors(
         note,
         stringNumber,
-        settings.cagedShape,
+        {
+          cagedShape: settings.cagedShape,
+          pentatonicOnly: settings.cagedPentatonicOnly,
+        },
         notes,
         pentatonicNotes,
-        getNotesForStringInShape,
       );
-      return noteColor
-        ? getNoteColorClass(noteColor, 'border')
+      return noteColors
+        ? getSplitBorderClasses(orientCagedColors(noteColors, settings.isLefty))
         : 'border-black';
     }
 
