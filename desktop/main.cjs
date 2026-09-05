@@ -196,15 +196,6 @@ if (!app.requestSingleInstanceLock()) {
           { role: 'appMenu' },
           { role: 'editMenu' },
           { role: 'viewMenu' },
-          {
-            label: 'Tools',
-            submenu: [
-              {
-                label: 'YouTube Music Analyzer',
-                click: () => mainWindow?.webContents.send('jam:show-analyzer'),
-              },
-            ],
-          },
           { role: 'windowMenu' },
         ]),
       );

@@ -11,8 +11,6 @@ import { SpeedInsights } from '@vercel/speed-insights/remix';
 import { ContextProviders } from './components/ContextProviders';
 import { GoogleAdsense } from './components/GoogleAdsense/GoogleAdsense';
 
-import DesktopAnalyzer from './components/DesktopAnalyzer';
-
 import './tailwind.css';
 
 export const links: LinksFunction = () =>
@@ -160,10 +158,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body className="bg-background">
         <div id="root" className="bg-background">
-          <ContextProviders>
-            {children}
-            {import.meta.env.JAM_DESKTOP && <DesktopAnalyzer />}
-          </ContextProviders>
+          <ContextProviders>{children}</ContextProviders>
           <ScrollRestoration />
           {/* Silent audio element for iOS audio unblocking - not meant for user interaction */}
           {/* eslint-disable-next-line jsx-a11y/media-has-caption */}

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { ScaleKeyProvider } from '~/contexts/ScaleKeyContext';
-import DesktopAnalyzer, { DesktopAnalyzerTrigger } from './DesktopAnalyzer';
+import DesktopAnalyzer from './DesktopAnalyzer';
 
 const meta = {
   title: 'Components/DesktopAnalyzer',
@@ -8,7 +8,6 @@ const meta = {
   decorators: [
     Story => (
       <ScaleKeyProvider>
-        <DesktopAnalyzerTrigger />
         <Story />
       </ScaleKeyProvider>
     ),

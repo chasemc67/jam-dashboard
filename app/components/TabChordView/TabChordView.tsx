@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
 import RandomPlayer from '~/components/RandomPlayer';
 import ChordExplorer from '~/components/ChordExplorer';
 import NoteDetector from '~/components/NoteDetector';
+import DesktopAnalyzer from '~/components/DesktopAnalyzer';
 import { useHighlight } from '~/contexts/HighlightContext';
 
 const TabChordView: React.FC = () => {
@@ -26,6 +27,11 @@ const TabChordView: React.FC = () => {
           <TabsTrigger value="note-detect" className="flex-1">
             Note Detect
           </TabsTrigger>
+          {import.meta.env.JAM_DESKTOP && (
+            <TabsTrigger value="youtube-analyzer" className="flex-1">
+              YouTube Analyzer
+            </TabsTrigger>
+          )}
         </TabsList>
         <TabsContent value="chord-explorer">
           <ChordExplorer />
@@ -38,6 +44,15 @@ const TabChordView: React.FC = () => {
             <NoteDetector />
           </div>
         </TabsContent>
+        {import.meta.env.JAM_DESKTOP && (
+          <TabsContent
+            value="youtube-analyzer"
+            forceMount
+            className="data-[state=inactive]:hidden"
+          >
+            <DesktopAnalyzer />
+          </TabsContent>
+        )}
       </Tabs>
     </Card>
   );
