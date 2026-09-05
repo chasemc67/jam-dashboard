@@ -107,7 +107,7 @@ function findTools() {
   return { ytDlp: found('yt-dlp'), ffmpeg: found('ffmpeg') };
 }
 
-/** Owns a single job and its snapshot independently of renderer/drawer lifetime. */
+/** Owns a single job and its snapshot independently of renderer/tab lifetime. */
 class AnalyzerService {
   constructor({
     helperPath,

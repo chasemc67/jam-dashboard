@@ -24,19 +24,19 @@ For code changes, rebuild with `npm run desktop:build` and restart with
 `npm run desktop:start`. Swift build products and desktop renderer output are
 isolated from the normal `build/` directory. No sibling repository is needed.
 
-The **YouTube Analyzer** header button and **Tools → YouTube Music Analyzer** menu
-open a collapsible side drawer inside the main window. Paste a YouTube URL to
+The desktop-only **YouTube Analyzer** tab sits beside **Chord Explorer**, **Ear
+Training**, and **Note Detect**. It is omitted from the hosted web build. Paste a YouTube URL to
 save an MP3, or choose/drop a local audio file (MP3, WAV, M4A, FLAC and more).
-The drawer shows download/analysis progress, BPM/key estimates, confidence, and
-Show in Finder. Closing it leaves the job running and retains its result for
-reopening; Cancel stops the helper and its downloader/decoder processes.
+The tab shows download/analysis progress, BPM/key estimates, confidence, and
+Show in Finder. Switching tools leaves the job running and retains its input/result for
+returning to the tab; Cancel stops the helper and its downloader/decoder processes.
 
 Click **Use [detected key]** or **Use relative major** to update the same shared
 key/scale context used by the global picker, fretboard, chord explorer, ear
 training, and note detector. Results do not change the selected key automatically.
 Accidental/enharmonic display labels carry separate Tonal-compatible selection
 values, and unknown keys cannot be applied. Job snapshots live in Electron's main
-process for the current app session, surviving drawer closure and renderer reload.
+process for the current app session, surviving tab switching and renderer reload.
 
 Install the runtime tools once:
 
@@ -96,9 +96,9 @@ npm test -- --runInBand      # existing guitar tool tests
 npm run build               # hosted build regression check
 ```
 
-Smoke test the packaged app: open the drawer, select a local recording or download
+Smoke test the packaged app: open the analyzer tab, select a local recording or download
 a permitted YouTube URL, click its detected key and verify the header/fretboard
-change. Check a minor key's relative-major action, close/reopen the drawer, cancel
+change. Check a minor key's relative-major action, close/reopen the analyzer tab, cancel
 a job, and reveal a completed file. `/listen` and `/theme` reload locally too.
 
 Electron uses a sandboxed renderer, context isolation, a CSP with hashes for
@@ -106,7 +106,7 @@ Remix hydration scripts, and narrowly scoped preload methods. IPC accepts only
 the main bundled frame. Native dialogs choose paths; dropped files use Electron's
 `webUtils.getPathForFile`. The helper executable is fixed and gets argument arrays
 without a shell. URL, audio-file, and worker-result validation happen in the main
-process. Renderer progress listeners are unsubscribed on unmount. External HTTP(S)
+process. Analyzer progress listeners are unsubscribed on unmount. External HTTP(S)
 links open in the browser; unrelated permission requests are rejected.
 
 References: [Electron protocol](https://www.electronjs.org/docs/latest/api/protocol/),

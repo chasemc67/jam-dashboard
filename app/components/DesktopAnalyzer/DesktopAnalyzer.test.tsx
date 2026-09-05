@@ -5,7 +5,7 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
-import DesktopAnalyzer, { DesktopAnalyzerTrigger } from './DesktopAnalyzer';
+import DesktopAnalyzer from './DesktopAnalyzer';
 import { ScaleKeyProvider, useScaleKey } from '~/contexts/ScaleKeyContext';
 import type { AnalyzerState } from '~/types/analyzer';
 
@@ -43,7 +43,6 @@ beforeEach(() => {
       receive = callback;
       return () => {};
     },
-    onOpenAnalyzer: () => () => {},
     startYouTube: jest.fn(ok),
     chooseAudio: ok,
     analyzeDroppedFile: ok,
@@ -56,14 +55,12 @@ afterEach(() => {
   delete window.jamDesktop;
 });
 function mount() {
-  render(
+  return render(
     <ScaleKeyProvider>
-      <DesktopAnalyzerTrigger />
       <DesktopAnalyzer />
       <Selection />
     </ScaleKeyProvider>,
   );
-  fireEvent.click(screen.getByRole('button', { name: 'YouTube Analyzer' }));
 }
 
 test('detected minor and relative major buttons update the shared key and notes', async () => {
@@ -81,16 +78,24 @@ test('detected minor and relative major buttons update the shared key and notes'
     'A major: A,B,C#,D,E,F#,G#',
   );
 });
-test('closing and reopening keeps the result and analysis continues while hidden', async () => {
-  mount();
+test('remounting retrieves the latest job without cancelling it', async () => {
+  const unsubscribe = jest.fn();
+  window.jamDesktop!.onAnalyzerState = callback => {
+    receive = callback;
+    return unsubscribe;
+  };
+  const view = mount();
   await screen.findByRole('button', { name: 'Use F♯ / G♭ minor' });
-  fireEvent.click(screen.getByRole('button', { name: 'Close song analyzer' }));
-  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-  act(() =>
-    receive({ ...complete, revision: 2, status: 'analyzing', analysis: null }),
-  );
-  fireEvent.click(screen.getByRole('button', { name: 'YouTube Analyzer' }));
-  expect(screen.getByText('Listening for tempo and key…')).toBeInTheDocument();
+  view.unmount();
+  expect(unsubscribe).toHaveBeenCalledTimes(1);
+  window.jamDesktop!.getAnalyzerState = async () => ({
+    ...complete,
+    revision: 2,
+    status: 'analyzing',
+    analysis: null,
+  });
+  mount();
+  await screen.findByText('Listening for tempo and key…');
   act(() => receive({ ...complete, revision: 3 }));
   expect(
     screen.getByRole('button', { name: 'Use F♯ / G♭ minor' }),

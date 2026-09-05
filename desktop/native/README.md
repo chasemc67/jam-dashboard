@@ -6,7 +6,7 @@ Jam Dashboard now owns this copy; building does not require the sibling repo.
 
 Only the headless `MusicAnalyzerCLI` is packaged. Its Swift code downloads and
 converts audio with yt-dlp/ffmpeg and estimates BPM/key locally. The UI lives in
-Jam Dashboard's React drawer; no separate SwiftUI app is built or launched.
+Jam Dashboard's React tab; no separate SwiftUI app is built or launched.
 
 ## Protocol
 

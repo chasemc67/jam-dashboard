@@ -39,5 +39,4 @@ export interface DesktopAPI {
   cancelAnalysis: () => Promise<AnalyzerReply>;
   revealAudio: () => Promise<AnalyzerReply>;
   onAnalyzerState: (callback: (state: AnalyzerState) => void) => () => void;
-  onOpenAnalyzer: (callback: () => void) => () => void;
 }

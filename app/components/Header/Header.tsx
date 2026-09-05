@@ -2,7 +2,6 @@ import { KeyPicker } from '~/components/KeyPicker/KeyPicker';
 import { cn } from '~/lib/utils';
 import { Settings } from '~/components/Settings';
 import About from '~/components/About';
-import { DesktopAnalyzerTrigger } from '~/components/DesktopAnalyzer';
 
 export default function Header() {
   return (
@@ -23,7 +22,6 @@ export default function Header() {
           <KeyPicker />
           <Settings />
           <About />
-          {import.meta.env.JAM_DESKTOP && <DesktopAnalyzerTrigger />}
         </div>
       </div>
 
@@ -33,7 +31,6 @@ export default function Header() {
           <KeyPicker />
           <Settings />
           <About />
-          {import.meta.env.JAM_DESKTOP && <DesktopAnalyzerTrigger />}
         </div>
       </div>
     </header>
