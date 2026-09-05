@@ -15,14 +15,8 @@ export const CAGED_COLORS: Record<CAGEDShape, string> = {
   D: 'orange',
 };
 
+// Scale notes that are not part of the highlighted shape(s), e.g. the 4th and 7th
 export const CAGED_NON_SHAPE_COLOR = 'grey';
-
-export interface CagedColorOptions {
-  cagedShape: CAGEDShapeSelection;
-  // When true, scale notes outside the pentatonic (e.g. the 4th and 7th of a
-  // major scale) are left unhighlighted instead of being drawn in grey
-  pentatonicOnly?: boolean;
-}
 
 /**
  * Colors for a note under CAGED coloring.
@@ -37,12 +31,10 @@ export type CagedNoteColors = [string] | [string, string];
 export const getCagedNoteColors = (
   note: string,
   stringNumber: number,
-  options: CagedColorOptions,
+  cagedShape: CAGEDShapeSelection,
   scaleNotes: string[],
   pentatonicNotes: string[],
 ): CagedNoteColors | undefined => {
-  const { cagedShape, pentatonicOnly = false } = options;
-
   const isInScale = scaleNotes.some(scaleNote =>
     areNotesEquivalent(scaleNote, note),
   );
@@ -54,7 +46,7 @@ export const getCagedNoteColors = (
     areNotesEquivalent(pentatonicNote, note),
   );
   if (pentatonicIndex === -1) {
-    return pentatonicOnly ? undefined : [CAGED_NON_SHAPE_COLOR];
+    return [CAGED_NON_SHAPE_COLOR];
   }
 
   if (cagedShape === 'ALL') {

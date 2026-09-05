@@ -163,36 +163,6 @@ export default function Settings() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="caged-pentatonic"
-                  checked={settings.cagedPentatonicOnly}
-                  disabled={!settings.cagedModeEnabled}
-                  onCheckedChange={checked =>
-                    updateSettings({ cagedPentatonicOnly: checked === true })
-                  }
-                />
-                <Label htmlFor="caged-pentatonic">Pentatonic CAGED</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 p-0"
-                      aria-label="Pentatonic CAGED Info"
-                    >
-                      <Info className="h-4 w-4 text-accent-foreground" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[200px]">
-                    <p className="text-sm">
-                      Only shows the pentatonic notes of each shape, leaving the
-                      other scale notes (the 4th and 7th of a major scale)
-                      unhighlighted
-                    </p>
-                  </PopoverContent>
-                </Popover>
-              </div>
             </div>
           </div>
           <div className="space-y-2">

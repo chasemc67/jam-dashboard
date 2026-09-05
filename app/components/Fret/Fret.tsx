@@ -55,10 +55,7 @@ const Fret: React.FC<FretProps> = ({
       const noteColors = getCagedNoteColors(
         currentNote,
         stringNumber,
-        {
-          cagedShape: settings.cagedShape,
-          pentatonicOnly: settings.cagedPentatonicOnly,
-        },
+        settings.cagedShape,
         notes,
         pentatonicNotes,
       );
