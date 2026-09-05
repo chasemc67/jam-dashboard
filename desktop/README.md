@@ -52,6 +52,13 @@ with DMG/ZIP assets. Review and publish that draft to make the downloads availab
 from the repository's Releases page. Vercel continues deploying `main` separately.
 There is no automatic app updater yet; install a newer download to upgrade.
 
+## App icon
+
+The Mac bundle and installer use the angled red guitar artwork from
+`assets/JamDashboard.icns`, inspired by the website favicon. The source PNG and
+generation prompt are kept in `assets/`. After replacing the artwork, regenerate
+all standard Mac icon sizes with `bash desktop/build-icon.sh` and repackage.
+
 ## Signing
 
 Local/CI builds are previews without Developer ID signing or Apple notarization.
