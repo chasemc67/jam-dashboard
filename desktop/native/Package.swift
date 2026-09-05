@@ -9,15 +9,10 @@ let package = Package(
     ],
     products: [
         .library(name: "MusicCore", targets: ["MusicCore"]),
-        .executable(name: "YouTubeMusicAnalyzer", targets: ["YouTubeMusicAnalyzer"]),
         .executable(name: "MusicAnalyzerCLI", targets: ["MusicAnalyzerCLI"])
     ],
     targets: [
         .target(name: "MusicCore"),
-        .executableTarget(
-            name: "YouTubeMusicAnalyzer",
-            dependencies: ["MusicCore"]
-        ),
         .executableTarget(
             name: "MusicAnalyzerCLI",
             dependencies: ["MusicCore"]

@@ -29,6 +29,21 @@ public struct MusicAnalysis: Sendable, Equatable {
         guard let minorPitchClass = pitchClassNames.firstIndex(of: tonic) else { return nil }
         return "\(pitchClassNames[(minorPitchClass + 3) % 12]) major"
     }
+
+    /// Tonal-compatible values, separate from the human-readable enharmonic labels.
+    public var keyScale: String? { Self.selection(for: musicalKey) }
+    public var relativeMajorKeyScale: String? { relativeMajorKey.flatMap(Self.selection) }
+
+    private static func selection(for label: String) -> String? {
+        let mode = label.hasSuffix(" major") ? "major" : label.hasSuffix(" minor") ? "minor" : nil
+        guard let mode else { return nil }
+        let tonic = String(label.dropLast(mode.count + 1))
+            .components(separatedBy: " / ")[0]
+            .replacingOccurrences(of: "♯", with: "#")
+            .replacingOccurrences(of: "♭", with: "b")
+        guard ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"].contains(tonic) else { return nil }
+        return "\(tonic) \(mode)"
+    }
 }
 
 public enum MusicUtilityError: LocalizedError {

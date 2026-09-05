@@ -3,7 +3,5 @@ interface ImportMetaEnv {
 }
 
 interface Window {
-  jamDesktop?: {
-    openAnalyzer: () => Promise<{ ok: boolean; error?: string }>;
-  };
+  jamDesktop?: import('./types/analyzer').DesktopAPI;
 }

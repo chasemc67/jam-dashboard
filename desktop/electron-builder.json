@@ -9,14 +9,15 @@
     "main.cjs",
     "preload.cjs",
     "policy.cjs",
+    "analyzer.cjs",
     "renderer/client/**/*",
     "package.json",
     "!**/node_modules/**/*"
   ],
   "extraResources": [
     {
-      "from": "desktop/native/dist/YouTube Music Analyzer.app",
-      "to": "YouTube Music Analyzer.app"
+      "from": "desktop/native/dist/MusicAnalyzerCLI",
+      "to": "MusicAnalyzerCLI"
     }
   ],
   "mac": {

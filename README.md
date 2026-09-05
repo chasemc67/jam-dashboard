@@ -27,7 +27,8 @@ Changes merged to main will auto-deploy to vercel
 ### Mac desktop app
 
 Jam Dashboard also packages as an Electron Mac app, with a **YouTube Analyzer**
-button that opens the bundled native downloader and BPM/key analyzer.
+button that opens an in-window song analyzer drawer. Click a detected key or its
+relative major to set the dashboard key; downloads and analysis run locally.
 
 ```sh
 npm run desktop:dev      # build and launch on macOS

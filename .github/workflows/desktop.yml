@@ -66,4 +66,4 @@ jobs:
         run: |
           gh release create "$RELEASE_TAG" release/*.dmg release/*.zip --draft --verify-tag \
             --title "Jam Dashboard $RELEASE_TAG" \
-            --notes "Mac desktop preview for macOS 13+. Choose arm64 for Apple Silicon or x64 for Intel. Includes YouTube Music Analyzer; install yt-dlp and ffmpeg with Homebrew. These preview builds are not Developer ID signed or notarized."
+            --notes "Mac desktop preview for macOS 13+. Choose arm64 for Apple Silicon or x64 for Intel. Includes an integrated song analyzer drawer; install yt-dlp and ffmpeg with Homebrew. These preview builds are not Developer ID signed or notarized."

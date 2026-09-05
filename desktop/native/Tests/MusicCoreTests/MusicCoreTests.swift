@@ -52,6 +52,17 @@ final class MusicCoreTests: XCTestCase {
         XCTAssertEqual(result.bpm, 90, accuracy: 1.5)
     }
 
+    func testStructuredKeySelectionForEnharmonicMinor() {
+        let result = MusicAnalysis(bpm: 90, musicalKey: "F♯ / G♭ minor", tempoConfidence: 0.8, keyConfidence: 0.7)
+        XCTAssertEqual(result.keyScale, "F# minor")
+        XCTAssertEqual(result.relativeMajorKeyScale, "A major")
+    }
+
+    func testStructuredKeySelectionForMajorAndUnknown() {
+        XCTAssertEqual(MusicAnalysis(bpm: 120, musicalKey: "C major", tempoConfidence: 1, keyConfidence: 1).keyScale, "C major")
+        XCTAssertNil(MusicAnalysis(bpm: 120, musicalKey: "Unknown", tempoConfidence: 0, keyConfidence: 0).keyScale)
+    }
+
     func testRelativeMajorForMinorKey() {
         let analysis = MusicAnalysis(
             bpm: 70,

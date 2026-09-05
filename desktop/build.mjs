@@ -32,7 +32,7 @@ function run(command, commandArgs, extraEnv = {}) {
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
-run('bash', ['desktop/native/scripts/build-app.sh'], {
+run('bash', ['desktop/native/scripts/build-helper.sh'], {
   JAM_DESKTOP_ARCH: arch === 'x64' ? 'x86_64' : 'arm64',
 });
 run('npm', ['run', 'desktop:renderer']);

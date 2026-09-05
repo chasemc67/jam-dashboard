@@ -1,1 +1,1 @@
-export { default } from './DesktopAnalyzer';
+export { default, DesktopAnalyzerTrigger } from './DesktopAnalyzer';

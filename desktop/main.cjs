@@ -10,8 +10,7 @@ const {
   shell,
   systemPreferences,
 } = require('electron');
-const { execFile } = require('node:child_process');
-const { promisify } = require('node:util');
+const { AnalyzerService, AUDIO_EXTENSIONS } = require('./analyzer.cjs');
 const { readFile, stat } = require('node:fs/promises');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
@@ -23,9 +22,8 @@ const {
   contentSecurityPolicy,
 } = require('./policy.cjs');
 
-const run = promisify(execFile);
 let mainWindow;
-let openingAnalyzer;
+let analyzer;
 
 protocol.registerSchemesAsPrivileged([
   {
@@ -38,36 +36,6 @@ protocol.registerSchemesAsPrivileged([
     },
   },
 ]);
-
-async function openAnalyzer() {
-  if (openingAnalyzer) return openingAnalyzer;
-  openingAnalyzer = (async () => {
-    const analyzer = path.join(
-      app.isPackaged
-        ? process.resourcesPath
-        : path.join(__dirname, 'native', 'dist'),
-      'YouTube Music Analyzer.app',
-    );
-    try {
-      await stat(analyzer);
-      // Fixed bundled path, no shell or renderer-supplied arguments.
-      await run('/usr/bin/open', ['-a', analyzer], { timeout: 10000 });
-      return { ok: true };
-    } catch (error) {
-      console.error('Analyzer launch failed:', error);
-      return {
-        ok: false,
-        error:
-          'The bundled analyzer could not be opened. Reinstall Jam Dashboard, or run npm run desktop:build in a development checkout.',
-      };
-    }
-  })();
-  try {
-    return await openingAnalyzer;
-  } finally {
-    openingAnalyzer = undefined;
-  }
-}
 
 function openExternal(url) {
   if (isExternalURL(url)) shell.openExternal(url).catch(console.error);
@@ -164,14 +132,64 @@ if (!app.requestSingleInstanceLock()) {
           }
         },
       );
-      ipcMain.handle('jam:open-analyzer', event => {
-        if (
-          event.sender !== mainWindow?.webContents ||
-          event.senderFrame !== mainWindow.webContents.mainFrame ||
-          !isAppURL(event.senderFrame.url)
-        )
-          throw new Error('Untrusted analyzer request');
-        return openAnalyzer();
+      analyzer = new AnalyzerService({
+        helperPath: path.join(
+          app.isPackaged
+            ? process.resourcesPath
+            : path.join(__dirname, 'native', 'dist'),
+          'MusicAnalyzerCLI',
+        ),
+        destination: app.getPath('desktop'),
+        onChange: state => {
+          const contents = mainWindow?.webContents;
+          if (contents && !contents.isDestroyed())
+            contents.send('jam:analyzer-changed', state);
+        },
+      });
+      const handle = (channel, handler, raw = false) =>
+        ipcMain.handle(channel, async (event, ...args) => {
+          if (
+            event.sender !== mainWindow?.webContents ||
+            event.senderFrame !== mainWindow.webContents.mainFrame ||
+            !isAppURL(event.senderFrame.url)
+          ) {
+            throw new Error('Untrusted analyzer request');
+          }
+          try {
+            const result = await handler(...args);
+            return raw ? result : { ok: true };
+          } catch (error) {
+            if (raw) throw error;
+            return { ok: false, error: error.message };
+          }
+        });
+      handle('jam:analyzer-state', () => analyzer.getState(), true);
+      handle('jam:analyzer-youtube', url => analyzer.startYouTube(url));
+      handle('jam:analyzer-local', file => analyzer.startFile(file));
+      handle('jam:analyzer-cancel', () => analyzer.stop());
+      handle('jam:analyzer-destination', async () => {
+        analyzer.ensureIdle();
+        const result = await dialog.showOpenDialog(mainWindow, {
+          title: 'Save downloaded MP3s to',
+          defaultPath: analyzer.state.destination,
+          properties: ['openDirectory', 'createDirectory'],
+        });
+        if (!result.canceled) analyzer.setDestination(result.filePaths[0]);
+      });
+      handle('jam:analyzer-choose-audio', async () => {
+        analyzer.ensureIdle();
+        const result = await dialog.showOpenDialog(mainWindow, {
+          title: 'Analyze an audio file',
+          properties: ['openFile'],
+          filters: [{ name: 'Audio', extensions: AUDIO_EXTENSIONS }],
+        });
+        if (!result.canceled) analyzer.startFile(result.filePaths[0]);
+      });
+      handle('jam:analyzer-reveal', async () => {
+        const file = analyzer.state.file;
+        if (!file || !(await stat(file.path)).isFile())
+          throw new Error('The audio file could not be found.');
+        shell.showItemInFolder(file.path);
       });
       Menu.setApplicationMenu(
         Menu.buildFromTemplate([
@@ -183,14 +201,7 @@ if (!app.requestSingleInstanceLock()) {
             submenu: [
               {
                 label: 'YouTube Music Analyzer',
-                click: async () => {
-                  const result = await openAnalyzer();
-                  if (!result.ok)
-                    dialog.showErrorBox(
-                      'Could not open the analyzer',
-                      result.error,
-                    );
-                },
+                click: () => mainWindow?.webContents.send('jam:show-analyzer'),
               },
             ],
           },
@@ -208,6 +219,7 @@ if (!app.requestSingleInstanceLock()) {
       app.quit();
     });
   // Standard macOS behavior: keep the app available from the Dock after closing a window.
+  app.on('before-quit', () => analyzer?.stop());
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
   });
