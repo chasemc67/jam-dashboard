@@ -1,0 +1,37 @@
+{
+  "appId": "com.jamdashboard.desktop",
+  "productName": "Jam Dashboard",
+  "directories": {
+    "app": "desktop",
+    "output": "release"
+  },
+  "files": [
+    "main.cjs",
+    "preload.cjs",
+    "policy.cjs",
+    "analyzer.cjs",
+    "renderer/client/**/*",
+    "package.json",
+    "!**/node_modules/**/*"
+  ],
+  "extraResources": [
+    {
+      "from": "desktop/native/dist/MusicAnalyzerCLI",
+      "to": "MusicAnalyzerCLI"
+    }
+  ],
+  "mac": {
+    "icon": "desktop/assets/JamDashboard.icns",
+    "category": "public.app-category.music",
+    "target": ["dmg", "zip"],
+    "minimumSystemVersion": "13.0",
+    "hardenedRuntime": true,
+    "entitlements": "desktop/entitlements.mac.plist",
+    "entitlementsInherit": "desktop/entitlements.mac.plist",
+    "extendInfo": {
+      "NSMicrophoneUsageDescription": "Jam Dashboard listens to your instrument to detect notes."
+    }
+  },
+  "artifactName": "Jam-Dashboard-${version}-${arch}.${ext}",
+  "publish": null
+}

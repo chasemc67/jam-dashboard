@@ -24,6 +24,21 @@ npm run format     # prettier
 
 Changes merged to main will auto-deploy to vercel
 
+### Mac desktop app
+
+Jam Dashboard also packages as an Electron Mac app, with a **YouTube Analyzer**
+button that opens an in-window song analyzer drawer. Click a detected key or its
+relative major to set the dashboard key; downloads and analysis run locally.
+
+```sh
+npm run desktop:dev      # build and launch on macOS
+npm run desktop:package  # create DMG and ZIP in release/
+```
+
+See [desktop setup and downloads](desktop/README.md) for requirements, Apple
+Silicon/Intel builds, GitHub release artifacts, and signing. The hosted website
+keeps its existing build and does not expose local downloader functionality.
+
 
 ## About
 

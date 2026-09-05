@@ -12,7 +12,14 @@
     "format": "prettier --write .",
     "test": "jest",
     "storybook": "STORYBOOK=true storybook dev -p 6006",
-    "build-storybook": "STORYBOOK=true storybook build"
+    "build-storybook": "STORYBOOK=true storybook build",
+    "desktop:renderer": "JAM_DESKTOP=true remix vite:build",
+    "desktop:build": "node desktop/build.mjs",
+    "desktop:start": "electron desktop",
+    "desktop:dev": "npm run desktop:build && npm run desktop:start",
+    "desktop:package": "node desktop/build.mjs --package",
+    "desktop:test": "node --test desktop/tests/*.test.cjs",
+    "desktop:test:native": "bash desktop/native/scripts/test.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -71,6 +78,8 @@
     "@typescript-eslint/parser": "^6.7.4",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.19",
+    "electron": "44.2.0",
+    "electron-builder": "26.15.3",
     "eslint": "^8.38.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-import-resolver-typescript": "^3.6.1",

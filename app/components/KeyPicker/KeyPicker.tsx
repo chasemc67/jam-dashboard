@@ -114,8 +114,9 @@ export const KeyPicker: React.FC = () => {
           className="w-[350px] justify-between"
         >
           {keyScale
-            ? key_options.find(key_option => key_option.value === keyScale)
-                ?.label
+            ? (key_options.find(key_option => key_option.value === keyScale)
+                ?.label ??
+              `${keyScale} (${Scale.get(keyScale).notes.join(', ')})`)
             : 'Select key...'}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
