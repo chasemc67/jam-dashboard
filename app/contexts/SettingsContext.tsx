@@ -10,7 +10,7 @@ const SettingsSchema = z.object({
   showTextNotes: z.boolean(),
   quickColors: z.enum(COLORING_PATTERN_CHOICES),
   cagedModeEnabled: z.boolean(),
-  cagedShape: z.enum(['C', 'A', 'G', 'E', 'D']),
+  cagedShape: z.enum(['C', 'A', 'G', 'E', 'D', 'ALL']),
   showMajorMinorScales: z.boolean(),
   showHarmonicMelodicScales: z.boolean(),
   showModes: z.boolean(),

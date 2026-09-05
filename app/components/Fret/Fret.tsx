@@ -8,11 +8,10 @@
 import React from 'react';
 import { getNoteAtFret, areNotesEquivalent } from '~/utils/musicTheoryUtils';
 import { getNoteColorClass } from '~/utils/noteColors';
-import { getNotesForStringInShape } from '~/utils/cagedShapeUtils';
 import { useHighlight, INTERVALS } from '~/contexts/HighlightContext';
 import { useSettings } from '~/contexts/SettingsContext';
 import { useScaleKey } from '~/contexts/ScaleKeyContext';
-import { getCagedNoteColor } from '~/utils/cagedColorUtils';
+import { getCagedNoteColors, orientCagedColors } from '~/utils/cagedColorUtils';
 import '~/tailwind.css';
 
 export type HighlightedNote = {
@@ -53,27 +52,47 @@ const Fret: React.FC<FretProps> = ({
       const stringNumber = stringIndex + 1; // Convert to 1-based index
       const currentNote = getNoteAtFret(rootNote, fretNumber);
 
-      const noteColor = getCagedNoteColor(
+      const noteColors = getCagedNoteColors(
         currentNote,
         stringNumber,
         settings.cagedShape,
         notes,
         pentatonicNotes,
-        getNotesForStringInShape,
       );
 
-      if (noteColor) {
+      if (noteColors) {
+        const [leftColor, rightColor] = orientCagedColors(
+          noteColors,
+          settings.isLefty,
+        );
+        const isSplit = rightColor !== undefined;
+
         return (
           <div
             key={stringIndex}
             className="h-[2px] bg-[#808080] relative z-[2]"
           >
             <div
-              className={`rounded-md w-5 h-5 absolute -top-[9px] left-[calc(50%-10px)] flex items-center justify-center text-muted z-[3] ${getNoteColorClass(noteColor, 'background')}`}
+              data-testid="caged-note"
+              className={`rounded-md w-5 h-5 absolute -top-[9px] left-[calc(50%-10px)] flex items-center justify-center overflow-hidden text-muted z-[3] ${isSplit ? '' : getNoteColorClass(leftColor, 'background')}`}
             >
-              {showTextNotes
-                ? currentNote
-                : INTERVALS[notes.indexOf(currentNote)]}
+              {isSplit && (
+                <>
+                  <div
+                    data-testid="caged-note-left"
+                    className={`absolute inset-y-0 left-0 w-1/2 ${getNoteColorClass(leftColor, 'background')}`}
+                  />
+                  <div
+                    data-testid="caged-note-right"
+                    className={`absolute inset-y-0 right-0 w-1/2 ${getNoteColorClass(rightColor, 'background')}`}
+                  />
+                </>
+              )}
+              <span className="relative">
+                {showTextNotes
+                  ? currentNote
+                  : INTERVALS[notes.indexOf(currentNote)]}
+              </span>
             </div>
           </div>
         );

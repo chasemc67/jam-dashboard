@@ -2,13 +2,26 @@
 
 import React, { useState, useEffect } from 'react';
 import FretBoard from '../FretBoard';
-import { getNoteColorClass } from '~/utils/noteColors';
+import { getNoteColorClass, getSplitBorderClasses } from '~/utils/noteColors';
 import { useSettings } from '~/contexts/SettingsContext';
-import { getNotesForStringInShape } from '~/utils/cagedShapeUtils';
-import { getCagedNoteColor } from '~/utils/cagedColorUtils';
+import { getCagedNoteColors, orientCagedColors } from '~/utils/cagedColorUtils';
 import { useHighlight } from '~/contexts/HighlightContext';
 import { useScaleKey } from '~/contexts/ScaleKeyContext';
 import { areNotesEquivalent } from '~/utils/musicTheoryUtils';
+import {
+  CUSTOM_TUNING_NAME,
+  TUNING_PRESETS,
+  findMatchingPreset,
+  getTuningForStrings,
+} from '~/utils/tuningPresets';
+import { Label } from '~/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '~/components/ui/select';
 
 const DEFAULT_TUNING_PATTERN = ['E', 'B', 'G', 'D', 'A'];
 
@@ -51,6 +64,15 @@ const FretboardControls: React.FC = () => {
     });
   }, [settings.numberOfStrings]);
 
+  const matchingPreset = findMatchingPreset(rootNotes);
+
+  const handlePresetChange = (presetName: string) => {
+    const preset = TUNING_PRESETS.find(p => p.name === presetName);
+    if (preset) {
+      setRootNotes(getTuningForStrings(preset, settings.numberOfStrings));
+    }
+  };
+
   const handleInputChange = (index: number, value: string) => {
     const processedValue =
       value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
@@ -62,16 +84,15 @@ const FretboardControls: React.FC = () => {
   const getOutlineColor = (note: string, stringIndex: number) => {
     if (settings.cagedModeEnabled && pentatonicNotes.length !== 0) {
       const stringNumber = stringIndex + 1;
-      const noteColor = getCagedNoteColor(
+      const noteColors = getCagedNoteColors(
         note,
         stringNumber,
         settings.cagedShape,
         notes,
         pentatonicNotes,
-        getNotesForStringInShape,
       );
-      return noteColor
-        ? getNoteColorClass(noteColor, 'border')
+      return noteColors
+        ? getSplitBorderClasses(orientCagedColors(noteColors, settings.isLefty))
         : 'border-black';
     }
 
@@ -103,6 +124,35 @@ const FretboardControls: React.FC = () => {
 
   return (
     <div>
+      <div
+        className={`flex items-center gap-2 mb-2 ${settings.isLefty ? 'justify-end' : ''}`}
+      >
+        <Label htmlFor="tuning-preset">Tuning:</Label>
+        <Select
+          value={matchingPreset?.name ?? CUSTOM_TUNING_NAME}
+          onValueChange={handlePresetChange}
+        >
+          <SelectTrigger
+            id="tuning-preset"
+            className="w-[140px] h-8"
+            aria-label="Tuning preset"
+          >
+            <SelectValue placeholder="Select tuning" />
+          </SelectTrigger>
+          <SelectContent>
+            {TUNING_PRESETS.map(preset => (
+              <SelectItem key={preset.name} value={preset.name}>
+                {preset.name}
+              </SelectItem>
+            ))}
+            {!matchingPreset && (
+              <SelectItem value={CUSTOM_TUNING_NAME} disabled>
+                {CUSTOM_TUNING_NAME}
+              </SelectItem>
+            )}
+          </SelectContent>
+        </Select>
+      </div>
       <div className="flex">
         <div
           className={`flex flex-col justify-between h-[330px] ${settings.isLefty ? 'order-1' : 'order-0'}`}

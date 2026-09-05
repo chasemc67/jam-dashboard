@@ -1,6 +1,15 @@
 // Types for CAGED shapes and string positions
 export type CAGEDShape = 'C' | 'A' | 'G' | 'E' | 'D';
 
+// 'ALL' renders every shape at once, with shared notes split between the two shapes they belong to
+export type CAGEDShapeSelection = CAGEDShape | 'ALL';
+
+export const CAGED_SHAPES: CAGEDShape[] = ['C', 'A', 'G', 'E', 'D'];
+export const CAGED_SHAPE_CHOICES: CAGEDShapeSelection[] = [
+  ...CAGED_SHAPES,
+  'ALL',
+];
+
 // Interface defining which pentatonic scale indices appear on the high E string for each shape
 interface ShapeHighEConfig {
   noteIndices: [number, number]; // The indices in the pentatonic scale array that appear on high E
@@ -53,4 +62,35 @@ export function getNotesForStringInShape(
   const newSecondNote = (secondNote + (offset - 1) * 3) % 5;
 
   return [newFirstNote, newSecondNote];
+}
+
+/**
+ * Finds the two CAGED shapes that share a given pentatonic note on a string.
+ * Within a shape, the first note on a string sits at the lower fret and the second
+ * at the higher fret, so a note is the "top" of one shape and the "bottom" of the next.
+ * @param stringNumber - The string number (1 = high E, 6 = low E)
+ * @param pentatonicIndex - Index of the note in the pentatonic scale array (0-4)
+ * @returns lower: the shape that extends toward the nut from this note,
+ *          higher: the shape that extends toward the bridge from this note
+ */
+export function getShapesForNoteOnString(
+  stringNumber: number,
+  pentatonicIndex: number,
+): { lower: CAGEDShape; higher: CAGEDShape } {
+  let lower: CAGEDShape | undefined;
+  let higher: CAGEDShape | undefined;
+
+  for (const shape of CAGED_SHAPES) {
+    const [first, second] = getNotesForStringInShape(stringNumber, shape);
+    if (second === pentatonicIndex) lower = shape;
+    if (first === pentatonicIndex) higher = shape;
+  }
+
+  if (lower === undefined || higher === undefined) {
+    throw new Error(
+      `No CAGED shapes found for pentatonic index ${pentatonicIndex} on string ${stringNumber}`,
+    );
+  }
+
+  return { lower, higher };
 }

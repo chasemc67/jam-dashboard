@@ -20,6 +20,10 @@ import {
   COLORING_PATTERN_CHOICES,
   ColoringPatternType,
 } from '~/utils/noteColoringUtils';
+import {
+  CAGED_SHAPE_CHOICES,
+  CAGEDShapeSelection,
+} from '~/utils/cagedShapeUtils';
 
 export default function Settings() {
   const { settings, updateSettings } = useSettings();
@@ -142,7 +146,7 @@ export default function Settings() {
                 <Label htmlFor="caged-shape">CAGED Shape:</Label>
                 <Select
                   value={settings.cagedShape}
-                  onValueChange={(value: 'C' | 'A' | 'G' | 'E' | 'D') =>
+                  onValueChange={(value: CAGEDShapeSelection) =>
                     updateSettings({ cagedShape: value })
                   }
                   disabled={!settings.cagedModeEnabled}
@@ -151,7 +155,7 @@ export default function Settings() {
                     <SelectValue placeholder="Select shape" />
                   </SelectTrigger>
                   <SelectContent>
-                    {['C', 'A', 'G', 'E', 'D'].map(shape => (
+                    {CAGED_SHAPE_CHOICES.map(shape => (
                       <SelectItem key={shape} value={shape}>
                         {shape}
                       </SelectItem>
