@@ -1,7 +1,7 @@
 # Jam Dashboard for Mac
 
 The Electron app loads a bundled, static build of the existing Remix website at
-`jam://dashboard/`. It runs without Vercel or a local HTTP server. The dashboard
+`jam://dashboard/`. It serves the renderer without Vercel or a local web server; its optional agent connection uses a bundled loopback MCP service. The dashboard
 tools work offline; the About video, external links, and YouTube downloads need
 internet. Ads, analytics, and the PostHog feedback form are disabled in desktop
 builds. `npm run build`, `npm run dev`, and Vercel deployment retain their web behavior.
@@ -52,6 +52,10 @@ analysis and returns structured JSON events; no separate analyzer application is
 launched or included in the package. Quitting Jam Dashboard cancels an active job.
 A failed analysis preserves the downloaded file and its Finder action; cancelled
 downloads may leave partial files in the selected folder.
+
+## AI agent connection
+
+Open **AI connection** below the fretboard to connect Codex, Cursor or another MCP client. The bundled service listens at `http://127.0.0.1:4177/mcp`; the panel provides its private bearer token. Agents can select scales/CAGED coloring, identify chords and show/select basic chord voicings. The installed app needs no separate Node service. See the [agent setup guide](../docs/agent-tools.md).
 
 ## Download deployment
 

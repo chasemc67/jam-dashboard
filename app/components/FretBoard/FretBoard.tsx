@@ -1,6 +1,7 @@
 // FretBoard.tsx
 import React from 'react';
 import Fret from '../Fret';
+import type { Position } from '../../../shared/music/voicings';
 
 export type FretBoardProps = {
   rootNotes: string[];
@@ -8,6 +9,8 @@ export type FretBoardProps = {
   startingFret: number;
   showTextNotes?: boolean;
   isLeftHanded?: boolean;
+  /** When supplied, show only these exact locations instead of pitch-class highlights. */
+  positions?: Position[];
 };
 
 const FretBoard: React.FC<FretBoardProps> = ({
@@ -16,6 +19,7 @@ const FretBoard: React.FC<FretBoardProps> = ({
   startingFret,
   showTextNotes,
   isLeftHanded,
+  positions,
 }) => {
   const renderFrets = () => {
     const frets = [];
@@ -31,13 +35,18 @@ const FretBoard: React.FC<FretBoardProps> = ({
           rootNotes={rootNotes}
           fretNumber={startingFret + i + 1}
           showTextNotes={showTextNotes}
+          positions={positions}
         />,
       );
     }
     return frets;
   };
 
-  return <div className="flex">{renderFrets()}</div>;
+  return (
+    <div className="flex pb-6" aria-label="Guitar fretboard">
+      {renderFrets()}
+    </div>
+  );
 };
 
 export default FretBoard;

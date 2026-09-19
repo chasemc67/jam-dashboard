@@ -14,7 +14,7 @@ import { GoogleAdsense } from './components/GoogleAdsense/GoogleAdsense';
 import './tailwind.css';
 
 export const links: LinksFunction = () =>
-  import.meta.env.JAM_DESKTOP
+  import.meta.env.JAM_DESKTOP || import.meta.env.JAM_AGENT
     ? []
     : [
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -117,7 +117,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           }}
         />
 
-        {!import.meta.env.JAM_DESKTOP && (
+        {!(import.meta.env.JAM_DESKTOP || import.meta.env.JAM_AGENT) && (
           <>
             {/* Google Ads Tag */}
             <script
@@ -166,7 +166,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <source src="/assets/silent.mp3" type="audio/mp3" />
           </audio>
           <Scripts />
-          {!import.meta.env.JAM_DESKTOP && (
+          {!(import.meta.env.JAM_DESKTOP || import.meta.env.JAM_AGENT) && (
             <>
               <Analytics />
               <SpeedInsights />

@@ -1,6 +1,7 @@
 const {
   app,
   BrowserWindow,
+  clipboard,
   dialog,
   ipcMain,
   Menu,
@@ -11,6 +12,7 @@ const {
   systemPreferences,
 } = require('electron');
 const { AnalyzerService, AUDIO_EXTENSIONS } = require('./analyzer.cjs');
+const { startAgentService, loadAgentToken } = require('./agent-service.cjs');
 const { readFile, stat } = require('node:fs/promises');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
@@ -24,6 +26,13 @@ const {
 
 let mainWindow;
 let analyzer;
+let agentService;
+let agentConnection;
+let agentSession;
+function detachAgent() {
+  if (agentSession) agentService?.registry.detach(agentSession);
+  agentSession = undefined;
+}
 
 protocol.registerSchemesAsPrivileged([
   {
@@ -72,8 +81,16 @@ async function createWindow() {
     if (!isAppURL(url)) event.preventDefault();
   });
   mainWindow.on('closed', () => {
+    detachAgent();
     mainWindow = undefined;
   });
+  mainWindow.webContents.on('render-process-gone', detachAgent);
+  mainWindow.webContents.on(
+    'did-start-navigation',
+    (_event, _url, inPlace, isMainFrame) => {
+      if (isMainFrame && !inPlace) detachAgent();
+    },
+  );
   await mainWindow.loadURL(APP_URL);
 }
 
@@ -153,7 +170,7 @@ if (!app.requestSingleInstanceLock()) {
             event.senderFrame !== mainWindow.webContents.mainFrame ||
             !isAppURL(event.senderFrame.url)
           ) {
-            throw new Error('Untrusted analyzer request');
+            throw new Error('Untrusted app request');
           }
           try {
             const result = await handler(...args);
@@ -163,6 +180,79 @@ if (!app.requestSingleInstanceLock()) {
             return { ok: false, error: error.message };
           }
         });
+      try {
+        const token = await loadAgentToken(
+          path.join(app.getPath('userData'), 'agent-token'),
+        );
+        agentService = await startAgentService({ token });
+        agentConnection = { connection: { url: agentService.url, token } };
+      } catch (error) {
+        agentConnection = {
+          error: `MCP service could not start: ${error.message}. Close any other service using port 4177 and restart Jam Dashboard.`,
+        };
+      }
+      handle('jam:agent-connection', () => agentConnection, true);
+      handle(
+        'jam:agent-copy-config',
+        () => {
+          const connection = agentConnection.connection;
+          if (!connection) throw new Error('Agent service unavailable.');
+          clipboard.writeText(
+            JSON.stringify(
+              {
+                mcpServers: {
+                  'jam-dashboard': {
+                    url: connection.url,
+                    headers: { Authorization: `Bearer ${connection.token}` },
+                  },
+                },
+              },
+              null,
+              2,
+            ),
+          );
+        },
+        true,
+      );
+      handle(
+        'jam:agent-connect',
+        state => {
+          if (!agentService) throw new Error(agentConnection.error);
+          detachAgent();
+          agentSession = agentService.registry.attach(
+            'desktop',
+            state,
+            request => {
+              if (!mainWindow || mainWindow.webContents.isDestroyed())
+                throw new Error('Dashboard window closed.');
+              mainWindow.webContents.send('jam:agent-command', request);
+            },
+          );
+          return agentSession;
+        },
+        true,
+      );
+      handle(
+        'jam:agent-disconnect',
+        id => {
+          if (id === agentSession) detachAgent();
+        },
+        true,
+      );
+      handle(
+        'jam:agent-state',
+        (id, state) => {
+          if (id === agentSession) agentService.registry.update(id, state);
+        },
+        true,
+      );
+      handle(
+        'jam:agent-reply',
+        (id, reply) => {
+          if (id === agentSession) agentService.registry.reply(id, reply);
+        },
+        true,
+      );
       handle('jam:analyzer-state', () => analyzer.getState(), true);
       handle('jam:analyzer-youtube', url => analyzer.startYouTube(url));
       handle('jam:analyzer-local', file => analyzer.startFile(file));
@@ -210,7 +300,10 @@ if (!app.requestSingleInstanceLock()) {
       app.quit();
     });
   // Standard macOS behavior: keep the app available from the Dock after closing a window.
-  app.on('before-quit', () => analyzer?.stop());
+  app.on('before-quit', () => {
+    analyzer?.stop();
+    void agentService?.close().catch(console.error);
+  });
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
   });

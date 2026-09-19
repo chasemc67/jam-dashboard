@@ -13,15 +13,7 @@ const Template: StoryFn<FretBoardProps> = (args: FretBoardProps) => (
 export const Default = Template.bind({});
 Default.args = {
   rootNotes: ['E', 'A', 'D', 'G', 'B', 'E'],
-  highlightedNotes: [
-    { note: 'C', color: 'red' },
-    { note: 'D', color: 'blue' },
-    { note: 'E', color: 'green' },
-    { note: 'F', color: 'yellow' },
-    { note: 'G', color: 'orange' },
-    { note: 'A', color: 'purple' },
-    { note: 'B', color: 'pink' },
-  ],
+
   numberOfFrets: 12,
   startingFret: 0,
   showTextNotes: true,

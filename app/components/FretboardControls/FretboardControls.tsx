@@ -1,12 +1,14 @@
 // FretboardControls.tsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import FretBoard from '../FretBoard';
 import { getNoteColorClass, getSplitBorderClasses } from '~/utils/noteColors';
 import { useSettings } from '~/contexts/SettingsContext';
 import { getCagedNoteColors, orientCagedColors } from '~/utils/cagedColorUtils';
 import { useHighlight } from '~/contexts/HighlightContext';
 import { useScaleKey } from '~/contexts/ScaleKeyContext';
+import { useAgent } from '~/contexts/AgentContext';
+import VoicingControls from '../VoicingControls';
 import { areNotesEquivalent } from '~/utils/musicTheoryUtils';
 import {
   CUSTOM_TUNING_NAME,
@@ -23,46 +25,22 @@ import {
   SelectValue,
 } from '~/components/ui/select';
 
-const DEFAULT_TUNING_PATTERN = ['E', 'B', 'G', 'D', 'A'];
-
-const getDefaultTuning = (numberOfStrings: number): string[] => {
-  const tuning: string[] = [];
-  for (let i = 0; i < numberOfStrings; i++) {
-    tuning.push(DEFAULT_TUNING_PATTERN[i % DEFAULT_TUNING_PATTERN.length]);
-  }
-  return tuning;
-};
-
 const FretboardControls: React.FC = () => {
   const { getHighlightedNotes } = useHighlight();
   const { notes, pentatonicNotes } = useScaleKey();
   const { settings } = useSettings();
-  const [rootNotes, setRootNotes] = useState(() =>
-    getDefaultTuning(settings.numberOfStrings),
-  );
-  const [startingFret] = useState(0);
+  const { rootNotes, setRootNotes, display, setViewReady } = useAgent();
+  useEffect(() => {
+    setViewReady(true);
+    return () => setViewReady(false);
+  }, [setViewReady]);
+  const startingFret = 0;
 
   const shouldShowWarning =
     pentatonicNotes.length === 0 &&
     ((settings.quickColors !== 'scale' &&
       settings.quickColors !== 'major/minor roots') ||
       settings.cagedModeEnabled);
-
-  // Update tuning when number of strings changes
-  useEffect(() => {
-    setRootNotes(prev => {
-      const newTuning = getDefaultTuning(settings.numberOfStrings);
-      // Preserve existing tuning values for strings that still exist
-      for (
-        let i = 0;
-        i < Math.min(prev.length, settings.numberOfStrings);
-        i++
-      ) {
-        newTuning[i] = prev[i];
-      }
-      return newTuning;
-    });
-  }, [settings.numberOfStrings]);
 
   const matchingPreset = findMatchingPreset(rootNotes);
 
@@ -82,6 +60,11 @@ const FretboardControls: React.FC = () => {
   };
 
   const getOutlineColor = (note: string, stringIndex: number) => {
+    if (
+      display.positions &&
+      !display.positions.some(p => p.string === stringIndex + 1 && p.fret === 0)
+    )
+      return 'border-black';
     if (settings.cagedModeEnabled && pentatonicNotes.length !== 0) {
       const stringNumber = stringIndex + 1;
       const noteColors = getCagedNoteColors(
@@ -108,22 +91,39 @@ const FretboardControls: React.FC = () => {
     return rootNotes.map((note, index) => (
       <div
         key={index}
-        className="flex items-start h-[calc(100%/var(--num-strings))]"
+        className="flex items-center gap-1 h-[30px]"
         style={
           { '--num-strings': settings.numberOfStrings } as React.CSSProperties
         }
       >
         <input
+          maxLength={6}
+          aria-label={`String ${index + 1} tuning`}
           value={note}
           onChange={e => handleInputChange(index, e.target.value)}
           className={`w-[30px] h-[30px] text-center border-[5px] bg-background [color-scheme:dark] ${getOutlineColor(note, index)}`}
         />
+        {display.positions && (
+          <span
+            className="w-4 text-xs"
+            aria-label={`String ${index + 1} ${display.positions.some(p => p.string === index + 1) ? 'played' : 'muted'}`}
+          >
+            {!display.positions.some(p => p.string === index + 1)
+              ? '×'
+              : display.positions.some(
+                    p => p.string === index + 1 && p.fret === 0,
+                  )
+                ? '○'
+                : ''}
+          </span>
+        )}
       </div>
     ));
   };
 
   return (
     <div>
+      <VoicingControls />
       <div
         className={`flex items-center gap-2 mb-2 ${settings.isLefty ? 'justify-end' : ''}`}
       >
@@ -155,7 +155,7 @@ const FretboardControls: React.FC = () => {
       </div>
       <div className="flex">
         <div
-          className={`flex flex-col justify-between h-[330px] ${settings.isLefty ? 'order-1' : 'order-0'}`}
+          className={`flex flex-col justify-between h-[310px] -mt-[5px] ${settings.isLefty ? 'order-1' : 'order-0'}`}
         >
           {renderInputs()}
         </div>
@@ -168,6 +168,7 @@ const FretboardControls: React.FC = () => {
                 startingFret={startingFret}
                 showTextNotes={settings.showTextNotes}
                 isLeftHanded={settings.isLefty}
+                positions={display.positions}
               />
             </div>
           </div>
