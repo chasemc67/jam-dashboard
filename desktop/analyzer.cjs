@@ -1,4 +1,5 @@
 const { spawn } = require('node:child_process');
+const { randomUUID } = require('node:crypto');
 const {
   accessSync,
   constants,
@@ -23,6 +24,11 @@ const AUDIO_EXTENSIONS = [
   'webm',
 ];
 const keyPattern = /^[A-G](?:#|b)? (?:major|minor)$/;
+const PUBLIC_HISTORY_LIMIT = 8;
+
+function analyzerError(code, message) {
+  return Object.assign(new Error(message), { code });
+}
 
 function validateAnalysis(value) {
   if (
@@ -183,6 +189,8 @@ class AnalyzerService {
     });
     this.state = {
       revision: 0,
+      jobId: null,
+      query: null,
       status: 'idle',
       destination,
       tools: detectTools(),
@@ -192,6 +200,7 @@ class AnalyzerService {
       error: null,
     };
     this.job = null;
+    this.history = new Map();
   }
 
   snapshot() {
@@ -199,7 +208,69 @@ class AnalyzerService {
   }
   update(patch) {
     this.state = { ...this.state, ...patch, revision: this.state.revision + 1 };
+    if (
+      this.state.jobId &&
+      ['complete', 'error', 'cancelled'].includes(this.state.status)
+    ) {
+      this.history.set(this.state.jobId, this.publicSnapshot());
+      while (this.history.size > PUBLIC_HISTORY_LIMIT)
+        this.history.delete(this.history.keys().next().value);
+    }
     this.onChange(this.snapshot());
+  }
+  publicSnapshot() {
+    const { jobId, status, query, source, analysis, error } = this.state;
+    return structuredClone({ jobId, status, query, source, analysis, error });
+  }
+  startSongAnalysis(query) {
+    this.ensureIdle();
+    let input;
+    try {
+      input = parseYouTubeInput(query);
+    } catch (error) {
+      throw analyzerError('INVALID_INPUT', error.message);
+    }
+    if (input.kind === 'url') {
+      const url = new URL(input.value);
+      const videoId =
+        url.hostname === 'youtu.be'
+          ? /^\/([A-Za-z0-9_-]{11})\/?$/.exec(url.pathname)?.[1]
+          : url.pathname === '/watch'
+            ? url.searchParams.get('v')
+            : /^\/(?:shorts|live|embed)\/([A-Za-z0-9_-]{11})\/?$/.exec(
+                url.pathname,
+              )?.[1];
+      if (!videoId || !/^[A-Za-z0-9_-]{11}$/.test(videoId))
+        throw analyzerError(
+          'INVALID_INPUT',
+          'Use a single YouTube video URL or a song name and artist. Channel, playlist, and search URLs are not supported for song analysis.',
+        );
+      // Removing playlist/channel parameters also bounds downloads to one video.
+      input.value = `https://www.youtube.com/watch?v=${videoId}`;
+    }
+    this.startYouTube(input.value);
+    return this.publicSnapshot();
+  }
+  getSongAnalysis(jobId) {
+    if (
+      jobId === undefined ||
+      (typeof jobId === 'string' && jobId === this.state.jobId)
+    )
+      return this.publicSnapshot();
+    const snapshot = this.history.get(jobId);
+    if (!snapshot)
+      throw analyzerError(
+        'ANALYSIS_NOT_FOUND',
+        'That analysis was not found. It may have expired or the app restarted.',
+      );
+    return structuredClone(snapshot);
+  }
+  cancelSongAnalysis(jobId) {
+    // Resolve first, so an unknown or expired ID cannot affect the current job.
+    const snapshot = this.getSongAnalysis(jobId);
+    if (this.job?.id !== jobId) return snapshot;
+    this.stop();
+    return this.getSongAnalysis(jobId);
   }
   getState() {
     this.update({ tools: this.detectTools() });
@@ -207,7 +278,8 @@ class AnalyzerService {
   }
   ensureIdle() {
     if (this.job)
-      throw new Error(
+      throw analyzerError(
+        'ANALYZER_BUSY',
         'An analysis is already running. Cancel it before starting another.',
       );
   }
@@ -219,15 +291,27 @@ class AnalyzerService {
   }
   startYouTube(raw) {
     this.ensureIdle();
-    const input = parseYouTubeInput(raw);
+    let input;
+    try {
+      input = parseYouTubeInput(raw);
+    } catch (error) {
+      throw analyzerError('INVALID_INPUT', error.message);
+    }
     const tools = this.detectTools();
     this.update({ tools });
     if (!tools.ytDlp || !tools.ffmpeg)
-      throw new Error(
+      throw analyzerError(
+        'DEPENDENCY_MISSING',
         'Install yt-dlp and ffmpeg with Homebrew, then try again.',
       );
-    if (!statSync(this.state.destination).isDirectory())
-      throw new Error('The destination folder no longer exists.');
+    try {
+      if (!statSync(this.state.destination).isDirectory()) throw new Error();
+    } catch {
+      throw analyzerError(
+        'INVALID_INPUT',
+        'The destination folder no longer exists.',
+      );
+    }
     const searching = input.kind === 'query';
     this.start(
       [
@@ -237,41 +321,50 @@ class AnalyzerService {
       ],
       null,
       searching ? 'searching' : 'downloading',
+      input.value,
     );
   }
   startFile(filePath) {
     this.ensureIdle();
-    if (
-      typeof filePath !== 'string' ||
-      !path.isAbsolute(filePath) ||
-      filePath.includes('\0') ||
-      !AUDIO_EXTENSIONS.includes(
-        path.extname(filePath).slice(1).toLowerCase(),
-      ) ||
-      !statSync(filePath).isFile()
-    ) {
-      throw new Error('Choose a supported audio file.');
+    try {
+      if (
+        typeof filePath !== 'string' ||
+        !path.isAbsolute(filePath) ||
+        filePath.includes('\0') ||
+        !AUDIO_EXTENSIONS.includes(
+          path.extname(filePath).slice(1).toLowerCase(),
+        ) ||
+        !statSync(filePath).isFile()
+      )
+        throw new Error();
+    } catch {
+      throw analyzerError('INVALID_INPUT', 'Choose a supported audio file.');
     }
     const tools = this.detectTools();
     this.update({ tools });
     if (!tools.ffmpeg)
-      throw new Error('Install ffmpeg with Homebrew, then try again.');
+      throw analyzerError(
+        'DEPENDENCY_MISSING',
+        'Install ffmpeg with Homebrew, then try again.',
+      );
     this.start(
       ['analyze', filePath],
       { path: filePath, name: path.basename(filePath) },
       'analyzing',
     );
   }
-  start(args, file, status) {
+  start(args, file, status, query = null) {
     try {
       accessSync(this.helperPath, constants.X_OK);
     } catch {
-      throw new Error(
+      throw analyzerError(
+        'DEPENDENCY_MISSING',
         'The local analyzer is missing. Reinstall Jam Dashboard.',
       );
     }
     const temp = mkdtempSync(path.join(tmpdir(), 'jam-analyzer-'));
     const job = {
+      id: randomUUID(),
       child: null,
       result: null,
       error: null,
@@ -281,7 +374,15 @@ class AnalyzerService {
       timer: null,
     };
     this.job = job;
-    this.update({ status, file, source: null, analysis: null, error: null });
+    this.update({
+      jobId: job.id,
+      query,
+      status,
+      file,
+      source: null,
+      analysis: null,
+      error: null,
+    });
     try {
       job.child = this.spawnProcess(this.helperPath, ['--json', ...args], {
         detached: true,

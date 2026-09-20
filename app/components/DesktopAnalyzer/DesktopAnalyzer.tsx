@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Download,
   ExternalLink,
@@ -28,6 +28,7 @@ export default function DesktopAnalyzer() {
   const [state, setState] = useState<AnalyzerState>();
   const [error, setError] = useState<string>();
   const [pending, setPending] = useState(false);
+  const displayedJobId = useRef<string | null>(null);
   const busy =
     state?.status === 'searching' ||
     state?.status === 'downloading' ||
@@ -60,6 +61,13 @@ export default function DesktopAnalyzer() {
       unsubscribe?.();
     };
   }, []);
+
+  useEffect(() => {
+    if (!state?.jobId || state.jobId === displayedJobId.current) return;
+    displayedJobId.current = state.jobId;
+    setInput(state.query ?? '');
+    setError(undefined);
+  }, [state?.jobId, state?.query]);
 
   async function run(action: () => Promise<AnalyzerReply> | undefined) {
     setError(undefined);

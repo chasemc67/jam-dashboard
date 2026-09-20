@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card } from '~/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
 import RandomPlayer from '~/components/RandomPlayer';
@@ -9,13 +9,22 @@ import { useHighlight } from '~/contexts/HighlightContext';
 
 const TabChordView: React.FC = () => {
   const { clearChordHighlight } = useHighlight();
+  const [tab, setTab] = useState('chord-explorer');
+
+  useEffect(() => {
+    if (!import.meta.env.JAM_DESKTOP) return;
+    return window.jamDesktop?.onAnalyzerOpen(() => setTab('youtube-analyzer'));
+  }, []);
 
   return (
     <Card className="w-full max-w-[750px]">
       <Tabs
-        defaultValue="chord-explorer"
+        value={tab}
         className="w-full"
-        onValueChange={() => clearChordHighlight()}
+        onValueChange={value => {
+          setTab(value);
+          clearChordHighlight();
+        }}
       >
         <TabsList className="w-full">
           <TabsTrigger value="chord-explorer" className="flex-1">

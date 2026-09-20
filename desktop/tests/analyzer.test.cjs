@@ -262,3 +262,205 @@ test('deadline terminates the job', async t => {
   assert.match(service.state.error, /timed out/);
   assert.deepEqual(killed, [9000]);
 });
+
+test('MCP starts a search immediately and reports its source and analysis without local paths', t => {
+  const { service, directory, children } = setup(t);
+  assert.deepEqual(service.getSongAnalysis(), {
+    jobId: null,
+    status: 'idle',
+    query: null,
+    source: null,
+    analysis: null,
+    error: null,
+  });
+  const started = service.startSongAnalysis('  Blue Skies Ella Fitzgerald  ');
+  assert.match(started.jobId, /^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/);
+  assert.deepEqual(started, {
+    jobId: service.snapshot().jobId,
+    status: 'searching',
+    query: 'Blue Skies Ella Fitzgerald',
+    source: null,
+    analysis: null,
+    error: null,
+  });
+  emit(children[0], { event: 'source', source });
+  emit(children[0], { event: 'status', status: 'downloading' });
+  assert.equal(service.getSongAnalysis(started.jobId).status, 'downloading');
+  emit(children[0], { event: 'file', path: path.join(directory, 'Song.mp3') });
+  emit(children[0], { event: 'status', status: 'analyzing' });
+  assert.equal(service.getSongAnalysis(started.jobId).status, 'analyzing');
+  emit(children[0], { event: 'result', analysis: result });
+  children[0].emit('close', 0);
+  const completed = service.getSongAnalysis(started.jobId);
+  assert.deepEqual(completed, {
+    ...started,
+    status: 'complete',
+    source,
+    analysis: result,
+  });
+  assert.ok(!JSON.stringify(completed).includes(directory));
+  completed.analysis.bpm = 42;
+  completed.source.title = 'Changed';
+  assert.equal(service.getSongAnalysis(started.jobId).analysis.bpm, 120);
+  assert.equal(service.getSongAnalysis(started.jobId).source.title, 'A song');
+});
+
+test('MCP preserves direct URLs and cannot replace an active manual job', t => {
+  const { service, file, children, calls } = setup(t);
+  service.startFile(file);
+  const manualJob = service.getSongAnalysis();
+  assert.equal(manualJob.query, null);
+  assert.ok(manualJob.jobId);
+  assert.throws(() => service.startSongAnalysis('A song'), {
+    code: 'ANALYZER_BUSY',
+  });
+  assert.equal(service.getSongAnalysis().jobId, manualJob.jobId);
+  assert.equal(calls.length, 1);
+  emit(children[0], { event: 'result', analysis: result });
+  children[0].emit('close', 0);
+  const direct = service.startSongAnalysis('https://youtu.be/BaW_jenozKc');
+  assert.notEqual(direct.jobId, manualJob.jobId);
+  assert.equal(direct.status, 'downloading');
+  assert.equal(direct.query, 'https://www.youtube.com/watch?v=BaW_jenozKc');
+  assert.equal(calls[1][1][1], 'download');
+  assert.deepEqual(service.getSongAnalysis(manualJob.jobId).analysis, result);
+});
+
+test('MCP direct URLs select one video and discard playlist parameters', t => {
+  const { service, calls } = setup(t);
+  const canonical = 'https://www.youtube.com/watch?v=BaW_jenozKc';
+  for (const url of [
+    'https://www.youtube.com/watch?v=BaW_jenozKc&list=PL123&index=2',
+    'http://music.youtube.com/watch?v=BaW_jenozKc',
+    'https://youtu.be/BaW_jenozKc?list=PL123',
+    'https://www.youtube.com/shorts/BaW_jenozKc?feature=share',
+    'https://www.youtube.com/live/BaW_jenozKc',
+    'https://www.youtube.com/embed/BaW_jenozKc/',
+  ]) {
+    const started = service.startSongAnalysis(url);
+    assert.equal(started.status, 'downloading');
+    assert.equal(started.query, canonical);
+    assert.equal(calls.at(-1)[1][1], 'download');
+    assert.equal(calls.at(-1)[1][2], canonical);
+    service.stop();
+  }
+});
+
+test('MCP rejects collection URLs before starting a download', t => {
+  const { service, calls } = setup(t);
+  for (const url of [
+    'https://www.youtube.com/playlist?list=PL123',
+    'https://www.youtube.com/@artist',
+    'https://www.youtube.com/channel/UC123',
+    'https://www.youtube.com/results?search_query=Blue+Skies',
+    'https://www.youtube.com/watch?list=PL123',
+    'https://www.youtube.com/watch?v=short',
+    'https://youtu.be/BaW_jenozKc/other',
+    'https://www.youtube.com/shorts/',
+  ]) {
+    assert.throws(() => service.startSongAnalysis(url), {
+      code: 'INVALID_INPUT',
+    });
+    assert.equal(service.getSongAnalysis().status, 'idle');
+    assert.equal(service.getSongAnalysis().jobId, null);
+  }
+  assert.deepEqual(calls, []);
+  const search = service.startSongAnalysis('Blue Skies Ella Fitzgerald');
+  assert.equal(search.status, 'searching');
+  assert.equal(calls[0][1][1], 'search-download');
+  assert.equal(calls[0][1][2], 'Blue Skies Ella Fitzgerald');
+});
+
+test('MCP cancellation targets only the exact job and remains safe after a new manual job', t => {
+  const { service, file, children, killed } = setup(t);
+  const first = service.startSongAnalysis('A song');
+  emit(children[0], { event: 'source', source });
+  const cancelled = service.cancelSongAnalysis(first.jobId);
+  assert.equal(cancelled.status, 'cancelled');
+  assert.deepEqual(killed, [9000]);
+  service.startFile(file);
+  const manualId = service.getSongAnalysis().jobId;
+  assert.notEqual(manualId, first.jobId);
+  assert.deepEqual(service.cancelSongAnalysis(first.jobId), cancelled);
+  assert.throws(() => service.cancelSongAnalysis('unknown-job'), {
+    code: 'ANALYSIS_NOT_FOUND',
+  });
+  assert.equal(service.getSongAnalysis().status, 'analyzing');
+  assert.equal(service.getSongAnalysis().jobId, manualId);
+  assert.deepEqual(killed, [9000]);
+  emit(children[0], { event: 'result', analysis: result });
+  children[0].emit('close', 0);
+  assert.deepEqual(service.getSongAnalysis(first.jobId), cancelled);
+  assert.equal(service.getSongAnalysis().status, 'analyzing');
+  assert.equal(service.cancelSongAnalysis(manualId).status, 'cancelled');
+  assert.deepEqual(killed, [9000, 9001]);
+});
+
+test('MCP keeps eight terminal jobs, including completed manual analyses, without unbounded history', t => {
+  const { service, file, children, killed } = setup(t);
+  const ids = [];
+  for (let index = 0; index < 9; index++) {
+    service.startFile(file);
+    ids.push(service.getSongAnalysis().jobId);
+    emit(children[index], {
+      event: 'result',
+      analysis: { ...result, bpm: 100 + index },
+    });
+    children[index].emit('close', 0);
+  }
+  assert.equal(new Set(ids).size, 9);
+  assert.equal(service.history.size, 8);
+  assert.throws(() => service.getSongAnalysis(ids[0]), {
+    code: 'ANALYSIS_NOT_FOUND',
+  });
+  assert.throws(() => service.getSongAnalysis('unknown'), {
+    code: 'ANALYSIS_NOT_FOUND',
+  });
+  for (const [index, id] of ids.entries()) {
+    if (!index) continue;
+    const completed = service.getSongAnalysis(id);
+    assert.equal(completed.analysis.bpm, 100 + index);
+    assert.deepEqual(service.cancelSongAnalysis(id), completed);
+    completed.analysis.bpm = 10;
+    assert.equal(service.getSongAnalysis(id).analysis.bpm, 100 + index);
+  }
+  assert.deepEqual(killed, []);
+});
+
+test('MCP preflight errors have actionable codes and never start a job', t => {
+  const { service, directory, calls } = setup(t);
+  for (const input of ['', 'file:///tmp/song.mp3', 'A song\n']) {
+    assert.throws(() => service.startSongAnalysis(input), {
+      code: 'INVALID_INPUT',
+    });
+  }
+  service.detectTools = () => ({ ytDlp: false, ffmpeg: true });
+  assert.throws(() => service.startSongAnalysis('A song'), {
+    code: 'DEPENDENCY_MISSING',
+  });
+  service.detectTools = () => ({ ytDlp: true, ffmpeg: true });
+  service.helperPath = path.join(directory, 'missing-helper');
+  assert.throws(() => service.startSongAnalysis('A song'), {
+    code: 'DEPENDENCY_MISSING',
+  });
+  service.state.destination = path.join(directory, 'missing-folder');
+  assert.throws(() => service.startSongAnalysis('A song'), {
+    code: 'INVALID_INPUT',
+  });
+  assert.equal(service.getSongAnalysis().jobId, null);
+  assert.deepEqual(calls, []);
+});
+
+test('MCP failure snapshots remain available when later work starts', t => {
+  const { service, children } = setup(t);
+  const failed = service.startSongAnalysis('A song');
+  emit(children[0], { event: 'error', message: 'No videos found.' });
+  children[0].emit('close', 1);
+  service.startSongAnalysis('Another song');
+  assert.deepEqual(service.getSongAnalysis(failed.jobId), {
+    ...failed,
+    status: 'error',
+    error: 'No videos found.',
+  });
+  assert.equal(service.getSongAnalysis().query, 'Another song');
+});

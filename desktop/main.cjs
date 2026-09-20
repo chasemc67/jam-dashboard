@@ -184,7 +184,20 @@ if (!app.requestSingleInstanceLock()) {
         const token = await loadAgentToken(
           path.join(app.getPath('userData'), 'agent-token'),
         );
-        agentService = await startAgentService({ token });
+        agentService = await startAgentService({
+          token,
+          songAnalyzer: {
+            startSongAnalysis: query => {
+              const result = analyzer.startSongAnalysis(query);
+              const contents = mainWindow?.webContents;
+              if (contents && !contents.isDestroyed())
+                contents.send('jam:analyzer-open');
+              return result;
+            },
+            getSongAnalysis: jobId => analyzer.getSongAnalysis(jobId),
+            cancelSongAnalysis: jobId => analyzer.cancelSongAnalysis(jobId),
+          },
+        });
         agentConnection = { connection: { url: agentService.url, token } };
       } catch (error) {
         agentConnection = {

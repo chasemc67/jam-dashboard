@@ -96,7 +96,7 @@ export default function AdvancedMcpGuide() {
             <p>
               For tools that target a view, supply <code>sessionId</code> when
               multiple views are connected. Get the ID from{' '}
-              <code>list_sessions</code>. Mutations can include{' '}
+              <code>list_sessions</code>. View mutations can include{' '}
               <code>expectedRevision</code> from <code>get_state</code> to
               reject stale changes. Read state before retrying an acknowledgment
               timeout.
@@ -120,6 +120,46 @@ export default function AdvancedMcpGuide() {
             </p>
           </AccordionContent>
         </AccordionItem>
+        <AccordionItem value="song-analysis">
+          <AccordionTrigger>Song analysis workflow</AccordionTrigger>
+          <AccordionContent className="space-y-3 text-muted-foreground">
+            <p>
+              Connect to the desktop endpoint for song analysis. Check{' '}
+              <code>get_capabilities.songAnalysis.available</code> for host
+              support. The standalone Chrome host and native WebMCP return{' '}
+              <code>ANALYZER_UNAVAILABLE</code> for these tools. No selected
+              scale or <code>sessionId</code> is required.
+            </p>
+            <p>
+              Call <code>analyze_song</code> with a <code>query</code>{' '}
+              containing a song name and artist, or a direct YouTube URL. Song
+              searches use the first YouTube result. The desktop app saves an
+              MP3 to its configured folder and estimates key and BPM. In an open
+              dashboard window, the analyzer tab is selected automatically.
+            </p>
+            <p>
+              The call returns a job immediately. Poll{' '}
+              <code>get_song_analysis</code> every few seconds with the returned{' '}
+              <code>jobId</code> until it reaches a terminal status:{' '}
+              <code>complete</code>, <code>error</code> or{' '}
+              <code>cancelled</code>. Omit the ID to read the current job. Use{' '}
+              <code>cancel_song_analysis</code> with its exact ID to cancel.
+              Human and AI requests share one job slot; a busy analyzer rejects
+              another start. Read the current job before retrying an uncertain
+              start.
+            </p>
+            <p>
+              Public snapshots contain <code>jobId</code>, <code>status</code>,{' '}
+              <code>query</code>, matched YouTube <code>source</code>,{' '}
+              <code>analysis</code>, and <code>error</code>. Snapshots omit
+              destination and file-path fields. The latest eight finished jobs
+              remain readable until the app restarts. Key and tempo are
+              estimates with confidence values. To apply a result when asked,
+              call <code>set_view</code> with <code>analysis.keyScale</code> if
+              it is non-null; analysis alone leaves the fretboard unchanged.
+            </p>
+          </AccordionContent>
+        </AccordionItem>
       </Accordion>
 
       <section aria-label="Exposed MCP tools">
@@ -137,7 +177,9 @@ export default function AdvancedMcpGuide() {
                   <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-normal text-muted-foreground">
                     {tool.annotations.readOnlyHint
                       ? 'Read only'
-                      : 'Changes view'}
+                      : tool.annotations.openWorldHint
+                        ? 'Downloads audio'
+                        : 'Changes app'}
                   </span>
                 </span>
               </AccordionTrigger>

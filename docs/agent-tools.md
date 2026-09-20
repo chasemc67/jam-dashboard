@@ -1,6 +1,6 @@
 # Agent tools for Jam Dashboard
 
-V1 exposes music queries and the live fretboard through authenticated, local MCP. The same tools work in the Mac desktop app and the locally served web app in Chrome. A selected scale is required for visualizations; C major is selected initially. The agent can explicitly change it.
+V1 exposes music queries and the live fretboard through authenticated, local MCP in the Mac desktop app and the locally served web app in Chrome. The desktop endpoint also exposes YouTube song search, download, and BPM/key analysis. A selected scale is required for visualizations; C major is selected initially. Song analysis does not require a selected scale.
 
 ## Start the app
 
@@ -8,7 +8,7 @@ V1 exposes music queries and the live fretboard through authenticated, local MCP
 
 **Chrome:** run `npm ci`, then `npm run agent:dev`, and open `http://127.0.0.1:5173` in Chrome. This one command starts the web app and the same MCP service. The endpoint is `http://127.0.0.1:4178/mcp`. Optional `JAM_WEB_PORT` and `JAM_MCP_PORT` environment variables change the web-mode ports. Use the address printed by the command, including `127.0.0.1`.
 
-Open **AI connection** below the fretboard for the endpoint, bearer token and Cursor configuration. Tokens persist across restarts. **Disconnect this view** removes the view from agent control; pure music queries remain available while the service is running. Quit the desktop app or stop `agent:dev` to stop its service.
+Open **AI connection** below the fretboard for the endpoint, bearer token and Cursor configuration. Tokens persist across restarts. **Disconnect this view** removes the fretboard view from agent control; pure music queries and desktop song analysis remain available while the service is running. Quit the desktop app or stop `agent:dev` to stop its service.
 
 The round **AI** button in the bottom-left opens an anchored guide. **Guide** offers example requests; **Advanced** lists every exposed tool with its exact agent-facing description, input/output JSON schemas, and annotations from the shared registry. Expand **Agent prompt & instructions** to inspect the server's prompt configuration. This version provides tool descriptions but no server-wide instructions or MCP prompt templates.
 
@@ -88,16 +88,40 @@ The last call returns to the normal scale view. Visualization calls return the c
 | `show_fretboard`   | Show notes, a chord, or exact positions; omit all three to clear the selection.               |
 | `show_voicings`    | Search, show the first result and expose the result selector.                                 |
 | `select_voicing`   | Select a zero-based index from the current results.                                           |
+| `analyze_song` | Desktop: search by song name and artist or use a direct YouTube URL, download an MP3, and start BPM/key analysis. |
+| `get_song_analysis` | Desktop: read the current job or a retained job by ID, including progress, matched video, and analysis. |
+| `cancel_song_analysis` | Desktop: cancel the active job using its exact ID. |
 
 Tool-handler results use `{ "ok": true, "data": ... }` or `{ "ok": false, "error": { "code": ..., "message": ... } }`; MCP also sets `isError`. SDK argument-validation failures can return text-only errors without `structuredContent`; protocol and authentication failures may use MCP or HTTP errors. All tools have JSON input/output schemas and annotations. Unknown arguments are rejected.
 
-Read and mutation tools accept `sessionId` where relevant. It is optional with one connected view and required with multiple views. Mutations also accept `expectedRevision` for optimistic concurrency. Refresh with `get_state` after `REVISION_CONFLICT`. Human changes publish the same state that tools read. Commands are acknowledged after React commits, with bounded duplicate-request protection. On `ACK_TIMEOUT`, the command may have applied: read the state before retrying. A reload creates a new session ID; rediscover it with `list_sessions`.
+View tools accept `sessionId` where relevant. It is optional with one connected view and required with multiple views. View mutations also accept `expectedRevision` for optimistic concurrency. Refresh with `get_state` after `REVISION_CONFLICT`. Human changes publish the same state that tools read. Commands are acknowledged after React commits, with bounded duplicate-request protection. On `ACK_TIMEOUT`, the command may have applied: read the state before retrying. A reload creates a new session ID; rediscover it with `list_sessions`. Song-analysis tools act on the desktop host and do not accept `sessionId` or `expectedRevision`.
 
 Notes are compared enharmonically and displayed using the scale's spelling. Out-of-scale requests return `NOTES_OUTSIDE_SCALE` without changing the view. Explicitly choose a compatible scale to proceed. Clearing the scale in the normal UI produces `SCALE_REQUIRED`. `show_fretboard` accepts only one of `notes`, `chord` and `positions`.
 
 String 1 is the top/high string. Tuning arrays and voicing fret arrays run **high to low**, independent of handedness. Fret 0 means open; `null` in a voicing means muted. Exact positions may include several frets on one string for diagrams. A generated voicing has at most one sounding position per string. View settings support 4–8 strings and up to 24 frets; tuning changes invalidate previous exact selections.
 
 CAGED tools use the existing scale-coloring implementation, with C/A/G/E/D/ALL. They do not generate positional CAGED chord templates. CAGED requires an existing pentatonic mapping. A note/voicing selection disables CAGED coloring so the displayed selection is unambiguous.
+
+## Song analysis
+
+Connect to the **desktop endpoint** and ask:
+
+> Find the key and BPM of Blue Skies by Ella Fitzgerald. Then show the detected key on my fretboard.
+
+Check `get_capabilities` for `songAnalysis.available`. The desktop host supports analysis using the same installed yt-dlp, ffmpeg, native helper, and destination folder as the YouTube Analyzer tab. Standalone Chrome and native WebMCP publish the tool definitions but return `ANALYZER_UNAVAILABLE`; connect to the desktop endpoint to use them.
+
+The agent starts an asynchronous job and polls its returned ID:
+
+```json
+{"tool":"analyze_song","arguments":{"query":"Blue Skies Ella Fitzgerald"}}
+{"tool":"get_song_analysis","arguments":{"jobId":"RETURNED_JOB_ID"}}
+```
+
+`query` also accepts a direct YouTube URL. Song-name searches use the first YouTube match; the snapshot exposes the matched title, channel, duration, and URL so the agent can identify the recording. A successful start selects the analyzer tab in an open dashboard window without clearing fretboard highlights. It saves an MP3 to the app's existing destination and analyzes the downloaded audio locally. It does not change the selected key automatically.
+
+`analyze_song` returns immediately with a public snapshot: `jobId`, `status`, `query`, `source`, `analysis`, and `error`. Snapshots omit destination and file-path fields. Poll `get_song_analysis` every few seconds until `complete`, `error`, or `cancelled`; omitting `jobId` reads the current job. Read the current job before retrying an uncertain start. Key and tempo are estimates, with confidence values, and the key can be unknown. If the user asks to apply a detected key, call `set_view` with `scale` set to the non-null `analysis.keyScale`. That follow-up uses the normal view/session rules.
+
+Human and agent starts share a single analyzer slot. A new start while searching, downloading, or analyzing returns a busy error without replacing the job. To cancel, call `cancel_song_analysis` with the exact `jobId`; it cannot cancel a different, newer job. The latest eight terminal snapshots remain queryable in memory until the desktop app restarts. Local-file jobs started in the UI share the same slot and have a null query. The normal UI also shows progress and permits cancellation; completed audio remains accessible from the app's Finder action.
 
 ## Basic voicing module
 
@@ -148,5 +172,8 @@ The repository-wide lint command still reports four pre-existing errors in `Side
 - **Web connection rejected:** use the exact `127.0.0.1` web address printed by `agent:dev`; restart and reconnect after changing a token.
 - **View not ready:** return to the dashboard route that contains the fretboard.
 - **No voicings or search truncated:** adjust the fret range/span or use a simpler chord. This first solver requires every chord tone and does not assign fingers.
+- **Analyzer unavailable:** use the desktop MCP endpoint; the standalone web host cannot download or analyze songs.
+- **Analyzer busy:** read the current job with `get_song_analysis`, then wait or cancel that exact job before starting another.
+- **Song analysis failed:** inspect the job's `error` and confirm yt-dlp and ffmpeg are installed. Search, download, and native analysis failures appear in the same job snapshot shown by the app.
 
-Embedded AI chat, public-site pairing, remote hosting, audio control, alternate-tuning voicings, image export and multi-board comparison are deferred.
+Embedded AI chat, public-site pairing, remote hosting, audio playback control, agent access to local-file pickers, alternate-tuning voicings, image export and multi-board comparison are deferred.

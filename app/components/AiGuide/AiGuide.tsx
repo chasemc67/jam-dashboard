@@ -3,6 +3,7 @@ import { Close as PopoverClose } from '@radix-ui/react-popover';
 import {
   Eye,
   Guitar,
+  Headphones,
   Layers,
   MapPin,
   Music2,
@@ -21,6 +22,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
 const AdvancedMcpGuide = lazy(() => import('../AdvancedMcpGuide'));
 
 const capabilities = [
+  {
+    title: 'Find a song’s key & tempo',
+    icon: Headphones,
+    description:
+      'Connect to the desktop app to search YouTube by song and artist, or analyze a direct YouTube link. The app downloads an MP3 and estimates the key, BPM, and confidence. Ask your assistant to check progress or cancel.',
+    examples: [
+      'What key and BPM is Blue Skies by Ella Fitzgerald?',
+      'Analyze this YouTube URL, then show me its key on the fretboard.',
+    ],
+  },
   {
     title: 'Keys & scales',
     icon: Music2,
@@ -138,9 +149,9 @@ export default function AiGuide({
               >
                 {mode === 'guide' ? (
                   <>
-                    Ask your connected AI assistant to explain music or change
-                    this fretboard. Try these prompts in Codex, Cursor, or
-                    another MCP client.
+                    Ask your connected AI assistant to analyze songs, explain
+                    music, or change this fretboard. Try these prompts in Codex,
+                    Cursor, or another MCP client.
                   </>
                 ) : (
                   <>
@@ -209,8 +220,14 @@ export default function AiGuide({
                     chord grips.
                   </li>
                   <li>
-                    Playback, ear training, note detection, and YouTube analysis
-                    use the app controls and are not exposed through MCP.
+                    Song analysis needs the desktop MCP connection and uses the
+                    first YouTube match. Paste a direct URL for an exact
+                    recording. One song can run at a time; its key is applied
+                    only when you ask.
+                  </li>
+                  <li>
+                    Playback, ear training, and note detection use the app
+                    controls and are not exposed through MCP.
                   </li>
                 </ul>
               </section>

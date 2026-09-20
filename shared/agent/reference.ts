@@ -2,7 +2,7 @@ import { agentTools } from './tools';
 
 export const MCP_SERVER_INFO = {
   name: 'jam-dashboard',
-  version: '1.0.0',
+  version: '1.1.0',
 } as const;
 
 // No server-wide instructions or prompt templates are currently registered.

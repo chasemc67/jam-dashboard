@@ -19,6 +19,8 @@ function Selection() {
 }
 const complete: AnalyzerState = {
   revision: 1,
+  jobId: 'first-job',
+  query: 'Blue Skies Ella Fitzgerald',
   status: 'complete',
   destination: '/tmp/music',
   tools: { ytDlp: true, ffmpeg: true },
@@ -44,6 +46,7 @@ beforeEach(() => {
       receive = callback;
       return () => {};
     },
+    onAnalyzerOpen: () => () => {},
     startYouTube: jest.fn(ok),
     chooseAudio: ok,
     analyzeDroppedFile: ok,
@@ -177,4 +180,36 @@ test('song search is cancellable, prevents duplicate jobs, and displays the reso
   ).toHaveAttribute('href', 'https://www.youtube.com/watch?v=BaW_jenozKc');
   expect(screen.getByText('Artist channel · 3:05')).toBeInTheDocument();
   expect(input).not.toBeDisabled();
+});
+
+test('an agent-started job updates the query, while progress and stale snapshots preserve a drafted next query', async () => {
+  mount();
+  const input = screen.getByLabelText('Song name or YouTube URL');
+  await waitFor(() => expect(input).toHaveValue('Blue Skies Ella Fitzgerald'));
+
+  fireEvent.change(input, { target: { value: 'My next song' } });
+  act(() => receive({ ...complete, revision: 2 }));
+  expect(input).toHaveValue('My next song');
+
+  const nextJob: AnalyzerState = {
+    ...complete,
+    revision: 3,
+    jobId: 'agent-started-job',
+    query: 'Another song and artist',
+    status: 'searching',
+    source: null,
+    file: null,
+    analysis: null,
+  };
+  act(() => receive(nextJob));
+  expect(input).toHaveValue('Another song and artist');
+  expect(input).toBeDisabled();
+  expect(screen.getByTestId('selection')).toHaveTextContent('C major:');
+
+  act(() => receive({ ...complete, revision: 2 }));
+  expect(input).toHaveValue('Another song and artist');
+  act(() => receive({ ...nextJob, revision: 4, status: 'cancelled' }));
+  fireEvent.change(input, { target: { value: 'A different recording' } });
+  act(() => receive({ ...nextJob, revision: 5, status: 'cancelled' }));
+  expect(input).toHaveValue('A different recording');
 });
