@@ -23,6 +23,7 @@ const complete: AnalyzerState = {
   destination: '/tmp/music',
   tools: { ytDlp: true, ffmpeg: true },
   file: { path: '/tmp/music/song.mp3', name: 'song.mp3' },
+  source: null,
   error: null,
   analysis: {
     bpm: 92.5,
@@ -115,8 +116,8 @@ test('stale snapshots cannot overwrite a newer result and requests show launch e
     ok: false,
     error: 'Invalid YouTube URL.',
   }));
-  fireEvent.change(screen.getByLabelText('YouTube URL'), {
-    target: { value: 'not youtube' },
+  fireEvent.change(screen.getByLabelText('Song name or YouTube URL'), {
+    target: { value: 'https://example.com/not-youtube' },
   });
   fireEvent.click(
     screen.getByRole('button', { name: 'Download MP3 & Analyze' }),
@@ -124,4 +125,56 @@ test('stale snapshots cannot overwrite a newer result and requests show launch e
   await waitFor(() =>
     expect(screen.getByRole('alert')).toHaveTextContent('Invalid YouTube URL.'),
   );
+});
+
+test('song search is cancellable, prevents duplicate jobs, and displays the resolved video', async () => {
+  mount();
+  await screen.findByRole('button', { name: 'Use F♯ / G♭ minor' });
+  const input = screen.getByLabelText('Song name or YouTube URL');
+  fireEvent.change(input, { target: { value: 'Blue Skies Ella Fitzgerald' } });
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Download MP3 & Analyze' }),
+  );
+  await waitFor(() =>
+    expect(window.jamDesktop?.startYouTube).toHaveBeenCalledWith(
+      'Blue Skies Ella Fitzgerald',
+    ),
+  );
+  act(() =>
+    receive({
+      ...complete,
+      revision: 2,
+      status: 'searching',
+      analysis: null,
+      file: null,
+    }),
+  );
+  expect(
+    screen.getByText('Searching YouTube for your song…'),
+  ).toBeInTheDocument();
+  expect(input).toBeDisabled();
+  expect(
+    screen.getByRole('button', { name: 'Download MP3 & Analyze' }),
+  ).toBeDisabled();
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+  await waitFor(() =>
+    expect(window.jamDesktop?.cancelAnalysis).toHaveBeenCalledTimes(1),
+  );
+  act(() =>
+    receive({
+      ...complete,
+      revision: 3,
+      source: {
+        title: 'Blue Skies',
+        url: 'https://www.youtube.com/watch?v=BaW_jenozKc',
+        channel: 'Artist channel',
+        duration: 185,
+      },
+    }),
+  );
+  expect(
+    screen.getByRole('link', { name: 'Blue Skies (opens in browser)' }),
+  ).toHaveAttribute('href', 'https://www.youtube.com/watch?v=BaW_jenozKc');
+  expect(screen.getByText('Artist channel · 3:05')).toBeInTheDocument();
+  expect(input).not.toBeDisabled();
 });

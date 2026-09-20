@@ -16,6 +16,9 @@ final class MusicCoreTests: XCTestCase {
         XCTAssertNoThrow(try MediaDownloader.validatedYouTubeURL("https://youtu.be/abc123"))
         XCTAssertNoThrow(try MediaDownloader.validatedYouTubeURL("https://music.youtube.com/watch?v=abc123"))
         XCTAssertThrowsError(try MediaDownloader.validatedYouTubeURL("https://example.com/video"))
+        XCTAssertThrowsError(try MediaDownloader.validatedYouTubeURL("https://user:password@youtube.com/watch?v=abc123"))
+        XCTAssertThrowsError(try MediaDownloader.validatedYouTubeURL("https://youtube.com.evil.test/watch?v=abc123"))
+        XCTAssertThrowsError(try MediaDownloader.validatedYouTubeURL("https://youtube.com/watch?v=abc123\n--exec"))
     }
 
     func testDownloadedPathParsing() {

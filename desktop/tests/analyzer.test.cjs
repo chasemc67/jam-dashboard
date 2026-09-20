@@ -9,6 +9,7 @@ const {
   AnalyzerService,
   validateAnalysis,
   validateYouTubeURL,
+  parseYouTubeInput,
 } = require('../analyzer.cjs');
 
 const result = {
@@ -69,6 +70,112 @@ test('YouTube validation rejects shell/protocol tricks and lookalike hosts', () 
   ]) {
     assert.throws(() => validateYouTubeURL(input));
   }
+});
+test('YouTube inputs distinguish song names from URLs without searching invalid URLs', () => {
+  assert.deepEqual(parseYouTubeInput('  Blue Skies Ella Fitzgerald  '), {
+    kind: 'query',
+    value: 'Blue Skies Ella Fitzgerald',
+  });
+  assert.deepEqual(parseYouTubeInput('youtu.be/BaW_jenozKc'), {
+    kind: 'url',
+    value: 'https://youtu.be/BaW_jenozKc',
+  });
+  assert.equal(
+    parseYouTubeInput('https://music.youtube.com/watch?v=123').kind,
+    'url',
+  );
+  assert.equal(parseYouTubeInput('Song: Live at Home').kind, 'query');
+  for (const input of [
+    '',
+    '   ',
+    null,
+    'song\0name',
+    'song\nname',
+    'a'.repeat(501),
+    'file:///tmp/song.mp3',
+    'javascript:alert(1)',
+    'data:text/plain,song',
+    'https://youtube.com.evil.test/watch?v=123',
+    'https://user@youtube.com/v',
+    'https://',
+    'www.example.com/video',
+    '//example.com/video',
+  ])
+    assert.throws(() => parseYouTubeInput(input));
+});
+
+const source = {
+  title: 'A song',
+  url: 'https://www.youtube.com/watch?v=BaW_jenozKc',
+  channel: 'An artist',
+  duration: 180,
+};
+test('song searches use one literal argument and retain the resolved source through analysis', t => {
+  const { service, directory, children, calls } = setup(t);
+  const query = '--exec "echo test" $(literal song name)';
+  service.startYouTube(query);
+  assert.equal(service.state.status, 'searching');
+  assert.deepEqual(calls[0][1], [
+    '--json',
+    'search-download',
+    query,
+    directory,
+  ]);
+  assert.equal(calls[0][2].shell, false);
+  emit(children[0], { event: 'source', source });
+  emit(children[0], { event: 'status', status: 'downloading' });
+  assert.deepEqual(service.snapshot().source, source);
+  assert.equal(service.state.status, 'downloading');
+  emit(children[0], { event: 'file', path: path.join(directory, 'Song.mp3') });
+  emit(children[0], { event: 'status', status: 'analyzing' });
+  emit(children[0], { event: 'result', analysis: result });
+  children[0].emit('close', 0);
+  assert.equal(service.state.status, 'complete');
+  assert.deepEqual(service.snapshot().source, source);
+  service.startYouTube('https://youtu.be/test');
+  assert.deepEqual(calls[1][1], [
+    '--json',
+    'download',
+    'https://youtu.be/test',
+    directory,
+  ]);
+  assert.equal(service.state.status, 'downloading');
+  assert.equal(service.state.source, null);
+});
+test('cancelling a search ignores late results and clears the source for a new job', t => {
+  const { service, file, children, killed } = setup(t);
+  service.startYouTube('A song');
+  emit(children[0], { event: 'source', source });
+  service.stop();
+  assert.deepEqual(killed, [9000]);
+  assert.equal(service.state.status, 'cancelled');
+  service.startFile(file);
+  emit(children[0], { event: 'source', source });
+  emit(children[0], { event: 'status', status: 'downloading' });
+  assert.equal(service.state.source, null);
+  assert.equal(service.state.status, 'analyzing');
+});
+test('unsafe search metadata fails before it can be displayed', t => {
+  const { service, children, killed } = setup(t);
+  for (const update of [
+    { url: 'javascript:alert(1)' },
+    { url: 'https://evil.test/watch?v=BaW_jenozKc' },
+    { title: '' },
+    { title: 'A song\n' },
+    { url: source.url + '\n' },
+    { channel: ' ' },
+    { channel: 42 },
+    { duration: -1 },
+  ]) {
+    service.startYouTube('A song');
+    emit(children.at(-1), {
+      event: 'source',
+      source: { ...source, ...update },
+    });
+    assert.equal(service.state.status, 'error');
+    assert.equal(service.state.source, null);
+  }
+  assert.equal(killed.length, 8);
 });
 test('analysis contract rejects non-finite values and invalid selectable keys', () => {
   assert.deepEqual(validateAnalysis(result), result);

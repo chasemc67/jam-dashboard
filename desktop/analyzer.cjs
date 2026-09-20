@@ -85,6 +85,61 @@ function validateYouTubeURL(raw) {
   return url.href;
 }
 
+function parseYouTubeInput(raw) {
+  if (
+    typeof raw !== 'string' ||
+    raw.length > 4096 ||
+    /\p{Cc}/u.test(raw) ||
+    !raw.trim()
+  )
+    throw new Error('Enter a YouTube URL or song name.');
+  const input = raw.trim();
+  // A mistyped or unsupported URL must not become a song search.
+  if (
+    /^[a-z][a-z\d+.-]*:\/\//i.test(input) ||
+    /^(?:https?|file|data|javascript|ftp|mailto):/i.test(input) ||
+    /^(?:\/\/|www\.)/i.test(input) ||
+    /^[\w.-]+\.[a-z]{2,}(?:[/?#]|$)/i.test(input)
+  ) {
+    const url = /^(?:[\w.-]+\.[a-z]{2,})(?:[/?#]|$)/i.test(input)
+      ? `https://${input}`
+      : input;
+    return { kind: 'url', value: validateYouTubeURL(url) };
+  }
+  if (input.length > 500)
+    throw new Error('Keep the song name and artist under 500 characters.');
+  return { kind: 'query', value: input };
+}
+
+function validateYouTubeSource(source) {
+  const validLabel = value =>
+    typeof value === 'string' &&
+    value.trim().length > 0 &&
+    value.length <= 1024 &&
+    !/\p{Cc}/u.test(value);
+  if (
+    !source ||
+    !validLabel(source.title) ||
+    typeof source.url !== 'string' ||
+    /\p{Cc}/u.test(source.url) ||
+    !/^https:\/\/www\.youtube\.com\/watch\?v=[A-Za-z0-9_-]{11}$/.test(
+      source.url,
+    ) ||
+    !(source.channel === null || validLabel(source.channel)) ||
+    !(
+      source.duration === null ||
+      (Number.isFinite(source.duration) && source.duration >= 0)
+    )
+  )
+    throw new Error('Invalid YouTube search result');
+  return {
+    title: source.title,
+    url: source.url,
+    channel: source.channel,
+    duration: source.duration,
+  };
+}
+
 function findTools() {
   const dirs = [
     path.join(homedir(), '.local/bin'),
@@ -132,6 +187,7 @@ class AnalyzerService {
       destination,
       tools: detectTools(),
       file: null,
+      source: null,
       analysis: null,
       error: null,
     };
@@ -163,7 +219,7 @@ class AnalyzerService {
   }
   startYouTube(raw) {
     this.ensureIdle();
-    const url = validateYouTubeURL(raw);
+    const input = parseYouTubeInput(raw);
     const tools = this.detectTools();
     this.update({ tools });
     if (!tools.ytDlp || !tools.ffmpeg)
@@ -172,7 +228,16 @@ class AnalyzerService {
       );
     if (!statSync(this.state.destination).isDirectory())
       throw new Error('The destination folder no longer exists.');
-    this.start(['download', url, this.state.destination], null, 'downloading');
+    const searching = input.kind === 'query';
+    this.start(
+      [
+        searching ? 'search-download' : 'download',
+        input.value,
+        this.state.destination,
+      ],
+      null,
+      searching ? 'searching' : 'downloading',
+    );
   }
   startFile(filePath) {
     this.ensureIdle();
@@ -216,7 +281,7 @@ class AnalyzerService {
       timer: null,
     };
     this.job = job;
-    this.update({ status, file, analysis: null, error: null });
+    this.update({ status, file, source: null, analysis: null, error: null });
     try {
       job.child = this.spawnProcess(this.helperPath, ['--json', ...args], {
         detached: true,
@@ -281,9 +346,12 @@ class AnalyzerService {
     if (this.job !== job) return;
     switch (event.event) {
       case 'status':
-        if (!['downloading', 'analyzing'].includes(event.status))
+        if (!['searching', 'downloading', 'analyzing'].includes(event.status))
           throw new Error('Invalid status');
         this.update({ status: event.status });
+        break;
+      case 'source':
+        this.update({ source: validateYouTubeSource(event.source) });
         break;
       case 'file': {
         if (
@@ -344,4 +412,5 @@ module.exports = {
   AUDIO_EXTENSIONS,
   validateAnalysis,
   validateYouTubeURL,
+  parseYouTubeInput,
 };

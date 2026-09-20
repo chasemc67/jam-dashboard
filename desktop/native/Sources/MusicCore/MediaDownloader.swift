@@ -4,7 +4,11 @@ public enum MediaDownloader {
     public static func validatedYouTubeURL(_ rawValue: String) throws -> URL {
         let trimmed = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
         guard
+            trimmed.count <= 4096,
+            !rawValue.unicodeScalars.contains(where: CharacterSet.controlCharacters.contains),
             let url = URL(string: trimmed),
+            url.user == nil,
+            url.password == nil,
             let scheme = url.scheme?.lowercased(),
             scheme == "https" || scheme == "http",
             let host = url.host?.lowercased(),
@@ -44,6 +48,7 @@ public enum MediaDownloader {
             "--ffmpeg-location", ffmpeg,
             "--print", "after_move:filepath",
             "--output", destination.appendingPathComponent("%(title)s.%(ext)s").path,
+            "--",
             sourceURL.absoluteString
         ]
         process.environment = ProcessInfo.processInfo.environment.merging(["PATH": ToolLocator.searchPath]) { _, new in new }
