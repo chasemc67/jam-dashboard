@@ -85,7 +85,7 @@ export default function Settings() {
                   id="number-of-strings"
                   type="number"
                   min="4"
-                  max="12"
+                  max="8"
                   value={settings.numberOfStrings}
                   onChange={e =>
                     updateSettings({ numberOfStrings: Number(e.target.value) })

@@ -1,5 +1,4 @@
-import React from 'react';
-import { Meta, Story } from '@storybook/react';
+import { Meta, StoryFn } from '@storybook/react';
 import FretboardControls from './FretboardControls';
 
 export default {
@@ -7,6 +6,6 @@ export default {
   component: FretboardControls,
 } as Meta;
 
-const Template: Story = () => <FretboardControls />;
+const Template: StoryFn = () => <FretboardControls />;
 
 export const Default = Template.bind({});

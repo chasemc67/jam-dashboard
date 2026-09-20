@@ -14,10 +14,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   args: {
     fretNumber: 1,
-    highlightedNotes: [
-      { note: 'C', color: 'blue' },
-      { note: 'E', color: 'red' },
-    ],
+
     rootNotes: ['E', 'A', 'D', 'G', 'B', 'E'],
     showTextNotes: true,
   },

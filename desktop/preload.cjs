@@ -6,6 +6,18 @@ const subscribe = (channel, callback) => {
   return () => ipcRenderer.removeListener(channel, listener);
 };
 contextBridge.exposeInMainWorld(
+  'jamAgent',
+  Object.freeze({
+    copyConfiguration: () => ipcRenderer.invoke('jam:agent-copy-config'),
+    getConnection: () => ipcRenderer.invoke('jam:agent-connection'),
+    connect: state => ipcRenderer.invoke('jam:agent-connect', state),
+    disconnect: id => ipcRenderer.invoke('jam:agent-disconnect', id),
+    publish: (id, state) => ipcRenderer.invoke('jam:agent-state', id, state),
+    reply: (id, reply) => ipcRenderer.invoke('jam:agent-reply', id, reply),
+    onCommand: callback => subscribe('jam:agent-command', callback),
+  }),
+);
+contextBridge.exposeInMainWorld(
   'jamDesktop',
   Object.freeze({
     getAnalyzerState: () => ipcRenderer.invoke('jam:analyzer-state'),

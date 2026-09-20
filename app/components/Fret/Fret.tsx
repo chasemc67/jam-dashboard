@@ -13,6 +13,7 @@ import { useSettings } from '~/contexts/SettingsContext';
 import { useScaleKey } from '~/contexts/ScaleKeyContext';
 import { getCagedNoteColors, orientCagedColors } from '~/utils/cagedColorUtils';
 import '~/tailwind.css';
+import type { Position } from '../../../shared/music/voicings';
 
 export type HighlightedNote = {
   note: string;
@@ -23,6 +24,7 @@ export type FretProps = {
   rootNotes: string[];
   fretNumber: number;
   showTextNotes?: boolean;
+  positions?: Position[];
 };
 
 const getFretWidth = (
@@ -41,6 +43,7 @@ const Fret: React.FC<FretProps> = ({
   rootNotes,
   fretNumber,
   showTextNotes,
+  positions,
 }) => {
   const widths = getFretWidth(fretNumber);
   const { getHighlightedNotes } = useHighlight();
@@ -91,7 +94,9 @@ const Fret: React.FC<FretProps> = ({
               <span className="relative">
                 {showTextNotes
                   ? currentNote
-                  : INTERVALS[notes.indexOf(currentNote)]}
+                  : INTERVALS[
+                      notes.findIndex(n => areNotesEquivalent(n, currentNote))
+                    ]}
               </span>
             </div>
           </div>
@@ -116,15 +121,25 @@ const Fret: React.FC<FretProps> = ({
 
       return (
         <div key={index} className="h-[2px] bg-[#808080] relative z-[2]">
-          {highlightedNote && (
-            <div
-              className={`rounded-md w-6 h-6 absolute -top-[11px] left-[calc(50%-10px)] flex items-center justify-center text-muted z-[3] ${getNoteColorClass(highlightedNote.color, 'background')}`}
-            >
-              {showTextNotes
-                ? highlightedNote.note
-                : INTERVALS[notes.indexOf(highlightedNote.note)]}
-            </div>
-          )}
+          {highlightedNote &&
+            (positions === undefined ||
+              positions.some(
+                p => p.string === index + 1 && p.fret === fretNumber,
+              )) && (
+              <div
+                data-testid="fret-note"
+                aria-label={`String ${index + 1}, fret ${fretNumber}, ${highlightedNote.note}`}
+                className={`rounded-md w-6 h-6 absolute -top-[11px] left-[calc(50%-10px)] flex items-center justify-center text-muted z-[3] ${getNoteColorClass(highlightedNote.color, 'background')}`}
+              >
+                {showTextNotes
+                  ? highlightedNote.note
+                  : INTERVALS[
+                      notes.findIndex(n =>
+                        areNotesEquivalent(n, highlightedNote.note),
+                      )
+                    ]}
+              </div>
+            )}
         </div>
       );
     });
@@ -134,7 +149,9 @@ const Fret: React.FC<FretProps> = ({
   const tallMarkerFrets = [12, 24];
 
   const shouldRenderCaged =
-    settings.cagedModeEnabled && pentatonicNotes.length !== 0;
+    positions === undefined &&
+    settings.cagedModeEnabled &&
+    pentatonicNotes.length !== 0;
 
   return (
     <div
@@ -146,6 +163,9 @@ const Fret: React.FC<FretProps> = ({
       className="flex flex-col justify-between bg-accent border border-card p-2.5 relative h-[300px] md:!w-[var(--fret-desktop-width)]"
     >
       {shouldRenderCaged ? renderCagedStrings() : renderNormalStrings()}
+      <span className="absolute -bottom-6 left-0 w-full text-center text-xs text-muted-foreground">
+        {fretNumber}
+      </span>
       {fretMarkers.includes(fretNumber) && (
         <div
           className={`bg-background w-3/4 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[1] ${tallMarkerFrets.includes(fretNumber) ? 'h-1/2' : 'h-1/4'}`}

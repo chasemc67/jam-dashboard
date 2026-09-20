@@ -35,6 +35,7 @@ function run(command, commandArgs, extraEnv = {}) {
 run('bash', ['desktop/native/scripts/build-helper.sh'], {
   JAM_DESKTOP_ARCH: arch === 'x64' ? 'x86_64' : 'arm64',
 });
+run('npm', ['run', 'agent:build']);
 run('npm', ['run', 'desktop:renderer']);
 if (args.includes('--package')) {
   run(path.join(root, 'node_modules/.bin/electron-builder'), [

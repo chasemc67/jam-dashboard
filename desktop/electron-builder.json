@@ -10,6 +10,7 @@
     "preload.cjs",
     "policy.cjs",
     "analyzer.cjs",
+    "agent-service.cjs",
     "renderer/client/**/*",
     "package.json",
     "!**/node_modules/**/*"

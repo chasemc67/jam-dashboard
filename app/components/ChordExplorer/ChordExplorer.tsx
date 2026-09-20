@@ -27,8 +27,12 @@ const ChordExplorer: React.FC = () => {
     notes: string[];
   } | null>(null);
   const [isMuted, setIsMuted] = useState(false);
-  const { getHighlightedNotes, setChordHighlight, clearChordHighlight } =
-    useHighlight();
+  const {
+    getHighlightedNotes,
+    setChordHighlight,
+    clearChordHighlight,
+    chordHighlightNotes,
+  } = useHighlight();
   const highlightedNotes = getHighlightedNotes();
 
   const handleChordGroupChange = (
@@ -81,43 +85,50 @@ const ChordExplorer: React.FC = () => {
           </Button>
         </div>
 
-        {lastClickedChord && (
-          <div className="flex items-center justify-center gap-4 text-sm">
-            <span className="text-muted-foreground font-medium">
-              {lastClickedChord.name}:
-            </span>
-            <div className="flex items-center gap-2">
-              {lastClickedChord.notes.map((note, index) => {
-                // Find matching highlighted note to get its color
-                const highlightedNote = highlightedNotes.find(hn =>
-                  areNotesEquivalent(hn.note, note),
-                );
-                return (
-                  <span
-                    key={index}
-                    className={`rounded-md w-6 h-6 flex items-center justify-center text-muted ${
-                      highlightedNote
-                        ? getNoteColorClass(highlightedNote.color, 'background')
-                        : 'bg-note-grey'
-                    }`}
-                  >
-                    {note}
-                  </span>
-                );
-              })}
+        {lastClickedChord &&
+          lastClickedChord.notes.length === chordHighlightNotes.length &&
+          lastClickedChord.notes.every(n =>
+            chordHighlightNotes.some(h => areNotesEquivalent(n, h)),
+          ) && (
+            <div className="flex items-center justify-center gap-4 text-sm">
+              <span className="text-muted-foreground font-medium">
+                {lastClickedChord.name}:
+              </span>
+              <div className="flex items-center gap-2">
+                {lastClickedChord.notes.map((note, index) => {
+                  // Find matching highlighted note to get its color
+                  const highlightedNote = highlightedNotes.find(hn =>
+                    areNotesEquivalent(hn.note, note),
+                  );
+                  return (
+                    <span
+                      key={index}
+                      className={`rounded-md w-6 h-6 flex items-center justify-center text-muted ${
+                        highlightedNote
+                          ? getNoteColorClass(
+                              highlightedNote.color,
+                              'background',
+                            )
+                          : 'bg-note-grey'
+                      }`}
+                    >
+                      {note}
+                    </span>
+                  );
+                })}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  clearChordHighlight();
+                  setLastClickedChord(null);
+                }}
+              >
+                Clear
+              </Button>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                clearChordHighlight();
-                setLastClickedChord(null);
-              }}
-            >
-              Clear
-            </Button>
-          </div>
-        )}
+          )}
 
         <ScaleChordGrid
           onChordClick={handleChordClick}

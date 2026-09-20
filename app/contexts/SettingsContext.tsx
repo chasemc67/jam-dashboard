@@ -1,12 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { z } from 'zod';
+import { z } from 'zod/v3';
 import { COLORING_PATTERN_CHOICES } from '~/utils/noteColoringUtils';
 
 // Define Zod schema for our settings
 const SettingsSchema = z.object({
   isLefty: z.boolean(),
-  numberOfFrets: z.number().min(1).max(24),
-  numberOfStrings: z.number().min(4).max(8),
+  numberOfFrets: z.number().int().min(1).max(24),
+  numberOfStrings: z.number().int().min(4).max(8),
   showTextNotes: z.boolean(),
   quickColors: z.enum(COLORING_PATTERN_CHOICES),
   cagedModeEnabled: z.boolean(),
@@ -91,10 +91,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   }, [settings, isInitialized]);
 
   const updateSettings = (newSettings: Partial<Settings>) => {
-    setSettings(prev => ({
-      ...prev,
-      ...newSettings,
-    }));
+    setSettings(prev => {
+      const result = SettingsSchema.safeParse({ ...prev, ...newSettings });
+      return result.success ? result.data : prev;
+    });
   };
 
   return (

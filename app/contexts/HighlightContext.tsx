@@ -1,14 +1,16 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { HighlightedNote } from '~/components/Fret';
 import { useScaleKey } from './ScaleKeyContext';
 import { useSettings } from './SettingsContext';
 import { getEveryChordInScale } from '~/utils/scaleChords';
+import { areNotesEquivalent } from '~/utils/musicTheoryUtils';
 
 interface HighlightContextType {
   getHighlightedNotes: () => HighlightedNote[];
-  setChordHighlight: (notes: string[]) => void;
+  setChordHighlight: (notes: string[], scaleName?: string) => void;
   clearChordHighlight: () => void;
   chordHighlightNotes: string[];
+  highlightRevision: number;
 }
 
 const COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink'];
@@ -20,15 +22,30 @@ const HighlightContext = createContext<HighlightContextType | undefined>(
 
 export function HighlightProvider({ children }: { children: React.ReactNode }) {
   const { notes, pentatonicNotes, keyScale } = useScaleKey();
-  const { settings } = useSettings();
-  const [chordHighlightNotes, setChordHighlightNotes] = useState<string[]>([]);
+  const { settings, updateSettings } = useSettings();
+  const [highlight, setHighlight] = useState({
+    notes: [] as string[],
+    scale: keyScale,
+    revision: 0,
+  });
+  useEffect(() => {
+    setHighlight(previous =>
+      previous.scale === keyScale
+        ? previous
+        : { notes: [], scale: keyScale, revision: previous.revision + 1 },
+    );
+  }, [keyScale]);
+  const chordHighlightNotes =
+    highlight.scale === keyScale && !settings.cagedModeEnabled
+      ? highlight.notes
+      : [];
 
   const getHighlightedNotes = (): HighlightedNote[] => {
     // If there are chord highlight notes, prioritize those
     if (chordHighlightNotes.length > 0) {
       return notes.map((note, index) => ({
         note,
-        color: chordHighlightNotes.includes(note)
+        color: chordHighlightNotes.some(n => areNotesEquivalent(n, note))
           ? COLORS[index % COLORS.length]
           : 'grey',
       }));
@@ -87,12 +104,21 @@ export function HighlightProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const setChordHighlight = (notes: string[]) => {
-    setChordHighlightNotes(notes);
+  const setChordHighlight = (notes: string[], scaleName = keyScale) => {
+    setHighlight(previous => ({
+      notes,
+      scale: scaleName,
+      revision: previous.revision + 1,
+    }));
+    if (notes.length) updateSettings({ cagedModeEnabled: false });
   };
 
   const clearChordHighlight = () => {
-    setChordHighlightNotes([]);
+    setHighlight(previous => ({
+      notes: [],
+      scale: keyScale,
+      revision: previous.revision + 1,
+    }));
   };
 
   return (
@@ -102,6 +128,7 @@ export function HighlightProvider({ children }: { children: React.ReactNode }) {
         setChordHighlight,
         clearChordHighlight,
         chordHighlightNotes,
+        highlightRevision: highlight.revision,
       }}
     >
       {children}

@@ -43,7 +43,9 @@ startTransition(() => {
     document,
     <StrictMode>
       <RemixBrowser />
-      {!import.meta.env.JAM_DESKTOP && <PosthogInit />}
+      {!(import.meta.env.JAM_DESKTOP || import.meta.env.JAM_AGENT) && (
+        <PosthogInit />
+      )}
     </StrictMode>,
   );
 });
