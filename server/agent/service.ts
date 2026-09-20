@@ -4,6 +4,10 @@ import { McpServer, createMcpHandler } from '@modelcontextprotocol/server';
 import { toNodeHandler } from '@modelcontextprotocol/node';
 import { WebSocketServer, WebSocket } from 'ws';
 import { agentTools } from '../../shared/agent/tools';
+import {
+  MCP_SERVER_INFO,
+  MCP_SERVER_INSTRUCTIONS,
+} from '../../shared/agent/reference';
 import { ClientMessageSchema } from '../../shared/agent/wire';
 import { SessionRegistry } from './sessions';
 
@@ -41,7 +45,9 @@ export async function startAgentService({
   if (!/^[a-f0-9]{64}$/.test(token))
     throw new Error('Agent token must be 32 random bytes encoded as hex.');
   const handler = createMcpHandler(() => {
-    const mcp = new McpServer({ name: 'jam-dashboard', version: '1.0.0' });
+    const mcp = new McpServer(MCP_SERVER_INFO, {
+      instructions: MCP_SERVER_INSTRUCTIONS,
+    });
     for (const tool of agentTools) {
       mcp.registerTool(
         tool.name,

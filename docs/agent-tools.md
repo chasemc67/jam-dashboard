@@ -10,6 +10,8 @@ V1 exposes music queries and the live fretboard through authenticated, local MCP
 
 Open **AI connection** below the fretboard for the endpoint, bearer token and Cursor configuration. Tokens persist across restarts. **Disconnect this view** removes the view from agent control; pure music queries remain available while the service is running. Quit the desktop app or stop `agent:dev` to stop its service.
 
+The round **AI** button in the bottom-left opens an anchored guide. **Guide** offers example requests; **Advanced** lists every exposed tool with its exact agent-facing description, input/output JSON schemas, and annotations from the shared registry. Expand **Agent prompt & instructions** to inspect the server's prompt configuration. This version provides tool descriptions but no server-wide instructions or MCP prompt templates.
+
 The two hosts have independent views and credentials. Running both does not synchronize them. The hosted production website is outside V1; `npm run dev` intentionally does not enable this integration.
 
 ## Connect an agent
@@ -87,7 +89,7 @@ The last call returns to the normal scale view. Visualization calls return the c
 | `show_voicings`    | Search, show the first result and expose the result selector.                                 |
 | `select_voicing`   | Select a zero-based index from the current results.                                           |
 
-Results use `{ "ok": true, "data": ... }` or `{ "ok": false, "error": { "code": ..., "message": ... } }`; MCP also sets `isError`. All tools have JSON input/output schemas and annotations. Unknown arguments are rejected.
+Tool-handler results use `{ "ok": true, "data": ... }` or `{ "ok": false, "error": { "code": ..., "message": ... } }`; MCP also sets `isError`. SDK argument-validation failures can return text-only errors without `structuredContent`; protocol and authentication failures may use MCP or HTTP errors. All tools have JSON input/output schemas and annotations. Unknown arguments are rejected.
 
 Read and mutation tools accept `sessionId` where relevant. It is optional with one connected view and required with multiple views. Mutations also accept `expectedRevision` for optimistic concurrency. Refresh with `get_state` after `REVISION_CONFLICT`. Human changes publish the same state that tools read. Commands are acknowledged after React commits, with bounded duplicate-request protection. On `ACK_TIMEOUT`, the command may have applied: read the state before retrying. A reload creates a new session ID; rediscover it with `list_sessions`.
 

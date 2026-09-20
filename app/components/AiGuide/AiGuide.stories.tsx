@@ -10,7 +10,14 @@ export default {
 type Story = StoryObj<typeof AiGuide>;
 export const Closed: Story = {};
 export const Open: Story = { args: { defaultOpen: true } };
+export const Advanced: Story = {
+  args: { defaultOpen: true, defaultMode: 'advanced' },
+};
 export const Mobile: Story = {
   args: { defaultOpen: true },
+  parameters: { viewport: { defaultViewport: 'mobile1' } },
+};
+export const AdvancedMobile: Story = {
+  args: { defaultOpen: true, defaultMode: 'advanced' },
   parameters: { viewport: { defaultViewport: 'mobile1' } },
 };
