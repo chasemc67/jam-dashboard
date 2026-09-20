@@ -12,6 +12,12 @@ import { SessionRegistry } from './sessions';
 import { initialState } from '../../shared/agent/fixtures';
 import { prepareCommand } from '../../shared/agent/commands';
 import type { CommandRequest } from '../../shared/agent/contract';
+import {
+  getMcpToolReference,
+  MCP_PROMPT_TEMPLATES,
+  MCP_SERVER_INFO,
+  MCP_SERVER_INSTRUCTIONS,
+} from '../../shared/agent/reference';
 
 test('loopback source and constant-time token guards reject malformed requests', () => {
   assert.equal(tokenMatches('é', 'a'), false);
@@ -97,6 +103,22 @@ for (const mode of ['legacy', 'auto'] as const) {
       );
       const tools = await client.listTools();
       assert.equal(tools.tools.length, 11);
+      // The in-app technical reference must match the exact published surface,
+      // including the SDK's conversion direction and JSON Schema draft.
+      assert.deepEqual(
+        tools.tools.map(tool => ({
+          name: tool.name,
+          description: tool.description,
+          inputSchema: tool.inputSchema,
+          outputSchema: tool.outputSchema,
+          annotations: tool.annotations,
+        })),
+        getMcpToolReference(),
+      );
+      assert.deepEqual(client.getServerVersion(), MCP_SERVER_INFO);
+      assert.equal(client.getInstructions(), MCP_SERVER_INSTRUCTIONS);
+      assert.equal(client.getServerCapabilities()?.prompts, undefined);
+      assert.deepEqual(MCP_PROMPT_TEMPLATES, []);
       assert.equal(
         tools.tools.find(t => t.name === 'get_chord')?.annotations
           ?.readOnlyHint,
