@@ -29,5 +29,6 @@ contextBridge.exposeInMainWorld(
     cancelAnalysis: () => ipcRenderer.invoke('jam:analyzer-cancel'),
     revealAudio: () => ipcRenderer.invoke('jam:analyzer-reveal'),
     onAnalyzerState: callback => subscribe('jam:analyzer-changed', callback),
+    onAnalyzerOpen: callback => subscribe('jam:analyzer-open', callback),
   }),
 );

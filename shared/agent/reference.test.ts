@@ -56,4 +56,53 @@ describe('MCP tool reference', () => {
         .readOnlyHint,
     ).toBe(true);
   });
+
+  it('publishes the asynchronous song-analysis contract and its side effects', () => {
+    const reference = getMcpToolReference();
+    const analyze = reference.find(tool => tool.name === 'analyze_song')!;
+    const get = reference.find(tool => tool.name === 'get_song_analysis')!;
+    const cancel = reference.find(
+      tool => tool.name === 'cancel_song_analysis',
+    )!;
+    expect(analyze.inputSchema).toMatchObject({
+      required: ['query'],
+      additionalProperties: false,
+      properties: { query: { type: 'string', minLength: 1, maxLength: 4096 } },
+    });
+    expect(analyze.annotations).toEqual({
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: true,
+    });
+    expect(get.annotations.readOnlyHint).toBe(true);
+    expect(get.inputSchema.required).toBeUndefined();
+    expect(cancel.inputSchema).toMatchObject({
+      required: ['jobId'],
+      additionalProperties: false,
+      properties: { jobId: { type: 'string', format: 'uuid' } },
+    });
+    expect(cancel.annotations).toMatchObject({
+      readOnlyHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    });
+    const data = (
+      analyze.outputSchema.properties as {
+        data: { required: string[]; properties: Record<string, unknown> };
+      }
+    ).data;
+    expect(data.required).toEqual([
+      'jobId',
+      'status',
+      'query',
+      'source',
+      'analysis',
+      'error',
+    ]);
+    expect(data.properties).not.toHaveProperty('file');
+    expect(data.properties).not.toHaveProperty('destination');
+    expect(get.outputSchema).toEqual(analyze.outputSchema);
+    expect(cancel.outputSchema).toEqual(analyze.outputSchema);
+  });
 });

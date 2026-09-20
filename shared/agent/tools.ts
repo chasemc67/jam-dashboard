@@ -11,6 +11,7 @@ import {
 import { getChord, getScale, identifyChord, ToolError } from '../music/theory';
 import { findVoicings } from '../music/voicings';
 import { AppStateSchema } from './wire';
+import { callSongAnalyzer, SongAnalysisSnapshotSchema } from './song-analysis';
 
 const target = {
   sessionId: z
@@ -43,6 +44,13 @@ const resultSchemas: Record<string, z.ZodType> = {
     requiresScaleForVisualization: z.boolean(),
     stringOrder: z.string(),
     theoryWorksWithoutConnectedApp: z.boolean(),
+    songAnalysis: z.strictObject({
+      available: z.boolean(),
+      desktopOnly: z.literal(true),
+      accepts: z.array(z.string()),
+      requiredTools: z.array(z.string()),
+      workflow: z.string(),
+    }),
     voicings: z.strictObject({
       tuning: z.string(),
       defaultFrets: z.array(z.number()).length(2),
@@ -86,6 +94,9 @@ const resultSchemas: Record<string, z.ZodType> = {
   show_fretboard: AppStateSchema,
   show_voicings: AppStateSchema,
   select_voicing: AppStateSchema,
+  analyze_song: SongAnalysisSnapshotSchema,
+  get_song_analysis: SongAnalysisSnapshotSchema,
+  cancel_song_analysis: SongAnalysisSnapshotSchema,
 };
 
 function defineTool<S extends z.ZodObject>(
@@ -94,6 +105,7 @@ function defineTool<S extends z.ZodObject>(
   inputSchema: S,
   readOnly: boolean,
   run: (input: z.output<S>, host: ToolHost) => unknown | Promise<unknown>,
+  annotations: { idempotentHint?: boolean; openWorldHint?: boolean } = {},
 ) {
   return {
     name,
@@ -107,6 +119,7 @@ function defineTool<S extends z.ZodObject>(
       destructiveHint: false,
       idempotentHint: true,
       openWorldHint: false,
+      ...annotations,
     },
     async execute(input: unknown, host: ToolHost) {
       try {
@@ -140,12 +153,20 @@ export const agentTools = [
     'Describe the supported music and visualization operations and V1 limits.',
     z.strictObject({}),
     true,
-    () => ({
+    (_i, h) => ({
       version: 1,
       requiresScaleForVisualization: true,
       stringOrder:
         'String 1 is the high/top string. Tuning and voicing arrays run high to low.',
       theoryWorksWithoutConnectedApp: true,
+      songAnalysis: {
+        available: Boolean(h.songAnalyzer),
+        desktopOnly: true as const,
+        accepts: ['song name and artist', 'YouTube URL'],
+        requiredTools: ['yt-dlp', 'ffmpeg'],
+        workflow:
+          'analyze_song returns a jobId immediately. Poll get_song_analysis with that jobId every few seconds until complete, error, or cancelled. Completed analysis contains estimated BPM, key, confidence, and keyScale. Apply keyScale with set_view only if asked. cancel_song_analysis requires the jobId. Jobs use the desktop app and its configured download folder; no scale selection is required.',
+      },
       voicings: {
         tuning: 'six-string E standard only',
         defaultFrets: [0, 12],
@@ -201,6 +222,45 @@ export const agentTools = [
     FindVoicingsSchema,
     true,
     i => findVoicings(i.chord, i.options),
+  ),
+  defineTool(
+    'analyze_song',
+    'Start desktop song analysis from a song name and artist or a direct YouTube URL. Names search YouTube and use the first match; URLs select an exact video. Downloads an MP3 to the app’s configured folder and estimates BPM/key locally. Returns immediately with a jobId; poll get_song_analysis every few seconds until complete/error/cancelled. Shows progress in the app; does not change the selected scale. Requires the desktop MCP endpoint, yt-dlp and ffmpeg. Only one analysis runs at a time. Do not repeat to poll or retry an uncertain start: read get_song_analysis first.',
+    z.strictObject({
+      query: z
+        .string()
+        .min(1)
+        .max(4096)
+        .describe(
+          'Song title and artist (up to 500 characters), or an http(s) YouTube video URL.',
+        ),
+    }),
+    false,
+    (i, h) =>
+      callSongAnalyzer(h.songAnalyzer, analyzer =>
+        analyzer.startSongAnalysis(i.query),
+      ),
+    { idempotentHint: false, openWorldHint: true },
+  ),
+  defineTool(
+    'get_song_analysis',
+    'Read a desktop song-analysis job’s status, original query, matched YouTube video, BPM/key estimates and confidence, or failure message. Pass jobId from analyze_song to avoid mixing songs. Omit jobId to inspect the current job (including a manually started job) or recover after an uncertain start. Terminal statuses are complete, error, and cancelled. The last eight finished jobs are retained in memory until app restart; unknown or expired IDs return ANALYSIS_NOT_FOUND. No network requests or new downloads.',
+    z.strictObject({ jobId: z.string().uuid().optional() }),
+    true,
+    (i, h) =>
+      callSongAnalyzer(h.songAnalyzer, analyzer =>
+        analyzer.getSongAnalysis(i.jobId),
+      ),
+  ),
+  defineTool(
+    'cancel_song_analysis',
+    'Cancel the specified desktop analysis job and its search/download/decoder processes. Requires its jobId so a stale cancellation cannot stop a different song. Cancelling a retained completed job is a no-op. Partial downloads may remain in the app’s configured folder.',
+    z.strictObject({ jobId: z.string().uuid() }),
+    false,
+    (i, h) =>
+      callSongAnalyzer(h.songAnalyzer, analyzer =>
+        analyzer.cancelSongAnalysis(i.jobId),
+      ),
   ),
   defineTool(
     'set_view',

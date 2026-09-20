@@ -10,6 +10,8 @@ import {
 } from '../../shared/agent/reference';
 import { ClientMessageSchema } from '../../shared/agent/wire';
 import { SessionRegistry } from './sessions';
+import type { ToolHost } from '../../shared/agent/contract';
+import type { SongAnalyzerHost } from '../../shared/agent/song-analysis';
 
 export const DEFAULT_MCP_PORT = 4177;
 const MAX_BODY = 128 * 1024;
@@ -36,14 +38,22 @@ export async function startAgentService({
   port = DEFAULT_MCP_PORT,
   browserOrigins = [],
   registry = new SessionRegistry(),
+  songAnalyzer,
 }: {
   token: string;
   port?: number;
   browserOrigins?: string[];
   registry?: SessionRegistry;
+  songAnalyzer?: SongAnalyzerHost;
 }) {
   if (!/^[a-f0-9]{64}$/.test(token))
     throw new Error('Agent token must be 32 random bytes encoded as hex.');
+  const host: ToolHost = {
+    songAnalyzer,
+    listSessions: () => registry.listSessions(),
+    getState: id => registry.getState(id),
+    execute: (command, id, revision) => registry.execute(command, id, revision),
+  };
   const handler = createMcpHandler(() => {
     const mcp = new McpServer(MCP_SERVER_INFO, {
       instructions: MCP_SERVER_INSTRUCTIONS,
@@ -58,7 +68,7 @@ export async function startAgentService({
           annotations: tool.annotations,
         },
         async input => {
-          const result = await tool.execute(input, registry);
+          const result = await tool.execute(input, host);
           return {
             isError: !result.ok,
             content: [{ type: 'text', text: JSON.stringify(result) }],

@@ -11,6 +11,7 @@ import { startAgentService, tokenMatches, validRequestSource } from './service';
 import { SessionRegistry } from './sessions';
 import { initialState } from '../../shared/agent/fixtures';
 import { prepareCommand } from '../../shared/agent/commands';
+import { ToolOutputSchema } from '../../shared/agent/tools';
 import type { CommandRequest } from '../../shared/agent/contract';
 import {
   getMcpToolReference,
@@ -102,7 +103,7 @@ for (const mode of ['legacy', 'auto'] as const) {
         }),
       );
       const tools = await client.listTools();
-      assert.equal(tools.tools.length, 11);
+      assert.equal(tools.tools.length, 14);
       // The in-app technical reference must match the exact published surface,
       // including the SDK's conversion direction and JSON Schema draft.
       assert.deepEqual(
@@ -119,6 +120,34 @@ for (const mode of ['legacy', 'auto'] as const) {
       assert.equal(client.getInstructions(), MCP_SERVER_INSTRUCTIONS);
       assert.equal(client.getServerCapabilities()?.prompts, undefined);
       assert.deepEqual(MCP_PROMPT_TEMPLATES, []);
+      const capabilities = await client.callTool({
+        name: 'get_capabilities',
+        arguments: {},
+      });
+      assert.equal(capabilities.isError, false);
+      assert.equal(
+        (
+          ToolOutputSchema.parse(capabilities.structuredContent).data as {
+            songAnalysis: { available: boolean };
+          }
+        ).songAnalysis.available,
+        false,
+      );
+      for (const [name, args] of [
+        ['analyze_song', { query: 'Blue Skies Ella Fitzgerald' }],
+        ['get_song_analysis', {}],
+        [
+          'cancel_song_analysis',
+          { jobId: 'e180b129-51ef-40de-90f5-a5bf6c566702' },
+        ],
+      ] as const) {
+        const unavailable = await client.callTool({ name, arguments: args });
+        assert.equal(unavailable.isError, true);
+        assert.equal(
+          ToolOutputSchema.parse(unavailable.structuredContent).error?.code,
+          'ANALYZER_UNAVAILABLE',
+        );
+      }
       assert.equal(
         tools.tools.find(t => t.name === 'get_chord')?.annotations
           ?.readOnlyHint,

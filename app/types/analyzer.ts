@@ -11,6 +11,8 @@ export interface SongAnalysis {
 
 export interface AnalyzerState {
   revision: number;
+  jobId: string | null;
+  query: string | null;
   status:
     | 'idle'
     | 'searching'
@@ -46,4 +48,5 @@ export interface DesktopAPI {
   cancelAnalysis: () => Promise<AnalyzerReply>;
   revealAudio: () => Promise<AnalyzerReply>;
   onAnalyzerState: (callback: (state: AnalyzerState) => void) => () => void;
+  onAnalyzerOpen: (callback: () => void) => () => void;
 }

@@ -1,4 +1,5 @@
 import { z } from 'zod/v4';
+import type { SongAnalyzerHost } from './song-analysis';
 import {
   PositionSchema,
   VoicingOptionsSchema,
@@ -100,6 +101,7 @@ export type CommandReply = {
 };
 export type ConnectionInfo = { url: string; token: string };
 export interface ToolHost {
+  songAnalyzer?: SongAnalyzerHost;
   listSessions(): SessionInfo[];
   getState(sessionId?: string): AppState;
   execute(

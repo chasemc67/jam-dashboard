@@ -62,8 +62,10 @@ export function registerWebMcp(
             inputSchema: z.toJSONSchema(tool.inputSchema),
             annotations: {
               readOnlyHint: tool.annotations.readOnlyHint,
-              consequentialHint: false,
-              untrustedContentHint: false,
+              consequentialHint: tool.annotations.openWorldHint,
+              untrustedContentHint:
+                tool.annotations.openWorldHint ||
+                tool.name === 'get_song_analysis',
             },
             execute: async input =>
               JSON.stringify(await tool.execute(input, host)),
