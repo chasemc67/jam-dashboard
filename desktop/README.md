@@ -25,9 +25,13 @@ For code changes, rebuild with `npm run desktop:build` and restart with
 isolated from the normal `build/` directory. No sibling repository is needed.
 
 The desktop-only **YouTube Analyzer** tab sits beside **Chord Explorer**, **Ear
-Training**, and **Note Detect**. It is omitted from the hosted web build. Paste a YouTube URL to
-save an MP3, or choose/drop a local audio file (MP3, WAV, M4A, FLAC and more).
-The tab shows download/analysis progress, BPM/key estimates, confidence, and
+Training**, and **Note Detect**. It is omitted from the hosted web build. Enter a song
+name (ideally with the artist) or paste a YouTube URL to save an MP3, or choose/drop
+a local audio file (MP3, WAV, M4A, FLAC and more). Song names use yt-dlp's first
+YouTube search match, then download and analyze that video automatically; no API
+key or additional service is needed. The matched title, channel, duration, and
+YouTube link stay visible. Use an exact URL when you want a specific recording.
+The tab shows search/download/analysis progress, BPM/key estimates, confidence, and
 Show in Finder. Switching tools leaves the job running and retains its input/result for
 returning to the tab; Cancel stops the helper and its downloader/decoder processes.
 

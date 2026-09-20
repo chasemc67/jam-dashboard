@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Download, FolderOpen, Loader2, Music2 } from 'lucide-react';
+import {
+  Download,
+  ExternalLink,
+  FolderOpen,
+  Loader2,
+  Music2,
+} from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { useScaleKey } from '~/contexts/ScaleKeyContext';
@@ -7,6 +13,7 @@ import type { AnalyzerReply, AnalyzerState } from '~/types/analyzer';
 
 const statusLabels: Record<AnalyzerState['status'], string> = {
   idle: 'Ready for a song',
+  searching: 'Searching YouTube for your song…',
   downloading: 'Downloading and converting to MP3…',
   analyzing: 'Listening for tempo and key…',
   complete: 'Analysis complete',
@@ -17,11 +24,14 @@ const statusLabels: Record<AnalyzerState['status'], string> = {
 /** Kept mounted in the desktop tab so switching tools preserves the current input. */
 export default function DesktopAnalyzer() {
   const { keyScale, setKeyScale } = useScaleKey();
-  const [url, setURL] = useState('');
+  const [input, setInput] = useState('');
   const [state, setState] = useState<AnalyzerState>();
   const [error, setError] = useState<string>();
   const [pending, setPending] = useState(false);
-  const busy = state?.status === 'downloading' || state?.status === 'analyzing';
+  const busy =
+    state?.status === 'searching' ||
+    state?.status === 'downloading' ||
+    state?.status === 'analyzing';
   const disabled = busy || pending;
   const result = state?.analysis;
 
@@ -82,20 +92,28 @@ export default function DesktopAnalyzer() {
             onSubmit={event => {
               event.preventDefault();
               if (!disabled)
-                void run(() => window.jamDesktop?.startYouTube(url));
+                void run(() => window.jamDesktop?.startYouTube(input));
             }}
           >
-            <label htmlFor="analyzer-url" className="text-sm font-medium">
-              YouTube URL
+            <label htmlFor="analyzer-input" className="text-sm font-medium">
+              Song name or YouTube URL
             </label>
             <Input
-              id="analyzer-url"
-              value={url}
-              onChange={event => setURL(event.target.value)}
-              placeholder="https://www.youtube.com/watch?v=…"
+              id="analyzer-input"
+              value={input}
+              onChange={event => setInput(event.target.value)}
+              placeholder="Song title — artist, or a YouTube link"
+              aria-describedby="analyzer-search-hint"
               disabled={disabled}
               autoComplete="off"
             />
+            <p
+              id="analyzer-search-hint"
+              className="text-xs text-muted-foreground"
+            >
+              Song names use the first YouTube match. Include the artist for
+              better results, or paste a link to choose an exact version.
+            </p>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <FolderOpen className="h-4 w-4 shrink-0" />
               <span
@@ -121,7 +139,7 @@ export default function DesktopAnalyzer() {
               className="w-full"
               disabled={
                 disabled ||
-                !url.trim() ||
+                !input.trim() ||
                 !state?.tools.ytDlp ||
                 !state?.tools.ffmpeg
               }
@@ -144,7 +162,7 @@ export default function DesktopAnalyzer() {
                 void run(() => window.jamDesktop?.analyzeDroppedFile(file));
               else {
                 const text = event.dataTransfer.getData('text/plain');
-                if (text) setURL(text.trim());
+                if (text) setInput(text.trim());
               }
             }}
           >
@@ -225,6 +243,38 @@ export default function DesktopAnalyzer() {
             >
               {error || state?.error}
             </p>
+          )}
+          {state?.source && (
+            <div className="space-y-1 rounded-lg border bg-muted/30 p-3 text-sm">
+              <p className="text-xs text-muted-foreground">
+                Matched on YouTube
+              </p>
+              <a
+                href={state.source.url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-start gap-2 break-words font-medium underline-offset-4 hover:underline"
+              >
+                {state.source.title}
+                <ExternalLink
+                  className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                  aria-hidden="true"
+                />
+                <span className="sr-only"> (opens in browser)</span>
+              </a>
+              {(state.source.channel || state.source.duration !== null) && (
+                <p className="text-xs text-muted-foreground">
+                  {[
+                    state.source.channel,
+                    state.source.duration !== null
+                      ? `${Math.floor(state.source.duration / 60)}:${String(Math.floor(state.source.duration % 60)).padStart(2, '0')}`
+                      : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </p>
+              )}
+            </div>
           )}
           {result && (
             <section

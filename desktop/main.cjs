@@ -254,7 +254,7 @@ if (!app.requestSingleInstanceLock()) {
         true,
       );
       handle('jam:analyzer-state', () => analyzer.getState(), true);
-      handle('jam:analyzer-youtube', url => analyzer.startYouTube(url));
+      handle('jam:analyzer-youtube', input => analyzer.startYouTube(input));
       handle('jam:analyzer-local', file => analyzer.startFile(file));
       handle('jam:analyzer-cancel', () => analyzer.stop());
       handle('jam:analyzer-destination', async () => {

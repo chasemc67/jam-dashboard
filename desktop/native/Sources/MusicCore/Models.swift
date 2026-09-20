@@ -48,6 +48,9 @@ public struct MusicAnalysis: Sendable, Equatable {
 
 public enum MusicUtilityError: LocalizedError {
     case invalidYouTubeURL
+    case invalidYouTubeSearch
+    case invalidYouTubeSearchResult
+    case noYouTubeSearchResults
     case missingTool(String)
     case processFailed(tool: String, message: String)
     case downloadDidNotProduceFile
@@ -58,6 +61,12 @@ public enum MusicUtilityError: LocalizedError {
         switch self {
         case .invalidYouTubeURL:
             return "Enter a valid youtube.com or youtu.be URL."
+        case .invalidYouTubeSearch:
+            return "Enter a song name or artist using 1–500 characters without control characters."
+        case .invalidYouTubeSearchResult:
+            return "YouTube search returned an invalid result. Try a different song name or paste a YouTube URL."
+        case .noYouTubeSearchResults:
+            return "No YouTube videos matched that song. Try adding the artist or paste a YouTube URL."
         case .missingTool(let tool):
             return "Could not find \(tool). Install it with Homebrew, then reopen the app."
         case .processFailed(let tool, let message):

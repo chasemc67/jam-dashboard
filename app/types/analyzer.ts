@@ -13,6 +13,7 @@ export interface AnalyzerState {
   revision: number;
   status:
     | 'idle'
+    | 'searching'
     | 'downloading'
     | 'analyzing'
     | 'complete'
@@ -21,6 +22,12 @@ export interface AnalyzerState {
   destination: string;
   tools: { ytDlp: boolean; ffmpeg: boolean };
   file: { path: string; name: string } | null;
+  source: {
+    title: string;
+    url: string;
+    channel: string | null;
+    duration: number | null;
+  } | null;
   analysis: SongAnalysis | null;
   error: string | null;
 }
@@ -32,7 +39,7 @@ export interface AnalyzerReply {
 
 export interface DesktopAPI {
   getAnalyzerState: () => Promise<AnalyzerState>;
-  startYouTube: (url: string) => Promise<AnalyzerReply>;
+  startYouTube: (input: string) => Promise<AnalyzerReply>;
   chooseAudio: () => Promise<AnalyzerReply>;
   analyzeDroppedFile: (file: File) => Promise<AnalyzerReply>;
   chooseDestination: () => Promise<AnalyzerReply>;

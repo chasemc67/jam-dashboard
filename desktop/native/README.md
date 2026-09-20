@@ -17,9 +17,18 @@ contract lives in `app/types/analyzer.ts`.
 
 ```sh
 MusicAnalyzerCLI --json download 'https://youtu.be/VIDEO_ID' /path/to/destination
+MusicAnalyzerCLI --json search-download 'Artist — Song title' /path/to/destination
 MusicAnalyzerCLI --json analyze /path/to/song.mp3
 MusicAnalyzerCLI /path/to/song.mp3  # human-readable output for development
 ```
+
+Song queries use yt-dlp's YouTube search and automatically download its first
+match. Adding the artist makes the match more specific. Search uses metadata
+only, then passes the resolved video URL through the existing download and
+analysis pipeline. The helper emits `searching`, a `source` event with the
+matched title, canonical YouTube URL, channel and duration (when available),
+then `downloading` and `analyzing`. No API key or additional dependency is needed.
+`YouTubeSearch.search` also supports up to five results for future selection UIs.
 
 A result includes BPM, confidence estimates, a display key (such as
 `F♯ / G♭ minor`), a Tonal-compatible `keyScale` (`F# minor`), and the relative

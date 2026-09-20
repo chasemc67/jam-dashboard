@@ -16,13 +16,27 @@ do {
         emit(["event": "status", "status": "downloading"])
         fileURL = try MediaDownloader.downloadMP3(from: arguments[2], to: URL(fileURLWithPath: arguments[3]))
         emit(["event": "file", "path": fileURL.path])
+    } else if jsonMode && arguments.count == 4 && arguments[1] == "search-download" {
+        emit(["event": "status", "status": "searching"])
+        guard let source = try YouTubeSearch.search(arguments[2]).first else {
+            throw MusicUtilityError.noYouTubeSearchResults
+        }
+        emit(["event": "source", "source": [
+            "title": source.title,
+            "url": source.url.absoluteString,
+            "channel": source.channel as Any? ?? NSNull(),
+            "duration": source.duration as Any? ?? NSNull()
+        ]])
+        emit(["event": "status", "status": "downloading"])
+        fileURL = try MediaDownloader.downloadMP3(from: source.url.absoluteString, to: URL(fileURLWithPath: arguments[3]))
+        emit(["event": "file", "path": fileURL.path])
     } else if jsonMode && arguments.count == 3 && arguments[1] == "analyze" {
         fileURL = URL(fileURLWithPath: arguments[2])
     } else if !jsonMode && arguments.count == 1 {
         fileURL = URL(fileURLWithPath: arguments[0])
     } else {
         throw NSError(domain: "MusicAnalyzerCLI", code: 2, userInfo: [NSLocalizedDescriptionKey:
-            "Usage: MusicAnalyzerCLI [--json analyze] /path/to/audio, or --json download YOUTUBE_URL DESTINATION"])
+            "Usage: MusicAnalyzerCLI [--json analyze] /path/to/audio, --json download YOUTUBE_URL DESTINATION, or --json search-download SONG_QUERY DESTINATION"])
     }
     if jsonMode { emit(["event": "status", "status": "analyzing"]) }
     let result = try AudioAnalyzer().analyze(fileURL: fileURL)

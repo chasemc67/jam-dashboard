@@ -21,7 +21,7 @@ contextBridge.exposeInMainWorld(
   'jamDesktop',
   Object.freeze({
     getAnalyzerState: () => ipcRenderer.invoke('jam:analyzer-state'),
-    startYouTube: url => ipcRenderer.invoke('jam:analyzer-youtube', url),
+    startYouTube: input => ipcRenderer.invoke('jam:analyzer-youtube', input),
     chooseAudio: () => ipcRenderer.invoke('jam:analyzer-choose-audio'),
     analyzeDroppedFile: file =>
       ipcRenderer.invoke('jam:analyzer-local', webUtils.getPathForFile(file)),
