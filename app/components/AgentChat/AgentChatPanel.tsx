@@ -68,7 +68,7 @@ export default function AgentChatPanel({
       <div
         ref={listRef}
         aria-label="Chat messages"
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4 [@media(max-height:500px)]:overflow-visible"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4 [@media(max-height:500px)]:min-h-[12rem] [@media(max-height:500px)]:overflow-visible"
       >
         {messages.length === 0 && (
           <p className="text-sm text-muted-foreground">

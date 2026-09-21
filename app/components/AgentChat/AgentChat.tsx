@@ -47,7 +47,7 @@ export default function AgentChat({
           aria-describedby={descriptionId}
           onInteractOutside={event => event.preventDefault()}
           onFocusOutside={event => event.preventDefault()}
-          className="flex max-h-[min(38rem,var(--radix-popover-content-available-height))] w-[min(25rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl p-0 shadow-xl [@media(max-height:500px)]:block [@media(max-height:500px)]:overflow-y-auto"
+          className="flex h-[min(28rem,var(--radix-popover-content-available-height))] max-h-[min(38rem,var(--radix-popover-content-available-height))] w-[min(25rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl p-0 shadow-xl [@media(max-height:500px)]:block [@media(max-height:500px)]:h-auto [@media(max-height:500px)]:overflow-y-auto"
         >
           <AgentChatPanel
             titleId={titleId}
