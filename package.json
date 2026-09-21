@@ -25,6 +25,8 @@
     "agent:test": "node --import tsx --test server/agent/*.test.ts"
   },
   "dependencies": {
+    "@ai-sdk/mcp": "^2.0.54",
+    "@ai-sdk/react": "^4.0.110",
     "@hookform/resolvers": "^3.10.0",
     "@modelcontextprotocol/node": "^2.0.0",
     "@modelcontextprotocol/server": "^2.0.0",
@@ -43,6 +45,7 @@
     "@remix-run/serve": "^2.15.2",
     "@vercel/analytics": "^1.4.1",
     "@vercel/speed-insights": "^1.1.0",
+    "ai": "^7.0.107",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
