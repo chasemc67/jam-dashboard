@@ -1,5 +1,27 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import type { AgentChatVoice } from '~/hooks/useAgentChatVoice';
 import AgentChatPanel from './AgentChatPanel';
+
+const idleVoice = (
+  overrides: Partial<AgentChatVoice> = {},
+): AgentChatVoice => ({
+  status: 'idle',
+  error: null,
+  devices: [
+    { deviceId: 'chat-mic', label: 'USB headset mic' },
+    { deviceId: 'guitar-mic', label: 'Focusrite Scarlett 2i2' },
+  ],
+  selectedDeviceId: 'chat-mic',
+  hasPermission: true,
+  level: 0,
+  supported: true,
+  onSelectDevice: jest.fn(),
+  onStart: jest.fn(),
+  onStopAndSend: jest.fn(),
+  onCancel: jest.fn(),
+  onRefreshDevices: jest.fn(),
+  ...overrides,
+});
 
 test('renders messages, tool indicators, and sends on Enter', () => {
   const onSubmit = jest.fn();
@@ -69,4 +91,77 @@ test('shows a connection error and thinking status', () => {
   );
   expect(screen.getByRole('status')).toHaveTextContent('Thinking…');
   expect(screen.getByRole('alert')).toHaveTextContent('npm run agent:dev');
+});
+
+test('voice composer lists an independent mic, starts listening, and auto-sends on stop', () => {
+  const voice = idleVoice();
+  render(
+    <AgentChatPanel
+      titleId="title"
+      descriptionId="description"
+      messages={[]}
+      status="ready"
+      input=""
+      onInputChange={jest.fn()}
+      onSubmit={jest.fn()}
+      onClose={jest.fn()}
+      voice={voice}
+    />,
+  );
+  expect(screen.getByLabelText('Chat microphone')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Start voice message' }));
+  expect(voice.onStart).toHaveBeenCalledTimes(1);
+});
+
+test('recording shows a listening meter, cancel, and stop-and-send', () => {
+  const voice = idleVoice({ status: 'recording', level: 0.6 });
+  const onSubmit = jest.fn();
+  render(
+    <AgentChatPanel
+      titleId="title"
+      descriptionId="description"
+      messages={[]}
+      status="ready"
+      input="ignored while recording"
+      onInputChange={jest.fn()}
+      onSubmit={onSubmit}
+      onClose={jest.fn()}
+      voice={voice}
+    />,
+  );
+  expect(screen.getByRole('status', { name: 'Listening' })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+  expect(voice.onCancel).toHaveBeenCalledTimes(1);
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Stop and send voice message' }),
+  );
+  expect(voice.onStopAndSend).toHaveBeenCalledTimes(1);
+  const form = screen.getByRole('button', { name: 'Send' }).closest('form');
+  fireEvent.submit(form!);
+  expect(voice.onStopAndSend).toHaveBeenCalledTimes(2);
+  expect(onSubmit).not.toHaveBeenCalled();
+});
+
+test('shows voice permission and STT errors', () => {
+  render(
+    <AgentChatPanel
+      titleId="title"
+      descriptionId="description"
+      messages={[]}
+      status="ready"
+      input=""
+      onInputChange={jest.fn()}
+      onSubmit={jest.fn()}
+      onClose={jest.fn()}
+      voice={idleVoice({
+        status: 'error',
+        error:
+          'Microphone permission denied. Allow access in the browser to use voice mode.',
+        hasPermission: false,
+        devices: [],
+        selectedDeviceId: null,
+      })}
+    />,
+  );
+  expect(screen.getByRole('alert')).toHaveTextContent('permission denied');
 });

@@ -8,6 +8,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '~/components/ui/popover';
+import { useAgentChatVoice } from '~/hooks/useAgentChatVoice';
 import AgentChatPanel from './AgentChatPanel';
 
 export default function AgentChat({
@@ -24,6 +25,14 @@ export default function AgentChat({
     [],
   );
   const { messages, sendMessage, status, error } = useChat({ transport });
+  const chatReady = status === 'ready' || status === 'error';
+  const voice = useAgentChatVoice({
+    enabled: chatReady,
+    onTranscript: text => {
+      if (!text.trim() || !chatReady) return;
+      void sendMessage({ text });
+    },
+  });
 
   return (
     <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-[max(1rem,env(safe-area-inset-left))] z-40 ml-[3.25rem]">
@@ -58,12 +67,17 @@ export default function AgentChat({
             input={input}
             onInputChange={setInput}
             onSubmit={() => {
+              if (voice.status === 'recording') {
+                voice.onStopAndSend();
+                return;
+              }
               const text = input.trim();
-              if (!text || (status !== 'ready' && status !== 'error')) return;
+              if (!text || !chatReady) return;
               void sendMessage({ text });
               setInput('');
             }}
             onClose={() => setOpen(false)}
+            voice={voice}
           />
         </PopoverContent>
       </Popover>

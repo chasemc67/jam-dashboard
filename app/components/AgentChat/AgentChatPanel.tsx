@@ -1,12 +1,43 @@
 import { useEffect, useRef } from 'react';
-import { Sparkles, X } from 'lucide-react';
+import { Mic, RefreshCw, Sparkles, X } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '~/components/ui/select';
+import { cn } from '~/lib/utils';
 import {
   chatErrorMessage,
   describeChatPart,
   type AgentChatMessage,
 } from '~/agent/chat-ui';
+import { VOICE_UNSUPPORTED_MESSAGE } from '~/agent/voice-config';
+import type { AgentChatVoice } from '~/hooks/useAgentChatVoice';
+
+function VoiceMeter({ level }: { level: number }) {
+  const weights = [0.45, 0.75, 1, 0.68, 0.5];
+  return (
+    <div
+      className="flex h-9 min-w-0 flex-1 items-end justify-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-3 py-1.5"
+      role="status"
+      aria-label="Listening"
+    >
+      {weights.map((weight, index) => (
+        <span
+          key={index}
+          className="w-1 rounded-full bg-primary transition-[height] duration-75"
+          style={{
+            height: `${Math.max(18, Math.min(100, level * weight * 160 + 18))}%`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
 
 export default function AgentChatPanel({
   titleId,
@@ -18,6 +49,7 @@ export default function AgentChatPanel({
   onInputChange,
   onSubmit,
   onClose,
+  voice,
 }: {
   titleId: string;
   descriptionId: string;
@@ -28,13 +60,20 @@ export default function AgentChatPanel({
   onInputChange: (value: string) => void;
   onSubmit: () => void;
   onClose: () => void;
+  voice?: AgentChatVoice;
 }) {
   const listRef = useRef<HTMLDivElement>(null);
   const busy = status === 'submitted' || status === 'streaming';
+  const recording = voice?.status === 'recording';
+  const transcribing = voice?.status === 'transcribing';
+  const requesting = voice?.status === 'requesting';
+  const voiceActive = recording || transcribing || requesting;
+  const canSendText = !busy && !voiceActive && Boolean(input.trim());
+  const canSendVoice = recording && !busy;
   useEffect(() => {
     const list = listRef.current;
     if (list) list.scrollTop = list.scrollHeight;
-  }, [messages, status]);
+  }, [messages, status, voice?.status]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col [@media(max-height:500px)]:block">
@@ -61,8 +100,9 @@ export default function AgentChatPanel({
           </Button>
         </div>
         <p id={descriptionId} className="mt-2 text-sm text-muted-foreground">
-          Ask to change the key, highlight notes, or find voicings. This chat
-          uses the local MCP server from <code>npm run agent:dev</code>.
+          Ask to change the key, highlight notes, or find voicings. Tap the mic
+          to talk. Uses the local MCP server from <code>npm run agent:dev</code>
+          .
         </p>
       </div>
       <div
@@ -110,10 +150,20 @@ export default function AgentChatPanel({
               Thinking…
             </p>
           )}
+          {transcribing && (
+            <p role="status" className="text-sm text-muted-foreground">
+              Transcribing…
+            </p>
+          )}
         </div>
         {error && (
           <p role="alert" className="mt-3 text-sm text-destructive">
             {chatErrorMessage(error)}
+          </p>
+        )}
+        {voice?.error && (
+          <p role="alert" className="mt-3 text-sm text-destructive">
+            {voice.error}
           </p>
         )}
       </div>
@@ -121,19 +171,114 @@ export default function AgentChatPanel({
         className="shrink-0 border-t bg-muted/30 p-3"
         onSubmit={event => {
           event.preventDefault();
+          if (recording) {
+            voice?.onStopAndSend();
+            return;
+          }
           onSubmit();
         }}
       >
+        {voice && (
+          <div className="mb-2 flex items-center gap-2">
+            <Select
+              value={voice.selectedDeviceId ?? undefined}
+              onValueChange={voice.onSelectDevice}
+              disabled={voiceActive || !voice.supported}
+              onOpenChange={open => {
+                if (open) voice.onRefreshDevices();
+              }}
+            >
+              <SelectTrigger
+                className="h-8 flex-1 text-xs"
+                aria-label="Chat microphone"
+              >
+                <SelectValue placeholder="Chat microphone" />
+              </SelectTrigger>
+              <SelectContent>
+                {voice.devices.length > 0 ? (
+                  voice.devices.map(device => (
+                    <SelectItem key={device.deviceId} value={device.deviceId}>
+                      {device.label}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="__none" disabled>
+                    {voice.hasPermission
+                      ? 'No microphones found'
+                      : 'Allow microphone to list devices'}
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8 shrink-0"
+              aria-label="Refresh chat microphones"
+              title="Refresh chat microphones"
+              disabled={voiceActive || !voice.supported}
+              onClick={voice.onRefreshDevices}
+            >
+              <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+            </Button>
+          </div>
+        )}
         <div className="flex gap-2">
-          <Input
-            value={input}
-            onChange={event => onInputChange(event.target.value)}
-            placeholder="Ask to show a key or voicing…"
-            aria-label="Message"
-            disabled={busy}
-          />
-          <Button type="submit" disabled={busy || !input.trim()}>
-            Send
+          {recording ? (
+            <>
+              <VoiceMeter level={voice?.level ?? 0} />
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={busy}
+                onClick={voice?.onCancel}
+              >
+                Cancel
+              </Button>
+            </>
+          ) : (
+            <Input
+              value={input}
+              onChange={event => onInputChange(event.target.value)}
+              placeholder="Ask to show a key or voicing…"
+              aria-label="Message"
+              disabled={busy || voiceActive}
+            />
+          )}
+          {voice && (
+            <Button
+              type="button"
+              size="icon"
+              variant={recording ? 'destructive' : 'outline'}
+              className={cn('shrink-0', recording && 'animate-pulse')}
+              aria-label={
+                recording
+                  ? 'Stop and send voice message'
+                  : 'Start voice message'
+              }
+              aria-pressed={recording}
+              title={
+                !voice.supported
+                  ? VOICE_UNSUPPORTED_MESSAGE
+                  : recording
+                    ? 'Stop and send'
+                    : 'Voice mode'
+              }
+              disabled={!voice.supported || busy || transcribing || requesting}
+              onClick={() => {
+                if (recording) voice.onStopAndSend();
+                else voice.onStart();
+              }}
+            >
+              <Mic aria-hidden="true" />
+            </Button>
+          )}
+          <Button
+            type="submit"
+            disabled={recording ? !canSendVoice : !canSendText}
+          >
+            {recording ? 'Send' : transcribing ? '…' : 'Send'}
           </Button>
         </div>
       </form>

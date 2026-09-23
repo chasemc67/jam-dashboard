@@ -29,6 +29,11 @@ The round **Chat** button (next to **AI**) talks to the local Jam MCP server thr
 1. Copy `.env.example` to `.env` and set `AI_GATEWAY_API_KEY`.
 2. Run `npm run agent:dev` and open `http://127.0.0.1:5173`.
 3. Click **Chat** and ask something like “Show B major on the fretboard.”
+4. Optional voice mode: click the mic next to Send, speak, then click the mic
+   (or **Send**) to transcribe and submit. Pick a **Chat microphone** independently
+   of Note Detector — the chat device is stored as `jam-agent-chat-voice-device-id`.
+   Using two different physical mics at once is supported; opening the same device
+   twice is often flaky in browsers.
 
 `npm run agent:dev` prints the MCP URL and starts the same-origin `/__jam-agent/config` endpoint the app already uses for AI connection. Do not commit gateway keys or MCP tokens.
 
