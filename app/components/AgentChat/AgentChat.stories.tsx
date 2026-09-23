@@ -1,6 +1,34 @@
+import type { ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
+import type { AgentChatVoice } from '~/hooks/useAgentChatVoice';
 import AgentChat from './AgentChat';
 import AgentChatPanel from './AgentChatPanel';
+
+const idleVoice: AgentChatVoice = {
+  status: 'idle',
+  error: null,
+  devices: [
+    { deviceId: 'chat-mic', label: 'USB headset mic' },
+    { deviceId: 'guitar-mic', label: 'Focusrite Scarlett 2i2' },
+  ],
+  selectedDeviceId: 'chat-mic',
+  hasPermission: true,
+  level: 0.15,
+  supported: true,
+  onSelectDevice: () => {},
+  onStart: () => {},
+  onStopAndSend: () => {},
+  onCancel: () => {},
+  onRefreshDevices: () => {},
+};
+
+function PanelFrame({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex h-[32rem] w-[25rem] flex-col overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-xl">
+      {children}
+    </div>
+  );
+}
 
 export default {
   title: 'Components/AgentChat',
@@ -25,7 +53,7 @@ export const Mobile: Story = {
 
 export const WithMessages: StoryObj<typeof AgentChatPanel> = {
   render: () => (
-    <div className="flex h-[32rem] w-[25rem] flex-col overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-xl">
+    <PanelFrame>
       <AgentChatPanel
         titleId="agent-chat-title"
         descriptionId="agent-chat-description"
@@ -59,7 +87,70 @@ export const WithMessages: StoryObj<typeof AgentChatPanel> = {
         onInputChange={() => {}}
         onSubmit={() => {}}
         onClose={() => {}}
+        voice={idleVoice}
       />
-    </div>
+    </PanelFrame>
+  ),
+};
+
+export const VoiceListening: StoryObj<typeof AgentChatPanel> = {
+  render: () => (
+    <PanelFrame>
+      <AgentChatPanel
+        titleId="agent-chat-title"
+        descriptionId="agent-chat-description"
+        messages={[]}
+        status="ready"
+        input=""
+        onInputChange={() => {}}
+        onSubmit={() => {}}
+        onClose={() => {}}
+        voice={{ ...idleVoice, status: 'recording', level: 0.7 }}
+      />
+    </PanelFrame>
+  ),
+};
+
+export const VoiceTranscribing: StoryObj<typeof AgentChatPanel> = {
+  render: () => (
+    <PanelFrame>
+      <AgentChatPanel
+        titleId="agent-chat-title"
+        descriptionId="agent-chat-description"
+        messages={[]}
+        status="ready"
+        input=""
+        onInputChange={() => {}}
+        onSubmit={() => {}}
+        onClose={() => {}}
+        voice={{ ...idleVoice, status: 'transcribing' }}
+      />
+    </PanelFrame>
+  ),
+};
+
+export const VoiceError: StoryObj<typeof AgentChatPanel> = {
+  render: () => (
+    <PanelFrame>
+      <AgentChatPanel
+        titleId="agent-chat-title"
+        descriptionId="agent-chat-description"
+        messages={[]}
+        status="ready"
+        input=""
+        onInputChange={() => {}}
+        onSubmit={() => {}}
+        onClose={() => {}}
+        voice={{
+          ...idleVoice,
+          status: 'error',
+          hasPermission: false,
+          devices: [],
+          selectedDeviceId: null,
+          error:
+            'Microphone permission denied. Allow access in the browser to use voice mode.',
+        }}
+      />
+    </PanelFrame>
   ),
 };

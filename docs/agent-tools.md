@@ -14,6 +14,8 @@ The round **AI** button in the bottom-left opens an anchored guide. **Guide** of
 
 The round **Chat** button next to it is an in-app agent (Vercel AI SDK `ToolLoopAgent`) that calls this same local MCP HTTP endpoint. It needs `AI_GATEWAY_API_KEY` (see `.env.example`) and `npm run agent:dev`. The Remix route `/api/agent-chat` discovers the MCP URL and bearer token from `JAM_AGENT_URL` / `JAM_AGENT_TOKEN`, the same values `/__jam-agent/config` exposes to the page.
 
+Voice mode records from a **separate** `getUserMedia` stream (speech echo cancellation on) and POSTs the clip to `/api/agent-transcribe`, which calls the AI SDK `transcribe` helper through AI Gateway (`openai/whisper-1` by default, override with `JAM_AGENT_TRANSCRIBE_MODEL`). The transcript is then sent as a normal chat user message so MCP tools still run. Chat remembers its mic in `localStorage` key `jam-agent-chat-voice-device-id`; Note Detector does not use that key and keeps guitar-oriented capture (`echoCancellation: false` in `createInputStream`). Two different hardware inputs can run together. Capturing the same device twice is unreliable in many browsers (`NotReadableError` or a silent/shared track).
+
 The two hosts have independent views and credentials. Running both does not synchronize them. The hosted production website is outside V1; `npm run dev` intentionally does not enable this integration.
 
 ## Connect an agent
