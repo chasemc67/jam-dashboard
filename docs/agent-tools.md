@@ -12,6 +12,8 @@ Open **AI connection** below the fretboard for the endpoint, bearer token and Cu
 
 The round **AI** button in the bottom-left opens an anchored guide. **Guide** offers example requests; **Advanced** lists every exposed tool with its exact agent-facing description, input/output JSON schemas, and annotations from the shared registry. Expand **Agent prompt & instructions** to inspect the server's prompt configuration. This version provides tool descriptions but no server-wide instructions or MCP prompt templates.
 
+The round **Chat** button next to it is an in-app agent (Vercel AI SDK `ToolLoopAgent`) that calls this same local MCP HTTP endpoint. It needs `AI_GATEWAY_API_KEY` (see `.env.example`) and `npm run agent:dev`. The Remix route `/api/agent-chat` discovers the MCP URL and bearer token from `JAM_AGENT_URL` / `JAM_AGENT_TOKEN`, the same values `/__jam-agent/config` exposes to the page.
+
 The two hosts have independent views and credentials. Running both does not synchronize them. The hosted production website is outside V1; `npm run dev` intentionally does not enable this integration.
 
 ## Connect an agent
@@ -75,22 +77,22 @@ The last call returns to the normal scale view. Visualization calls return the c
 
 ## Tool contract
 
-| Tool               | Purpose                                                                                       |
-| ------------------ | --------------------------------------------------------------------------------------------- |
-| `get_capabilities` | V1 rules, limits and suggested workflow.                                                      |
-| `list_sessions`    | Connected views, their IDs, platform, revision and readiness.                                 |
-| `get_state`        | Selected scale, tuning, settings, highlights, exact positions and current voicing result.     |
-| `identify_chord`   | Tonal candidates from ordered notes; first note is bass even when octave labels are supplied. |
-| `get_chord`        | Chord notes, intervals, quality and optional slash bass.                                      |
-| `get_scale`        | Scale notes, intervals and the existing pentatonic mapping.                                   |
-| `find_voicings`    | Pure, bounded guitar voicing search. Does not need a connected view.                          |
-| `set_view`         | Select scale, tuning or display settings atomically.                                          |
-| `show_fretboard`   | Show notes, a chord, or exact positions; omit all three to clear the selection.               |
-| `show_voicings`    | Search, show the first result and expose the result selector.                                 |
-| `select_voicing`   | Select a zero-based index from the current results.                                           |
-| `analyze_song` | Desktop: search by song name and artist or use a direct YouTube URL, download an MP3, and start BPM/key analysis. |
-| `get_song_analysis` | Desktop: read the current job or a retained job by ID, including progress, matched video, and analysis. |
-| `cancel_song_analysis` | Desktop: cancel the active job using its exact ID. |
+| Tool                   | Purpose                                                                                                           |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `get_capabilities`     | V1 rules, limits and suggested workflow.                                                                          |
+| `list_sessions`        | Connected views, their IDs, platform, revision and readiness.                                                     |
+| `get_state`            | Selected scale, tuning, settings, highlights, exact positions and current voicing result.                         |
+| `identify_chord`       | Tonal candidates from ordered notes; first note is bass even when octave labels are supplied.                     |
+| `get_chord`            | Chord notes, intervals, quality and optional slash bass.                                                          |
+| `get_scale`            | Scale notes, intervals and the existing pentatonic mapping.                                                       |
+| `find_voicings`        | Pure, bounded guitar voicing search. Does not need a connected view.                                              |
+| `set_view`             | Select scale, tuning or display settings atomically.                                                              |
+| `show_fretboard`       | Show notes, a chord, or exact positions; omit all three to clear the selection.                                   |
+| `show_voicings`        | Search, show the first result and expose the result selector.                                                     |
+| `select_voicing`       | Select a zero-based index from the current results.                                                               |
+| `analyze_song`         | Desktop: search by song name and artist or use a direct YouTube URL, download an MP3, and start BPM/key analysis. |
+| `get_song_analysis`    | Desktop: read the current job or a retained job by ID, including progress, matched video, and analysis.           |
+| `cancel_song_analysis` | Desktop: cancel the active job using its exact ID.                                                                |
 
 Tool-handler results use `{ "ok": true, "data": ... }` or `{ "ok": false, "error": { "code": ..., "message": ... } }`; MCP also sets `isError`. SDK argument-validation failures can return text-only errors without `structuredContent`; protocol and authentication failures may use MCP or HTTP errors. All tools have JSON input/output schemas and annotations. Unknown arguments are rejected.
 
@@ -176,4 +178,4 @@ The repository-wide lint command still reports four pre-existing errors in `Side
 - **Analyzer busy:** read the current job with `get_song_analysis`, then wait or cancel that exact job before starting another.
 - **Song analysis failed:** inspect the job's `error` and confirm yt-dlp and ffmpeg are installed. Search, download, and native analysis failures appear in the same job snapshot shown by the app.
 
-Embedded AI chat, public-site pairing, remote hosting, audio playback control, agent access to local-file pickers, alternate-tuning voicings, image export and multi-board comparison are deferred.
+Public-site pairing, remote hosting, audio playback control, agent access to local-file pickers, alternate-tuning voicings, image export and multi-board comparison are deferred.
