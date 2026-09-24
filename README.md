@@ -37,6 +37,10 @@ The round **Chat** button (next to **AI**) talks to the local Jam MCP server thr
 
 `npm run agent:dev` prints the MCP URL and starts the same-origin `/__jam-agent/config` endpoint the app already uses for AI connection. Do not commit gateway keys or MCP tokens.
 
+In the Mac app, each user pastes their own AI Gateway key into Agent chat and it is
+stored in their macOS Keychain (service `Jam Dashboard`, account `AI_GATEWAY_API_KEY`);
+no key ships in the DMG. See [desktop/README.md](desktop/README.md#agent-chat-and-voice-your-ai-gateway-key).
+
 ## Deployment
 
 Changes merged to main will auto-deploy to vercel

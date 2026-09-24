@@ -68,6 +68,74 @@ For a song's key and BPM, an agent calls `analyze_song` with a song name and art
 
 One job runs at a time across human and agent requests. `cancel_song_analysis` requires the exact job ID, so an old request cannot stop a newer job. The current job and up to eight recent terminal snapshots survive renderer reloads but are cleared when the app restarts. These tools do not require a connected fretboard view or selected scale. The standalone Chrome host and native WebMCP report analysis as unavailable; use this desktop endpoint for songs. The AI guide's Advanced mode documents the exact tools and schemas.
 
+## Agent chat and voice (your AI Gateway key)
+
+The round **Agent chat** button works in the installed app without Vercel hosting.
+Chat and voice requests go to `jam://dashboard/api/agent-chat` and
+`/api/agent-transcribe`, which the Electron main process serves with the same
+handlers as the website. Tool calls go to the app's local MCP service on
+`127.0.0.1:4177`. The renderer's CSP stays `connect-src 'self'`; it never talks
+to the AI Gateway or MCP directly. These routes require an
+`X-Jam-Agent-Request` header, so other origins (such as the embedded YouTube
+player) can't call them without a CORS preflight, which the `jam:` scheme never grants.
+
+Each person uses **their own Vercel AI Gateway key**, stored in their macOS
+Keychain:
+
+| Keychain field    | Value                          |
+| ----------------- | ------------------------------ |
+| Service ("Where") | `Jam Dashboard`                |
+| Account           | `AI_GATEWAY_API_KEY`           |
+| Name (label)      | `Jam Dashboard AI Gateway key` |
+
+The key is **not** in the DMG, the ZIP, CI, or any JavaScript bundle. The main
+process reads it from Keychain for each request and gives it to the AI Gateway
+client directly. It is never put in `process.env` (so helper processes don't
+inherit it) and never sent to the renderer. `desktop/build.mjs` strips
+`AI_GATEWAY_API_KEY`/`VERCEL_OIDC_TOKEN` from build steps and refuses to package
+if the renderer or bundled main-process files contain a Gateway key.
+
+### Adding, replacing, or removing the key
+
+1. Open **Agent chat**. Without a key it shows **Add your AI Gateway key** with
+   these steps instead of the chat.
+2. Paste the key (it usually starts with `vck_`) and click **Save**. Jam
+   Dashboard writes it to Keychain via `/usr/bin/security` (the key is passed
+   on stdin, not as a command-line argument) and reads it back to confirm.
+3. To rotate it later, click the key button in the Agent chat header, paste the
+   new key, and click **Replace**. **Remove key from Keychain** deletes it. If
+   the Gateway rejects a key, the chat error shows a **Replace key** button.
+
+You can also inspect or delete the item in **Keychain Access** (search for
+"Jam Dashboard"), or add it from Terminal (it prompts for the key):
+
+```sh
+security add-generic-password -U -s "Jam Dashboard" -a AI_GATEWAY_API_KEY -w
+```
+
+An item created outside the app may make macOS ask once whether `security`
+may read it; choose **Always Allow**.
+
+In development (`npm run desktop:start`), `AI_GATEWAY_API_KEY` in the shell
+environment overrides Keychain. Packaged apps use Keychain first and fall back
+to that environment variable only when no Keychain item exists.
+`JAM_AGENT_CHAT_MODEL` and `JAM_AGENT_TRANSCRIBE_MODEL` work as they do on the web.
+
+### Giving friends access (until user accounts exist)
+
+For now, Chase gives each friend their own key rather than sharing one:
+
+1. In the Vercel dashboard, open **AI Gateway → API Keys** and click **Create
+   key**. Name it after the friend (for example `jam-dashboard-alex`).
+2. Send the key privately (not in a public channel or the repo). The friend
+   installs the DMG and pastes it into **Agent chat** once.
+3. Keep an eye on usage and spend in the AI Gateway dashboard. To cut someone
+   off, revoke their key; everyone else keeps working. To rotate, create a new
+   key and have them click **Replace**.
+
+This is an interim setup. Once Jam Dashboard has user accounts, a hosted
+service can hand out credentials instead of per-friend keys.
+
 ## Releases and automatic updates
 
 The **Mac desktop app** GitHub Actions workflow (`.github/workflows/desktop.yml`):
