@@ -8,10 +8,10 @@ import yaml from 'js-yaml';
 
 const { isDeveloperIdSigned } = createRequire(import.meta.url)('./updater.cjs');
 
-export const ARCHES = ['arm64', 'x64'];
+export const ARCHES = ['arm64'];
 const APP = 'Jam Dashboard.app';
-const appDirectory = { arm64: 'mac-arm64', x64: 'mac' };
-const machO = { arm64: 'arm64', x64: 'x86_64' };
+const appDirectory = { arm64: 'mac-arm64' };
+const machO = { arm64: 'arm64' };
 
 export function checkFeed(feed, { version, arches = ARCHES }) {
   const errors = [];

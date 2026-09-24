@@ -13,13 +13,11 @@ On macOS 13 or newer with Node 22+ and Xcode command-line tools:
 ```sh
 npm ci
 npm run desktop:dev                 # build both components and open Electron
-npm run desktop:package             # DMG + ZIP for this Mac's architecture
-npm run desktop:package -- --arm64  # Apple Silicon
-npm run desktop:package -- --x64    # Intel (also cross-buildable on Apple Silicon)
-npm run desktop:package -- --arm64 --x64  # both, with one combined update feed
+npm run desktop:package -- --arm64  # DMG + ZIP for Apple Silicon
 ```
 
-Output goes to `release/Jam-Dashboard-0.1.0-{arm64,x64}.{dmg,zip}` plus the
+Releases are Apple Silicon (arm64) only; Intel Macs are not supported.
+Output goes to `release/Jam-Dashboard-0.1.0-arm64.{dmg,zip}` plus the
 `latest-mac.yml` update feed. Set `JAM_DESKTOP_VERSION=0.1.99` to stamp a
 different version into the app and file names. Open the DMG
 and drag **Jam Dashboard** into Applications, or unzip and copy the app there.
@@ -141,12 +139,11 @@ service can hand out credentials instead of per-friend keys.
 The **Mac desktop app** GitHub Actions workflow (`.github/workflows/desktop.yml`):
 
 - **Pull requests / manual runs on other branches** build unsigned preview
-  artifacts (`Jam-Dashboard-mac-arm64`, `Jam-Dashboard-mac-x64`) on the run's
-  Actions page. These jobs never receive signing secrets.
+  artifact (`Jam-Dashboard-mac-arm64`) on the run's Actions page. These jobs
+  never receive signing secrets.
 - **Every merge to `main`** (or a manual run on `main`) publishes a GitHub
-  Release `desktop-v<version>` with both DMGs, both ZIPs, their blockmaps, and
-  `latest-mac.yml`. Both architectures come from one electron-builder run, so
-  the single feed lists both update ZIPs.
+  Release `desktop-v<version>` with the arm64 DMG, ZIP, their blockmaps, and
+  the `latest-mac.yml` update feed.
 
 The version is `<major>.<minor>` from `desktop/package.json` plus the workflow
 run number (for example `0.1.57`), so each release is newer than the last
@@ -187,7 +184,7 @@ Distribution is direct (Developer ID + notarization), not the Mac App Store.
 Until the secrets below exist, `main` publishes **unsigned** releases: CI logs a
 warning, the release notes say so, and Gatekeeper may require **Privacy &
 Security → Open Anyway** (only for a build you trust). Once the secrets exist, the
-same workflow signs, notarizes, staples, and verifies both apps before publishing.
+same workflow signs, notarizes, staples, and verifies the app before publishing.
 
 The builder enables hardened runtime and microphone/JIT entitlements. The bundled
 Swift helper is signed as nested code by electron-builder.

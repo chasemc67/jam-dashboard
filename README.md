@@ -60,7 +60,7 @@ Every merge to main also publishes a Mac release on
 [GitHub Releases](https://github.com/chasemc67/jam-dashboard/releases), which
 installed apps use to update themselves. See
 [desktop setup and downloads](desktop/README.md) for requirements, Apple
-Silicon/Intel builds, automatic updates, and the signing/notarization secrets. The
+Silicon builds, automatic updates, and the signing/notarization secrets. The
 hosted website keeps its existing build and does not expose local downloader
 functionality.
 
