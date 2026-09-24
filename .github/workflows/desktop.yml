@@ -13,62 +13,125 @@ on:
       - 'package*.json'
       - 'vite.config.ts'
       - '.github/workflows/desktop.yml'
+      - '.github/actions/package-mac-desktop/**'
+  # Every merge to main publishes a release that installed apps update to.
   push:
-    tags: ['desktop-v*']
+    branches: [main]
 
 permissions:
   contents: read
 
+concurrency:
+  group: mac-desktop-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
-  package:
+  # PRs (including forks) and manual runs on other branches: no secrets.
+  preview:
+    name: Package preview (unsigned)
+    if: github.ref != 'refs/heads/main'
     runs-on: macos-15
-    strategy:
-      matrix:
-        arch: [arm64, x64]
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - name: Check release version
-        if: startsWith(github.ref, 'refs/tags/')
-        run: node -e 'if (process.env.GITHUB_REF_NAME !== `desktop-v${require("./desktop/package.json").version}`) process.exit(1)'
-      - run: npm run desktop:test
-      - run: npm run agent:test
-      - run: npm run typecheck
-      - run: npm run desktop:test:native
-      - run: npm test -- --runInBand
-      - run: npm run build
-      - run: npm run desktop:package -- --${{ matrix.arch }}
-        env:
-          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - id: package
+        uses: ./.github/actions/package-mac-desktop
       - uses: actions/upload-artifact@v4
         with:
-          name: Jam-Dashboard-mac-${{ matrix.arch }}
+          name: Jam-Dashboard-mac-arm64
+          path: |
+            release/*-arm64.dmg
+            release/*-arm64.zip
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Jam-Dashboard-mac-x64
+          path: |
+            release/*-x64.dmg
+            release/*-x64.zip
+          if-no-files-found: error
+
+  release-build:
+    name: Package release
+    if: github.ref == 'refs/heads/main'
+    runs-on: macos-15
+    timeout-minutes: 90
+    # Store signing secrets on this environment and restrict it to main.
+    environment: desktop-release
+    outputs:
+      version: ${{ steps.package.outputs.version }}
+      signed: ${{ steps.package.outputs.signed }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: package
+        uses: ./.github/actions/package-mac-desktop
+        with:
+          csc-link: ${{ secrets.CSC_LINK }}
+          csc-key-password: ${{ secrets.CSC_KEY_PASSWORD }}
+          apple-api-key-p8: ${{ secrets.APPLE_API_KEY_P8 }}
+          apple-api-key-id: ${{ secrets.APPLE_API_KEY_ID }}
+          apple-api-issuer: ${{ secrets.APPLE_API_ISSUER }}
+          apple-id: ${{ secrets.APPLE_ID }}
+          apple-app-specific-password: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          apple-team-id: ${{ secrets.APPLE_TEAM_ID }}
+          require-signing: ${{ vars.DESKTOP_REQUIRE_SIGNING || 'false' }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-release
           path: |
             release/*.dmg
             release/*.zip
+            release/*.blockmap
+            release/latest-mac.yml
           if-no-files-found: error
+          retention-days: 7
 
-  draft-release:
-    if: startsWith(github.ref, 'refs/tags/desktop-v')
-    needs: package
+  publish:
+    name: Publish GitHub Release
+    needs: release-build
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/download-artifact@v4
         with:
+          name: desktop-release
           path: release
-          merge-multiple: true
-      - name: Create draft with Mac downloads
+      - name: Publish release with update feed
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          RELEASE_TAG: ${{ github.ref_name }}
+          VERSION: ${{ needs.release-build.outputs.version }}
+          SIGNED: ${{ needs.release-build.outputs.signed }}
         run: |
-          gh release create "$RELEASE_TAG" release/*.dmg release/*.zip --draft --verify-tag \
-            --title "Jam Dashboard $RELEASE_TAG" \
-            --notes "Mac desktop preview for macOS 13+. Choose arm64 for Apple Silicon or x64 for Intel. Includes an integrated song analyzer tab; install yt-dlp and ffmpeg with Homebrew. These preview builds are not Developer ID signed or notarized."
+          set -euo pipefail
+          tag="desktop-v$VERSION"
+          if [ "$SIGNED" = true ]; then
+            status="Signed with a Developer ID and notarized by Apple. Installed copies update themselves."
+          else
+            status="**Unsigned preview.** macOS may block it; use System Settings → Privacy & Security → Open Anyway only if you trust this build. Unsigned copies can't install updates themselves: they tell you when a new release is out and link here."
+          fi
+          cat > notes.md <<EOF
+          Jam Dashboard $VERSION for macOS 13+, built from $GITHUB_SHA.
+
+          Download the **arm64** DMG for Apple Silicon or the **x64** DMG for Intel Macs.
+
+          $status
+
+          The song analyzer tab needs \`brew install yt-dlp ffmpeg\`.
+          EOF
+          # latest-mac.yml is the feed electron-updater reads from the latest release.
+          files=(release/*.dmg release/*.zip release/*.blockmap release/latest-mac.yml)
+          if gh release view "$tag" > /dev/null 2>&1; then
+            # A re-run of the same workflow run reuses its version.
+            gh release upload "$tag" "${files[@]}" --clobber
+            gh release edit "$tag" --draft=false --latest
+          else
+            # gh uploads assets to a draft and publishes it once all are present.
+            gh release create "$tag" "${files[@]}" \
+              --target "$GITHUB_SHA" \
+              --title "Jam Dashboard $VERSION" \
+              --notes-file notes.md \
+              --generate-notes \
+              --latest
+          fi
