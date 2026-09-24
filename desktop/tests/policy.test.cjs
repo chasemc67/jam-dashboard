@@ -61,7 +61,9 @@ test('CSP trusts exact hydration scripts without allowing arbitrary inline JS', 
   const csp = contentSecurityPolicy('<script>window.test=1;</script>');
   assert.match(csp, /script-src 'self' blob: 'sha256-/);
   assert.doesNotMatch(csp.split(';')[1], /unsafe-inline|unsafe-eval/);
-  assert.match(csp, /connect-src 'self'/);
+  // Agent chat/voice go to jam://dashboard/api/* in the main process; the renderer
+  // never talks to loopback MCP or the AI Gateway directly.
+  assert.match(csp, /(^|; )connect-src 'self'(;|$)/);
   assert.notEqual(
     csp,
     contentSecurityPolicy('<script>window.test=2;</script>'),

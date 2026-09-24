@@ -3,6 +3,9 @@ import { copyFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import builder from 'electron-builder';
+import secretScan from './secret-scan.cjs';
+
+const { findSecrets, withoutSecrets } = secretScan;
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -32,7 +35,7 @@ function run(command, commandArgs, extraEnv = {}) {
   const result = spawnSync(command, commandArgs, {
     cwd: root,
     stdio: 'inherit',
-    env: { ...process.env, ...extraEnv },
+    env: { ...withoutSecrets(process.env), ...extraEnv },
   });
   if (result.error) throw result.error;
   if (result.status !== 0) process.exit(result.status ?? 1);
@@ -52,10 +55,22 @@ for (const arch of arches) {
 run('npm', ['run', 'agent:build']);
 run('node', ['scripts/build-updater.mjs']);
 run('npm', ['run', 'desktop:renderer']);
+// Each user brings their own AI Gateway key via Keychain; none may ship in the app.
+const config = JSON.parse(
+  readFileSync(path.join(root, 'desktop/electron-builder.json'), 'utf8'),
+);
+const leaks = await findSecrets([
+  path.join(root, 'desktop/renderer'),
+  ...config.files
+    .filter(file => file.endsWith('.cjs'))
+    .map(file => path.join(root, 'desktop', file)),
+]);
+if (leaks.length) {
+  for (const { file, reason } of leaks)
+    console.error(`${path.relative(root, file)} ${reason}`);
+  throw new Error('Refusing to package: build output contains a secret.');
+}
 if (args.includes('--package')) {
-  const config = JSON.parse(
-    readFileSync(path.join(root, 'desktop/electron-builder.json'), 'utf8'),
-  );
   if (version) config.extraMetadata = { ...config.extraMetadata, version };
   await builder.build({
     projectDir: root,

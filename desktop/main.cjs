@@ -12,7 +12,16 @@ const {
   systemPreferences,
 } = require('electron');
 const { AnalyzerService, AUDIO_EXTENSIONS } = require('./analyzer.cjs');
-const { startAgentService, loadAgentToken } = require('./agent-service.cjs');
+const {
+  startAgentService,
+  loadAgentToken,
+  createDesktopAgentApi,
+  createGatewayKeyManager,
+  createKeychainStore,
+  isDesktopAgentApiURL,
+  runSecurityCommand,
+  SECURITY_PATH,
+} = require('./agent-service.cjs');
 const { readFile, stat } = require('node:fs/promises');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
@@ -38,6 +47,22 @@ let agentConnection;
 let agentSession;
 let updater;
 let updaterLog;
+// Each user's own Vercel AI Gateway key lives in their macOS Keychain, never in the app bundle.
+// JAM_DESKTOP_SECURITY_BIN swaps in a stand-in `security` tool for unpackaged test runs only.
+const gatewayKey = createGatewayKeyManager({
+  keychain: createKeychainStore({
+    run: runSecurityCommand(
+      (!app.isPackaged && process.env.JAM_DESKTOP_SECURITY_BIN) ||
+        SECURITY_PATH,
+    ),
+  }),
+  env: process.env,
+  preferEnvironment: !app.isPackaged,
+});
+const agentApi = createDesktopAgentApi({
+  getGatewayKey: async () => (await gatewayKey.resolve()).key,
+  getMcpConnection: () => agentConnection?.connection,
+});
 function detachAgent() {
   if (agentSession) agentService?.registry.detach(agentSession);
   agentSession = undefined;
@@ -158,6 +183,17 @@ if (!app.requestSingleInstanceLock()) {
         await readFile(path.join(root, 'index.html'), 'utf8'),
       );
       await protocol.handle('jam', async request => {
+        if (isDesktopAgentApiURL(request.url)) {
+          try {
+            return await agentApi(request);
+          } catch (error) {
+            console.error('Agent API request failed:', error);
+            return Response.json(
+              { error: 'The chat agent failed. Try again.' },
+              { status: 500 },
+            );
+          }
+        }
         const file = assetPath(request.url, root);
         if (!file || !['GET', 'HEAD'].includes(request.method))
           return new Response('Not found', { status: 404 });
@@ -254,6 +290,9 @@ if (!app.requestSingleInstanceLock()) {
         };
       }
       handle('jam:agent-connection', () => agentConnection, true);
+      handle('jam:gateway-key-status', () => gatewayKey.status(), true);
+      handle('jam:gateway-key-save', key => gatewayKey.save(key), true);
+      handle('jam:gateway-key-clear', () => gatewayKey.clear(), true);
       handle(
         'jam:agent-copy-config',
         () => {
