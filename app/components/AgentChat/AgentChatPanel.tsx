@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import { Mic, RefreshCw, Sparkles, X } from 'lucide-react';
+import { useEffect, useRef, type ReactNode } from 'react';
+import { KeyRound, Mic, RefreshCw, Sparkles, X } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import {
@@ -16,6 +16,7 @@ import {
   type AgentChatMessage,
 } from '~/agent/chat-ui';
 import { VOICE_UNSUPPORTED_MESSAGE } from '~/agent/voice-config';
+import { isGatewayKeyError } from '~/agent/gateway-key';
 import type { AgentChatVoice } from '~/hooks/useAgentChatVoice';
 
 function VoiceMeter({ level }: { level: number }) {
@@ -49,10 +50,18 @@ export default function AgentChatPanel({
   onInputChange,
   onSubmit,
   onClose,
+  onManageKey,
   voice,
+  description = (
+    <>
+      Ask to change the key, highlight notes, or find voicings. Tap the mic to
+      talk. Uses the local MCP server from <code>npm run agent:dev</code>.
+    </>
+  ),
 }: {
   titleId: string;
   descriptionId: string;
+  description?: ReactNode;
   messages: AgentChatMessage[];
   status: 'submitted' | 'streaming' | 'ready' | 'error';
   error?: Error;
@@ -60,8 +69,14 @@ export default function AgentChatPanel({
   onInputChange: (value: string) => void;
   onSubmit: () => void;
   onClose: () => void;
+  /** Desktop only: opens AI Gateway key settings. */
+  onManageKey?: () => void;
   voice?: AgentChatVoice;
 }) {
+  const errorText = error ? chatErrorMessage(error) : null;
+  const keyError =
+    onManageKey &&
+    (isGatewayKeyError(errorText) || isGatewayKeyError(voice?.error));
   const listRef = useRef<HTMLDivElement>(null);
   const busy = status === 'submitted' || status === 'streaming';
   const recording = voice?.status === 'recording';
@@ -88,21 +103,34 @@ export default function AgentChatPanel({
               Ask Jam Dashboard
             </h2>
           </div>
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="-mr-2 -mt-2 shrink-0 rounded-full"
-            aria-label="Close agent chat"
-            onClick={onClose}
-          >
-            <X aria-hidden="true" />
-          </Button>
+          <div className="-mr-2 -mt-2 flex shrink-0 gap-1">
+            {onManageKey && (
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="rounded-full"
+                aria-label="AI Gateway key"
+                title="AI Gateway key"
+                onClick={onManageKey}
+              >
+                <KeyRound aria-hidden="true" />
+              </Button>
+            )}
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="rounded-full"
+              aria-label="Close agent chat"
+              onClick={onClose}
+            >
+              <X aria-hidden="true" />
+            </Button>
+          </div>
         </div>
         <p id={descriptionId} className="mt-2 text-sm text-muted-foreground">
-          Ask to change the key, highlight notes, or find voicings. Tap the mic
-          to talk. Uses the local MCP server from <code>npm run agent:dev</code>
-          .
+          {description}
         </p>
       </div>
       <div
@@ -156,15 +184,26 @@ export default function AgentChatPanel({
             </p>
           )}
         </div>
-        {error && (
+        {errorText && (
           <p role="alert" className="mt-3 text-sm text-destructive">
-            {chatErrorMessage(error)}
+            {errorText}
           </p>
         )}
         {voice?.error && (
           <p role="alert" className="mt-3 text-sm text-destructive">
             {voice.error}
           </p>
+        )}
+        {keyError && (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="mt-2"
+            onClick={onManageKey}
+          >
+            Replace key
+          </Button>
         )}
       </div>
       <form

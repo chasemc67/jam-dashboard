@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { MessageCircle } from 'lucide-react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
@@ -8,7 +8,15 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '~/components/ui/popover';
+import GatewayKeySetup from '~/components/GatewayKeySetup';
+import { chatErrorMessage } from '~/agent/chat-ui';
+import {
+  DESKTOP_AGENT_REQUEST_HEADER,
+  GATEWAY_KEY_REJECTED_MESSAGE,
+  isGatewayKeyError,
+} from '~/agent/gateway-key';
 import { useAgentChatVoice } from '~/hooks/useAgentChatVoice';
+import { useGatewayKey } from '~/hooks/useGatewayKey';
 import AgentChatPanel from './AgentChatPanel';
 
 export default function AgentChat({
@@ -20,19 +28,39 @@ export default function AgentChat({
   const descriptionId = useId();
   const [open, setOpen] = useState(defaultOpen);
   const [input, setInput] = useState('');
+  const [managingKey, setManagingKey] = useState(false);
+  const gatewayKey = useGatewayKey();
+  const needsKey =
+    gatewayKey.required &&
+    gatewayKey.status !== null &&
+    !gatewayKey.status.configured;
+  const showKeySetup = needsKey || managingKey;
   const transport = useMemo(
-    () => new DefaultChatTransport({ api: '/api/agent-chat' }),
+    () =>
+      new DefaultChatTransport({
+        api: '/api/agent-chat',
+        headers: { [DESKTOP_AGENT_REQUEST_HEADER]: '1' },
+      }),
     [],
   );
-  const { messages, sendMessage, status, error } = useChat({ transport });
+  const { messages, sendMessage, status, error, clearError } = useChat({
+    transport,
+  });
   const chatReady = status === 'ready' || status === 'error';
   const voice = useAgentChatVoice({
-    enabled: chatReady,
+    enabled: chatReady && !showKeySetup,
     onTranscript: text => {
       if (!text.trim() || !chatReady) return;
       void sendMessage({ text });
     },
   });
+  const chatError = error ? chatErrorMessage(error) : null;
+  const keyError = [chatError, voice.error].find(isGatewayKeyError) ?? null;
+  const { refresh: refreshKey } = gatewayKey;
+  useEffect(() => {
+    // The key may have been removed from Keychain outside the app.
+    if (keyError) void refreshKey().catch(() => {});
+  }, [keyError, refreshKey]);
 
   return (
     <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-[max(1rem,env(safe-area-inset-left))] z-40 ml-[3.25rem]">
@@ -58,27 +86,57 @@ export default function AgentChat({
           onFocusOutside={event => event.preventDefault()}
           className="flex h-[min(28rem,var(--radix-popover-content-available-height))] max-h-[min(38rem,var(--radix-popover-content-available-height))] w-[min(25rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl p-0 shadow-xl [@media(max-height:500px)]:block [@media(max-height:500px)]:h-auto [@media(max-height:500px)]:overflow-y-auto"
         >
-          <AgentChatPanel
-            titleId={titleId}
-            descriptionId={descriptionId}
-            messages={messages}
-            status={status}
-            error={error}
-            input={input}
-            onInputChange={setInput}
-            onSubmit={() => {
-              if (voice.status === 'recording') {
-                voice.onStopAndSend();
-                return;
+          {showKeySetup ? (
+            <GatewayKeySetup
+              titleId={titleId}
+              descriptionId={descriptionId}
+              status={gatewayKey.status}
+              notice={
+                keyError === GATEWAY_KEY_REJECTED_MESSAGE ? keyError : null
               }
-              const text = input.trim();
-              if (!text || !chatReady) return;
-              void sendMessage({ text });
-              setInput('');
-            }}
-            onClose={() => setOpen(false)}
-            voice={voice}
-          />
+              onSave={async key => {
+                const result = await gatewayKey.save(key);
+                if (result.ok) {
+                  clearError();
+                  setManagingKey(false);
+                }
+                return result;
+              }}
+              onClear={gatewayKey.clear}
+              onBack={needsKey ? undefined : () => setManagingKey(false)}
+              onClose={() => setOpen(false)}
+            />
+          ) : (
+            <AgentChatPanel
+              titleId={titleId}
+              descriptionId={descriptionId}
+              description={
+                gatewayKey.required
+                  ? 'Ask to change the key, highlight notes, or find voicings. Tap the mic to talk. Runs on this Mac with your AI Gateway key and the app’s built-in MCP server.'
+                  : undefined
+              }
+              messages={messages}
+              status={status}
+              error={error}
+              input={input}
+              onInputChange={setInput}
+              onSubmit={() => {
+                if (voice.status === 'recording') {
+                  voice.onStopAndSend();
+                  return;
+                }
+                const text = input.trim();
+                if (!text || !chatReady) return;
+                void sendMessage({ text });
+                setInput('');
+              }}
+              onClose={() => setOpen(false)}
+              onManageKey={
+                gatewayKey.required ? () => setManagingKey(true) : undefined
+              }
+              voice={voice}
+            />
+          )}
         </PopoverContent>
       </Popover>
     </div>

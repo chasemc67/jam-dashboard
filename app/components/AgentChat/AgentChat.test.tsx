@@ -165,3 +165,55 @@ test('shows voice permission and STT errors', () => {
   );
   expect(screen.getByRole('alert')).toHaveTextContent('permission denied');
 });
+
+test('desktop chat offers key settings and a replace action for key errors', () => {
+  const onManageKey = jest.fn();
+  render(
+    <AgentChatPanel
+      titleId="title"
+      descriptionId="description"
+      description="Runs on this Mac with your AI Gateway key."
+      messages={[]}
+      status="error"
+      error={
+        new Error(
+          JSON.stringify({
+            error:
+              'The AI Gateway rejected your API key. Replace the key and try again.',
+          }),
+        )
+      }
+      input=""
+      onInputChange={jest.fn()}
+      onSubmit={jest.fn()}
+      onClose={jest.fn()}
+      onManageKey={onManageKey}
+    />,
+  );
+  expect(
+    screen.getByText('Runs on this Mac with your AI Gateway key.'),
+  ).toBeInTheDocument();
+  expect(screen.getByRole('alert')).toHaveTextContent('rejected your API key');
+  fireEvent.click(screen.getByRole('button', { name: 'Replace key' }));
+  fireEvent.click(screen.getByRole('button', { name: 'AI Gateway key' }));
+  expect(onManageKey).toHaveBeenCalledTimes(2);
+});
+
+test('web chat has no key settings', () => {
+  render(
+    <AgentChatPanel
+      titleId="title"
+      descriptionId="description"
+      messages={[]}
+      status="ready"
+      input=""
+      onInputChange={jest.fn()}
+      onSubmit={jest.fn()}
+      onClose={jest.fn()}
+    />,
+  );
+  expect(
+    screen.queryByRole('button', { name: 'AI Gateway key' }),
+  ).not.toBeInTheDocument();
+  expect(screen.getByText('npm run agent:dev')).toBeInTheDocument();
+});
