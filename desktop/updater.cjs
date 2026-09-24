@@ -24,6 +24,8 @@ const OFFLINE_CODES = [
   'ERR_PROXY_CONNECTION_FAILED',
 ];
 const NO_RELEASE_CODES = [
+  // Thrown without a code when a repository has no releases at all.
+  'No published versions',
   'ERR_UPDATER_NO_PUBLISHED_VERSIONS',
   'ERR_UPDATER_LATEST_VERSION_NOT_FOUND',
   'ERR_UPDATER_CHANNEL_FILE_NOT_FOUND',

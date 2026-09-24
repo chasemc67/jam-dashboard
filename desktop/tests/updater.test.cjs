@@ -106,6 +106,10 @@ test('update errors become short, fail-soft messages', () => {
     /No published release/,
   );
   assert.match(
+    describeUpdateError(new Error('No published versions on GitHub')),
+    /No published release/,
+  );
+  assert.match(
     describeUpdateError(new Error('HttpError: 404 Not Found')),
     /No published release/,
   );
