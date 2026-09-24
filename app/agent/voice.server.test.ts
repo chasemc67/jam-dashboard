@@ -80,3 +80,20 @@ test('returns 422 when the model produces an empty transcript', async () => {
     error: EMPTY_TRANSCRIPT_MESSAGE,
   });
 });
+
+test('uses an injected Gateway provider for the transcription model', async () => {
+  const { transcribe } = jest.requireMock('ai') as { transcribe: jest.Mock };
+  transcribe.mockResolvedValueOnce({ text: 'Show A minor' });
+  const model = { modelId: 'openai/whisper-1' };
+  const gateway = { transcriptionModel: jest.fn(() => model) };
+  const response = await handleAgentTranscribeRequest(
+    requestWithAudio(audio()),
+    {
+      env: { AI_GATEWAY_API_KEY: 'key' },
+      gateway: gateway as never,
+    },
+  );
+  expect(response.status).toBe(200);
+  expect(gateway.transcriptionModel).toHaveBeenCalledWith('openai/whisper-1');
+  expect(transcribe).toHaveBeenCalledWith(expect.objectContaining({ model }));
+});

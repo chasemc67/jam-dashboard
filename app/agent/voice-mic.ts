@@ -1,4 +1,5 @@
 import { checkMicPermission, listInputDevices } from '~/utils/audioInput';
+import { DESKTOP_AGENT_REQUEST_HEADER } from './gateway-key';
 import {
   EMPTY_TRANSCRIPT_MESSAGE,
   readTranscribeResult,
@@ -171,6 +172,7 @@ export async function transcribeVoiceRecording(
   form.append('audio', blob, voiceAudioFilename(blob.type || 'audio/webm'));
   const response = await fetch('/api/agent-transcribe', {
     method: 'POST',
+    headers: { [DESKTOP_AGENT_REQUEST_HEADER]: '1' },
     body: form,
     signal,
   });

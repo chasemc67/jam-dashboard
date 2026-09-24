@@ -1,4 +1,4 @@
-import { transcribe } from 'ai';
+import { transcribe, type createGateway } from 'ai';
 import {
   AUDIO_REQUIRED_MESSAGE,
   EMPTY_TRANSCRIPT_MESSAGE,
@@ -30,6 +30,8 @@ export async function handleAgentTranscribeRequest(
   deps: {
     transcribeAudio?: TranscribeAudio;
     env?: Record<string, string | undefined>;
+    /** Omit to use the default AI Gateway provider configured from process env. */
+    gateway?: Pick<ReturnType<typeof createGateway>, 'transcriptionModel'>;
   } = {},
 ): Promise<Response> {
   let form: FormData;
@@ -55,7 +57,9 @@ export async function handleAgentTranscribeRequest(
     deps.transcribeAudio ??
     (args =>
       transcribe({
-        model: args.model,
+        model: deps.gateway
+          ? deps.gateway.transcriptionModel(args.model)
+          : args.model,
         audio: args.audio,
         abortSignal: args.abortSignal,
       }));

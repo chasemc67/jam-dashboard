@@ -1,4 +1,7 @@
-import { GATEWAY_UNAVAILABLE_MESSAGE } from './chat-config';
+import {
+  GATEWAY_KEY_REJECTED_MESSAGE,
+  GATEWAY_UNAVAILABLE_MESSAGE,
+} from './chat-config';
 import {
   DEFAULT_AGENT_TRANSCRIBE_MODEL,
   EMPTY_TRANSCRIPT_MESSAGE,
@@ -83,4 +86,12 @@ test('readTranscribeResult parses success and error JSON', () => {
     ok: false,
     error: EMPTY_TRANSCRIPT_MESSAGE,
   });
+});
+
+test('transcribeErrorMessage asks to replace a rejected Gateway key', () => {
+  expect(
+    transcribeErrorMessage(
+      new Error('AI Gateway authentication failed: Invalid API key or token.'),
+    ),
+  ).toBe(GATEWAY_KEY_REJECTED_MESSAGE);
 });

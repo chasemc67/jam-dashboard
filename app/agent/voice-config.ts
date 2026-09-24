@@ -1,6 +1,8 @@
 import {
+  GATEWAY_KEY_REJECTED_MESSAGE,
   GATEWAY_UNAVAILABLE_MESSAGE,
   hasAiGatewayCredentials,
+  isGatewayKeyRejected,
 } from './chat-config';
 
 export { GATEWAY_UNAVAILABLE_MESSAGE };
@@ -66,6 +68,7 @@ export function transcribeErrorMessage(error: unknown) {
   if (/no transcript generated/i.test(text)) {
     return EMPTY_TRANSCRIPT_MESSAGE;
   }
+  if (isGatewayKeyRejected(error)) return GATEWAY_KEY_REJECTED_MESSAGE;
   if (
     /AI_GATEWAY_API_KEY|VERCEL_OIDC_TOKEN|unauthorized|401|403|api key|gateway/i.test(
       text,
