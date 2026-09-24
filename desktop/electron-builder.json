@@ -11,13 +11,15 @@
     "policy.cjs",
     "analyzer.cjs",
     "agent-service.cjs",
+    "updater.cjs",
+    "electron-updater.cjs",
     "renderer/client/**/*",
     "package.json",
     "!**/node_modules/**/*"
   ],
   "extraResources": [
     {
-      "from": "desktop/native/dist/MusicAnalyzerCLI",
+      "from": "desktop/native/dist/${arch}/MusicAnalyzerCLI",
       "to": "MusicAnalyzerCLI"
     }
   ],
@@ -34,5 +36,12 @@
     }
   },
   "artifactName": "Jam-Dashboard-${version}-${arch}.${ext}",
-  "publish": null
+  "publish": [
+    {
+      "provider": "github",
+      "owner": "chasemc67",
+      "repo": "jam-dashboard",
+      "releaseType": "release"
+    }
+  ]
 }

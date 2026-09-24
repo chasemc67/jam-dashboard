@@ -52,7 +52,12 @@ export default defineConfig({
     },
     !isStorybook &&
       remix({
-        ...(isDesktop && { ssr: false, buildDirectory: 'desktop/renderer' }),
+        ...(isDesktop && {
+          ssr: false,
+          buildDirectory: 'desktop/renderer',
+          // SPA mode rejects server-only resource routes; jam:// has no server.
+          ignoredRouteFiles: ['**/.*', '**/api.*'],
+        }),
         future: {
           v3_fetcherPersist: true,
           v3_relativeSplatPath: true,

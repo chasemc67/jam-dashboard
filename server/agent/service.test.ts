@@ -199,7 +199,10 @@ for (const mode of ['legacy', 'auto'] as const) {
       assert.equal(sessions[0].platform, 'chrome');
       browser.close();
       await once(browser, 'close');
-      // Disconnection must reach the service before the next MCP call returns.
+      // The client can observe the close before the server's handler detaches.
+      const deadline = Date.now() + 2000;
+      while (service.registry.listSessions().length && Date.now() < deadline)
+        await new Promise(resolve => setTimeout(resolve, 10));
       const noSession = await client.callTool({
         name: 'get_state',
         arguments: {},

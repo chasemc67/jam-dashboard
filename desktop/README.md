@@ -16,9 +16,12 @@ npm run desktop:dev                 # build both components and open Electron
 npm run desktop:package             # DMG + ZIP for this Mac's architecture
 npm run desktop:package -- --arm64  # Apple Silicon
 npm run desktop:package -- --x64    # Intel (also cross-buildable on Apple Silicon)
+npm run desktop:package -- --arm64 --x64  # both, with one combined update feed
 ```
 
-Output goes to `release/Jam-Dashboard-0.1.0-{arm64,x64}.{dmg,zip}`. Open the DMG
+Output goes to `release/Jam-Dashboard-0.1.0-{arm64,x64}.{dmg,zip}` plus the
+`latest-mac.yml` update feed. Set `JAM_DESKTOP_VERSION=0.1.99` to stamp a
+different version into the app and file names. Open the DMG
 and drag **Jam Dashboard** into Applications, or unzip and copy the app there.
 For code changes, rebuild with `npm run desktop:build` and restart with
 `npm run desktop:start`. Swift build products and desktop renderer output are
@@ -65,17 +68,43 @@ For a song's key and BPM, an agent calls `analyze_song` with a song name and art
 
 One job runs at a time across human and agent requests. `cancel_song_analysis` requires the exact job ID, so an old request cannot stop a newer job. The current job and up to eight recent terminal snapshots survive renderer reloads but are cleared when the app restarts. These tools do not require a connected fretboard view or selected scale. The standalone Chrome host and native WebMCP report analysis as unavailable; use this desktop endpoint for songs. The AI guide's Advanced mode documents the exact tools and schemas.
 
-## Download deployment
+## Releases and automatic updates
 
-The **Mac desktop app** GitHub Actions workflow creates downloadable artifacts
-for both architectures on relevant PRs and manual runs. On the repository's
-Actions page, select a completed run and download the artifact for your Mac.
+The **Mac desktop app** GitHub Actions workflow (`.github/workflows/desktop.yml`):
 
-For a versioned release, update `desktop/package.json`, then push a matching tag
-(for example `desktop-v0.1.0`). The workflow creates a **draft** GitHub Release
-with DMG/ZIP assets. Review and publish that draft to make the downloads available
-from the repository's Releases page. Vercel continues deploying `main` separately.
-There is no automatic app updater yet; install a newer download to upgrade.
+- **Pull requests / manual runs on other branches** build unsigned preview
+  artifacts (`Jam-Dashboard-mac-arm64`, `Jam-Dashboard-mac-x64`) on the run's
+  Actions page. These jobs never receive signing secrets.
+- **Every merge to `main`** (or a manual run on `main`) publishes a GitHub
+  Release `desktop-v<version>` with both DMGs, both ZIPs, their blockmaps, and
+  `latest-mac.yml`. Both architectures come from one electron-builder run, so
+  the single feed lists both update ZIPs.
+
+The version is `<major>.<minor>` from `desktop/package.json` plus the workflow
+run number (for example `0.1.57`), so each release is newer than the last
+without committing version bumps. Bump the minor or major version in
+`desktop/package.json` for a visible jump (its patch number is ignored in CI). If the
+workflow file is ever renamed, its run numbers restart, so bump the minor
+version at the same time. Vercel continues deploying `main` separately; no
+signing credentials go to Vercel.
+
+The app uses [electron-updater](https://www.electron.build/auto-update) with the
+GitHub provider. The packaged app checks 10 seconds after launch and then every
+4 hours; **Jam Dashboard → Check for Updates…** checks immediately and reports the
+result. Only the ZIP is used for updates; the DMG is for first installs.
+
+- **Developer ID signed builds** download updates in the background and ask to
+  restart. Choosing **Later** installs the update when you next quit.
+- **Unsigned or ad-hoc builds** cannot be updated by macOS's updater, which
+  requires the same Developer ID signature. When a newer release exists, they
+  show a dialog linking to the Releases page instead.
+- Offline or before any release exists, background checks fail quietly; menu
+  checks explain what happened. Logs are written to
+  `~/Library/Logs/Jam Dashboard/updater.log`. Development runs (`desktop:start`)
+  skip update checks.
+
+Keep the same Developer ID certificate (team) for every signed release; a build
+signed by a different team cannot update an installed copy.
 
 ## App icon
 
@@ -84,25 +113,61 @@ The Mac bundle and installer use the angled red guitar artwork from
 generation prompt are kept in `assets/`. After replacing the artwork, regenerate
 all standard Mac icon sizes with `bash desktop/build-icon.sh` and repackage.
 
-## Signing
+## Signing and notarization
 
-Local/CI builds are previews without Developer ID signing or Apple notarization.
-Downloaded previews may be blocked by Gatekeeper; use macOS **Privacy & Security →
-Open Anyway** only for a build you trust. Public distribution should use a
-Developer ID Application certificate and notarization credentials.
+Distribution is direct (Developer ID + notarization), not the Mac App Store.
+Until the secrets below exist, `main` publishes **unsigned** releases: CI logs a
+warning, the release notes say so, and Gatekeeper may require **Privacy &
+Security → Open Anyway** (only for a build you trust). Once the secrets exist, the
+same workflow signs, notarizes, staples, and verifies both apps before publishing.
 
-The builder enables hardened runtime and microphone/JIT entitlements. For a
-signed local build, provide `CSC_LINK`, `CSC_KEY_PASSWORD`, `APPLE_ID`,
-`APPLE_APP_SPECIFIC_PASSWORD`, and `APPLE_TEAM_ID` through your environment using
-electron-builder's signing/notarization support. The bundled Swift helper is signed
-as nested code by electron-builder. CI intentionally disables identity discovery;
-configure trusted release-only secrets and remove that override before enabling
-signed releases. No signing credentials are committed.
+The builder enables hardened runtime and microphone/JIT entitlements. The bundled
+Swift helper is signed as nested code by electron-builder.
+
+### GitHub secrets
+
+Create an environment named `desktop-release` (**Settings → Environments**),
+limit its deployment branches to `main`, and add these as environment secrets.
+Repository secrets also work, but environment secrets are unavailable to other
+branches even if a workflow is edited. Only the `release-build` job references them;
+pull request jobs (including forks) never do.
+
+| Secret             | Value                                                                                                                         |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| `CSC_LINK`         | Base64 of a **Developer ID Application** certificate + private key exported as `.p12` (`base64 -i DeveloperID.p12 \| pbcopy`) |
+| `CSC_KEY_PASSWORD` | The `.p12` export password                                                                                                    |
+
+Plus one notarization option (the API key is preferred if both are set):
+
+| Secret             | Value                                                                             |
+| ------------------ | --------------------------------------------------------------------------------- |
+| `APPLE_API_KEY_P8` | Contents of the App Store Connect API key `AuthKey_XXXXXXXXXX.p8` (raw or base64) |
+| `APPLE_API_KEY_ID` | Its key ID (`XXXXXXXXXX`)                                                         |
+| `APPLE_API_ISSUER` | The issuer ID from App Store Connect → Users and Access → Integrations            |
+
+or
+
+| Secret                        | Value                                           |
+| ----------------------------- | ----------------------------------------------- |
+| `APPLE_ID`                    | Apple Developer account email                   |
+| `APPLE_APP_SPECIFIC_PASSWORD` | An app-specific password from account.apple.com |
+| `APPLE_TEAM_ID`               | 10-character Team ID                            |
+
+Credentials must be complete: a partial notarization set, a certificate without
+notarization, or notarization without a certificate fails the build instead of
+shipping a half-signed app. After signed releases work, set the repository (or
+environment) **variable** `DESKTOP_REQUIRE_SIGNING=true` so a missing secret
+fails CI rather than publishing an unsigned update.
+
+For a signed local build, export the same variables (`APPLE_API_KEY` is the
+`.p8` file path locally) and run `npm run desktop:package`. Check a result with
+`node desktop/verify-release.mjs --version <version> --signed true`. No signing
+credentials are committed.
 
 ## Checks and architecture
 
 ```sh
-npm run desktop:test         # job lifecycle, cancellation, IPC data, asset routing, CSP
+npm run desktop:test         # job lifecycle, IPC data, asset routing, CSP, updater
 npm run desktop:test:native  # key selection values, URL validation, BPM/key
 npm test -- --runInBand      # existing guitar tool tests
 npm run build               # hosted build regression check
