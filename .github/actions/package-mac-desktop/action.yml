@@ -1,8 +1,8 @@
 name: Package Mac desktop app
 description: >-
-  Test and package Jam Dashboard for arm64 and x64 in one electron-builder run,
-  so a single latest-mac.yml lists both update zips. Signs and notarizes only
-  when a complete set of credentials is passed in; otherwise builds unsigned.
+  Test and package Jam Dashboard for Apple Silicon (arm64) and write the
+  latest-mac.yml update feed. Signs and notarizes only when a complete set of
+  credentials is passed in; otherwise builds unsigned.
 
 inputs:
   csc-link:
@@ -123,7 +123,7 @@ runs:
         fi
         echo "signed=true" >> "$GITHUB_OUTPUT"
 
-    - name: Package arm64 and x64
+    - name: Package arm64
       shell: bash
       env:
         JAM_DESKTOP_VERSION: ${{ steps.version.outputs.version }}
@@ -136,7 +136,7 @@ runs:
         APPLE_ID: ${{ !steps.signing.outputs.api-key-path && inputs.apple-id || '' }}
         APPLE_APP_SPECIFIC_PASSWORD: ${{ !steps.signing.outputs.api-key-path && inputs.apple-app-specific-password || '' }}
         APPLE_TEAM_ID: ${{ !steps.signing.outputs.api-key-path && inputs.apple-team-id || '' }}
-      run: npm run desktop:package -- --arm64 --x64
+      run: npm run desktop:package -- --arm64
 
     - name: Verify update feed and signatures
       shell: bash

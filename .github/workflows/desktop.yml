@@ -43,13 +43,6 @@ jobs:
             release/*-arm64.dmg
             release/*-arm64.zip
           if-no-files-found: error
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Jam-Dashboard-mac-x64
-          path: |
-            release/*-x64.dmg
-            release/*-x64.zip
-          if-no-files-found: error
 
   release-build:
     name: Package release
@@ -114,7 +107,7 @@ jobs:
           cat > notes.md <<EOF
           Jam Dashboard $VERSION for macOS 13+, built from $GITHUB_SHA.
 
-          Download the **arm64** DMG for Apple Silicon or the **x64** DMG for Intel Macs.
+          Download the **arm64** DMG. Builds are for Apple Silicon Macs only.
 
           $status
 
