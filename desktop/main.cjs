@@ -23,12 +23,21 @@ const {
   assetPath,
   contentSecurityPolicy,
 } = require('./policy.cjs');
+const {
+  appBundlePath,
+  createLogger,
+  createUpdater,
+  isDeveloperIdSigned,
+  readCodeSignature,
+} = require('./updater.cjs');
 
 let mainWindow;
 let analyzer;
 let agentService;
 let agentConnection;
 let agentSession;
+let updater;
+let updaterLog;
 function detachAgent() {
   if (agentSession) agentService?.registry.detach(agentSession);
   agentSession = undefined;
@@ -92,6 +101,46 @@ async function createWindow() {
     },
   );
   await mainWindow.loadURL(APP_URL);
+}
+
+async function startUpdater() {
+  updaterLog = createLogger(path.join(app.getPath('logs'), 'updater.log'));
+  if (!app.isPackaged) {
+    updaterLog.info('Skipping updates in an unpackaged development build');
+    return;
+  }
+  const signature = await readCodeSignature(appBundlePath(process.execPath));
+  const { autoUpdater } = require('./electron-updater.cjs');
+  updater = createUpdater({
+    autoUpdater,
+    dialog,
+    shell,
+    getWindow: () => mainWindow,
+    currentVersion: app.getVersion(),
+    canSelfUpdate: isDeveloperIdSigned(signature),
+    log: updaterLog,
+  });
+  updater.start();
+}
+
+function checkForUpdates() {
+  if (updater) {
+    updater
+      .check({ interactive: true })
+      .catch(error => updaterLog.error(error));
+    return;
+  }
+  const options = {
+    type: 'info',
+    message: 'Updates are unavailable in this build',
+    detail: app.isPackaged
+      ? 'The updater could not start. See ~/Library/Logs/Jam Dashboard/updater.log.'
+      : 'Update checks run only in the packaged app.',
+  };
+  (mainWindow
+    ? dialog.showMessageBox(mainWindow, options)
+    : dialog.showMessageBox(options)
+  ).catch(console.error);
 }
 
 if (!app.requestSingleInstanceLock()) {
@@ -296,7 +345,21 @@ if (!app.requestSingleInstanceLock()) {
       });
       Menu.setApplicationMenu(
         Menu.buildFromTemplate([
-          { role: 'appMenu' },
+          {
+            label: app.name,
+            submenu: [
+              { role: 'about' },
+              { label: 'Check for Updates…', click: checkForUpdates },
+              { type: 'separator' },
+              { role: 'services' },
+              { type: 'separator' },
+              { role: 'hide' },
+              { role: 'hideOthers' },
+              { role: 'unhide' },
+              { type: 'separator' },
+              { role: 'quit' },
+            ],
+          },
           { role: 'editMenu' },
           { role: 'viewMenu' },
           { role: 'windowMenu' },
@@ -307,6 +370,9 @@ if (!app.requestSingleInstanceLock()) {
         if (!BrowserWindow.getAllWindows().length)
           createWindow().catch(console.error);
       });
+      startUpdater().catch(error =>
+        (updaterLog ?? console).error('Updater could not start:', error),
+      );
     })
     .catch(error => {
       dialog.showErrorBox('Jam Dashboard could not start', error.message);

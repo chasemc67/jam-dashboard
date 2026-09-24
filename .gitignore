@@ -1,5 +1,6 @@
 node_modules
 desktop/agent-service.cjs
+desktop/electron-updater.cjs
 storybook-static/
 
 /.cache
