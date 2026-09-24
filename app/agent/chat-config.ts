@@ -1,8 +1,12 @@
+import { GATEWAY_KEY_REJECTED_MESSAGE } from './gateway-key';
+
 export const MCP_UNAVAILABLE_MESSAGE =
-  'Jam MCP is not running. Start the local app with `npm run agent:dev` so chat can control the fretboard.';
+  'Jam MCP is not running. In the Mac app, restart Jam Dashboard; for local web development, start it with `npm run agent:dev` so chat can control the fretboard.';
 
 export const GATEWAY_UNAVAILABLE_MESSAGE =
   'Set AI_GATEWAY_API_KEY in your environment (see .env.example) to use in-app chat.';
+
+export { GATEWAY_KEY_REJECTED_MESSAGE };
 
 export const DEFAULT_AGENT_CHAT_MODEL = 'openai/gpt-5.4-mini';
 
@@ -11,7 +15,7 @@ export const JAM_CHAT_INSTRUCTIONS = `You are the in-app assistant for Jam Dashb
 Use the connected Jam Dashboard MCP tools to inspect and change the live fretboard. Prefer taking action with tools over only explaining.
 
 Workflow:
-1. Call list_sessions. If none are connected, tell the user to keep this page open, run \`npm run agent:dev\`, and leave AI connection enabled.
+1. Call list_sessions. If none are connected, tell the user to keep the Jam Dashboard window open and leave AI connection enabled (for local web development, also run \`npm run agent:dev\`).
 2. Read get_state (and get_capabilities when you need limits or the suggested workflow).
 3. Select a compatible scale with set_view before showing notes or voicings. Displayed notes must belong to the selected scale.
 4. Use show_fretboard, show_voicings, select_voicing, or set_view to update the visible board.
@@ -48,8 +52,14 @@ export function resolveJamMcpConnection(env: Env = process.env) {
   return { ok: true as const, url, token };
 }
 
+export function isGatewayKeyRejected(error: unknown) {
+  const text = error instanceof Error ? error.message : String(error ?? '');
+  return /AI Gateway authentication failed: Invalid API key/i.test(text);
+}
+
 export function jamMcpErrorMessage(error: unknown) {
   const text = error instanceof Error ? error.message : String(error);
+  if (isGatewayKeyRejected(error)) return GATEWAY_KEY_REJECTED_MESSAGE;
   if (
     /ECONNREFUSED|ENOTFOUND|ETIMEDOUT|fetch failed|Failed to fetch|network|401|403|404|timeout|MCP|unauthorized/i.test(
       text,

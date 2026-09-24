@@ -1,9 +1,11 @@
 import {
   DEFAULT_AGENT_CHAT_MODEL,
+  GATEWAY_KEY_REJECTED_MESSAGE,
   GATEWAY_UNAVAILABLE_MESSAGE,
   JAM_CHAT_INSTRUCTIONS,
   MCP_UNAVAILABLE_MESSAGE,
   hasAiGatewayCredentials,
+  isGatewayKeyRejected,
   jamMcpErrorMessage,
   prepareAgentChatRequest,
   resolveAgentChatModel,
@@ -92,5 +94,16 @@ test('maps connection failures to the agent:dev message', () => {
   ).toBe(MCP_UNAVAILABLE_MESSAGE);
   expect(jamMcpErrorMessage(new Error('something else'))).toBe(
     'something else',
+  );
+});
+
+test('maps Gateway key rejections to the replace-key message, not MCP', () => {
+  const error = new Error(
+    'AI Gateway authentication failed: Invalid API key or token.\n\nCreate a new API key: https://vercel.com/...',
+  );
+  expect(isGatewayKeyRejected(error)).toBe(true);
+  expect(jamMcpErrorMessage(error)).toBe(GATEWAY_KEY_REJECTED_MESSAGE);
+  expect(jamMcpErrorMessage(new Error('HTTP 401 from MCP'))).toBe(
+    MCP_UNAVAILABLE_MESSAGE,
   );
 });

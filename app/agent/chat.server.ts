@@ -1,5 +1,9 @@
 import { createMCPClient } from '@ai-sdk/mcp';
-import { createAgentUIStreamResponse, ToolLoopAgent } from 'ai';
+import {
+  createAgentUIStreamResponse,
+  ToolLoopAgent,
+  type createGateway,
+} from 'ai';
 import {
   JAM_CHAT_INSTRUCTIONS,
   jamMcpErrorMessage,
@@ -16,6 +20,11 @@ async function closeQuietly(close: () => Promise<void>) {
 
 export async function handleAgentChatRequest(
   request: Request,
+  deps: {
+    env?: Record<string, string | undefined>;
+    /** Omit to use the default AI Gateway provider configured from process env. */
+    gateway?: Pick<ReturnType<typeof createGateway>, 'languageModel'>;
+  } = {},
 ): Promise<Response> {
   let body: unknown;
   try {
@@ -24,7 +33,7 @@ export async function handleAgentChatRequest(
     return new Response('Request body must be JSON.', { status: 400 });
   }
 
-  const prepared = prepareAgentChatRequest(body);
+  const prepared = prepareAgentChatRequest(body, deps.env);
   if (!prepared.ok) {
     return new Response(prepared.error, { status: prepared.status });
   }
@@ -44,7 +53,9 @@ export async function handleAgentChatRequest(
     const tools = await mcpClient.tools();
     const client = mcpClient;
     const agent = new ToolLoopAgent({
-      model: prepared.model,
+      model: deps.gateway
+        ? deps.gateway.languageModel(prepared.model)
+        : prepared.model,
       instructions: JAM_CHAT_INSTRUCTIONS,
       tools,
     });

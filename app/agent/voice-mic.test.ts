@@ -87,7 +87,10 @@ test('transcribeVoiceRecording posts audio and returns text', async () => {
     await expect(transcribeVoiceRecording(blob)).resolves.toBe('Show B major.');
     expect(fetchMock).toHaveBeenCalledWith(
       '/api/agent-transcribe',
-      expect.objectContaining({ method: 'POST' }),
+      expect.objectContaining({
+        method: 'POST',
+        headers: { 'X-Jam-Agent-Request': '1' },
+      }),
     );
     const body = fetchMock.mock.calls[0][1].body as FormData;
     expect(body.get('audio')).toBeInstanceOf(Blob);

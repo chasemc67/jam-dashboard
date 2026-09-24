@@ -17,6 +17,15 @@ contextBridge.exposeInMainWorld(
     onCommand: callback => subscribe('jam:agent-command', callback),
   }),
 );
+// Write-only: the renderer can save or clear the Gateway key but never read it back.
+contextBridge.exposeInMainWorld(
+  'jamGatewayKey',
+  Object.freeze({
+    getStatus: () => ipcRenderer.invoke('jam:gateway-key-status'),
+    save: key => ipcRenderer.invoke('jam:gateway-key-save', key),
+    clear: () => ipcRenderer.invoke('jam:gateway-key-clear'),
+  }),
+);
 contextBridge.exposeInMainWorld(
   'jamDesktop',
   Object.freeze({
