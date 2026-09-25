@@ -49,11 +49,15 @@ export default function AgentChat({
   const chatReady = status === 'ready' || status === 'error';
   const voice = useAgentChatVoice({
     enabled: chatReady && !showKeySetup,
-    onTranscript: text => {
-      if (!text.trim() || !chatReady) return;
-      void sendMessage({ text });
-    },
+    draft: input,
+    onDraftChange: setInput,
   });
+  const sendDraft = (draft: string) => {
+    const text = draft.trim();
+    if (!text || !chatReady) return;
+    void sendMessage({ text });
+    setInput('');
+  };
   const chatError = error ? chatErrorMessage(error) : null;
   const keyError = [chatError, voice.error].find(isGatewayKeyError) ?? null;
   const { refresh: refreshKey } = gatewayKey;
@@ -121,14 +125,17 @@ export default function AgentChat({
               input={input}
               onInputChange={setInput}
               onSubmit={() => {
-                if (voice.status === 'recording') {
-                  voice.onStopAndSend();
+                if (
+                  voice.status === 'recording' ||
+                  voice.status === 'transcribing'
+                ) {
+                  // Explicit Send while dictating: finish the transcript first.
+                  void voice.onStop().then(draft => {
+                    if (draft !== null) sendDraft(draft);
+                  });
                   return;
                 }
-                const text = input.trim();
-                if (!text || !chatReady) return;
-                void sendMessage({ text });
-                setInput('');
+                sendDraft(input);
               }}
               onClose={() => setOpen(false)}
               onManageKey={

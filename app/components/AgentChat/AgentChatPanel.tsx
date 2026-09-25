@@ -83,8 +83,10 @@ export default function AgentChatPanel({
   const transcribing = voice?.status === 'transcribing';
   const requesting = voice?.status === 'requesting';
   const voiceActive = recording || transcribing || requesting;
-  const canSendText = !busy && !voiceActive && Boolean(input.trim());
-  const canSendVoice = recording && !busy;
+  const canSend =
+    !busy &&
+    !requesting &&
+    (recording || transcribing || Boolean(input.trim()));
   useEffect(() => {
     const list = listRef.current;
     if (list) list.scrollTop = list.scrollHeight;
@@ -180,7 +182,7 @@ export default function AgentChatPanel({
           )}
           {transcribing && (
             <p role="status" className="text-sm text-muted-foreground">
-              Transcribing…
+              Finishing transcript…
             </p>
           )}
         </div>
@@ -210,14 +212,25 @@ export default function AgentChatPanel({
         className="shrink-0 border-t bg-muted/30 p-3"
         onSubmit={event => {
           event.preventDefault();
-          if (recording) {
-            voice?.onStopAndSend();
-            return;
-          }
-          onSubmit();
+          if (canSend) onSubmit();
         }}
       >
-        {voice && (
+        {voice && recording && (
+          <div className="mb-2 flex items-center gap-2">
+            <VoiceMeter level={voice.level} />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 shrink-0"
+              title="Stop listening and discard the dictated text"
+              onClick={voice.onCancel}
+            >
+              Cancel
+            </Button>
+          </div>
+        )}
+        {voice && !recording && (
           <div className="mb-2 flex items-center gap-2">
             <Select
               value={voice.selectedDeviceId ?? undefined}
@@ -264,60 +277,43 @@ export default function AgentChatPanel({
           </div>
         )}
         <div className="flex gap-2">
-          {recording ? (
-            <>
-              <VoiceMeter level={voice?.level ?? 0} />
-              <Button
-                type="button"
-                variant="ghost"
-                disabled={busy}
-                onClick={voice?.onCancel}
-              >
-                Cancel
-              </Button>
-            </>
-          ) : (
-            <Input
-              value={input}
-              onChange={event => onInputChange(event.target.value)}
-              placeholder="Ask to show a key or voicing…"
-              aria-label="Message"
-              disabled={busy || voiceActive}
-            />
-          )}
+          <Input
+            value={input}
+            onChange={event => onInputChange(event.target.value)}
+            placeholder={
+              recording ? 'Listening…' : 'Ask to show a key or voicing…'
+            }
+            aria-label="Message"
+            // Dictation owns the draft while the mic is live.
+            readOnly={voiceActive}
+            disabled={busy}
+          />
           {voice && (
             <Button
               type="button"
               size="icon"
               variant={recording ? 'destructive' : 'outline'}
               className={cn('shrink-0', recording && 'animate-pulse')}
-              aria-label={
-                recording
-                  ? 'Stop and send voice message'
-                  : 'Start voice message'
-              }
+              aria-label={recording ? 'Stop voice input' : 'Start voice input'}
               aria-pressed={recording}
               title={
                 !voice.supported
                   ? VOICE_UNSUPPORTED_MESSAGE
                   : recording
-                    ? 'Stop and send'
-                    : 'Voice mode'
+                    ? 'Stop dictation (keeps the text; press Send to send)'
+                    : 'Dictate into the message'
               }
               disabled={!voice.supported || busy || transcribing || requesting}
               onClick={() => {
-                if (recording) voice.onStopAndSend();
+                if (recording) void voice.onStop();
                 else voice.onStart();
               }}
             >
               <Mic aria-hidden="true" />
             </Button>
           )}
-          <Button
-            type="submit"
-            disabled={recording ? !canSendVoice : !canSendText}
-          >
-            {recording ? 'Send' : transcribing ? '…' : 'Send'}
+          <Button type="submit" disabled={!canSend}>
+            Send
           </Button>
         </div>
       </form>

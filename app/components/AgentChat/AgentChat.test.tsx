@@ -17,7 +17,7 @@ const idleVoice = (
   supported: true,
   onSelectDevice: jest.fn(),
   onStart: jest.fn(),
-  onStopAndSend: jest.fn(),
+  onStop: jest.fn(async () => 'draft'),
   onCancel: jest.fn(),
   onRefreshDevices: jest.fn(),
   ...overrides,
@@ -93,7 +93,7 @@ test('shows a connection error and thinking status', () => {
   expect(screen.getByRole('alert')).toHaveTextContent('npm run agent:dev');
 });
 
-test('voice composer lists an independent mic, starts listening, and auto-sends on stop', () => {
+test('voice composer lists an independent mic and starts dictation', () => {
   const voice = idleVoice();
   render(
     <AgentChatPanel
@@ -109,11 +109,31 @@ test('voice composer lists an independent mic, starts listening, and auto-sends 
     />,
   );
   expect(screen.getByLabelText('Chat microphone')).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: 'Start voice message' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Start voice input' }));
   expect(voice.onStart).toHaveBeenCalledTimes(1);
 });
 
-test('recording shows a listening meter, cancel, and stop-and-send', () => {
+test('recording keeps the dictated draft visible in the composer', () => {
+  render(
+    <AgentChatPanel
+      titleId="title"
+      descriptionId="description"
+      messages={[]}
+      status="ready"
+      input="Show me B major and then"
+      onInputChange={jest.fn()}
+      onSubmit={jest.fn()}
+      onClose={jest.fn()}
+      voice={idleVoice({ status: 'recording', level: 0.6 })}
+    />,
+  );
+  const textbox = screen.getByRole('textbox', { name: 'Message' });
+  expect(textbox).toHaveValue('Show me B major and then');
+  expect(textbox).toHaveAttribute('readonly');
+  expect(screen.getByRole('status', { name: 'Listening' })).toBeInTheDocument();
+});
+
+test('stopping the mic does not submit the message', () => {
   const voice = idleVoice({ status: 'recording', level: 0.6 });
   const onSubmit = jest.fn();
   render(
@@ -122,23 +142,61 @@ test('recording shows a listening meter, cancel, and stop-and-send', () => {
       descriptionId="description"
       messages={[]}
       status="ready"
-      input="ignored while recording"
+      input="Show D dorian"
       onInputChange={jest.fn()}
       onSubmit={onSubmit}
       onClose={jest.fn()}
       voice={voice}
     />,
   );
-  expect(screen.getByRole('status', { name: 'Listening' })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Stop voice input' }));
+  expect(voice.onStop).toHaveBeenCalledTimes(1);
+  expect(onSubmit).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
   expect(voice.onCancel).toHaveBeenCalledTimes(1);
-  fireEvent.click(
-    screen.getByRole('button', { name: 'Stop and send voice message' }),
+  expect(onSubmit).not.toHaveBeenCalled();
+});
+
+test('Send while dictating is an explicit submit', () => {
+  const voice = idleVoice({ status: 'recording' });
+  const onSubmit = jest.fn();
+  render(
+    <AgentChatPanel
+      titleId="title"
+      descriptionId="description"
+      messages={[]}
+      status="ready"
+      input=""
+      onInputChange={jest.fn()}
+      onSubmit={onSubmit}
+      onClose={jest.fn()}
+      voice={voice}
+    />,
   );
-  expect(voice.onStopAndSend).toHaveBeenCalledTimes(1);
-  const form = screen.getByRole('button', { name: 'Send' }).closest('form');
-  fireEvent.submit(form!);
-  expect(voice.onStopAndSend).toHaveBeenCalledTimes(2);
+  fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+  expect(onSubmit).toHaveBeenCalledTimes(1);
+  expect(voice.onStop).not.toHaveBeenCalled();
+});
+
+test('empty composer does not submit', () => {
+  const onSubmit = jest.fn();
+  render(
+    <AgentChatPanel
+      titleId="title"
+      descriptionId="description"
+      messages={[]}
+      status="ready"
+      input="   "
+      onInputChange={jest.fn()}
+      onSubmit={onSubmit}
+      onClose={jest.fn()}
+      voice={idleVoice()}
+    />,
+  );
+  expect(screen.getByRole('button', { name: 'Send' })).toBeDisabled();
+  fireEvent.submit(
+    screen.getByRole('textbox', { name: 'Message' }).closest('form')!,
+  );
   expect(onSubmit).not.toHaveBeenCalled();
 });
 

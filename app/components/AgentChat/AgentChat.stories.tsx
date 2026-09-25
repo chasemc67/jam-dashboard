@@ -17,7 +17,7 @@ const idleVoice: AgentChatVoice = {
   supported: true,
   onSelectDevice: () => {},
   onStart: () => {},
-  onStopAndSend: () => {},
+  onStop: async () => null,
   onCancel: () => {},
   onRefreshDevices: () => {},
 };
@@ -101,11 +101,29 @@ export const VoiceListening: StoryObj<typeof AgentChatPanel> = {
         descriptionId="agent-chat-description"
         messages={[]}
         status="ready"
-        input=""
+        input="Show me B major and then highlight the"
         onInputChange={() => {}}
         onSubmit={() => {}}
         onClose={() => {}}
         voice={{ ...idleVoice, status: 'recording', level: 0.7 }}
+      />
+    </PanelFrame>
+  ),
+};
+
+export const VoiceListeningEmpty: StoryObj<typeof AgentChatPanel> = {
+  render: () => (
+    <PanelFrame>
+      <AgentChatPanel
+        titleId="agent-chat-title"
+        descriptionId="agent-chat-description"
+        messages={[]}
+        status="ready"
+        input=""
+        onInputChange={() => {}}
+        onSubmit={() => {}}
+        onClose={() => {}}
+        voice={{ ...idleVoice, status: 'recording', level: 0.4 }}
       />
     </PanelFrame>
   ),
@@ -119,7 +137,7 @@ export const VoiceTranscribing: StoryObj<typeof AgentChatPanel> = {
         descriptionId="agent-chat-description"
         messages={[]}
         status="ready"
-        input=""
+        input="Show me B major and then highlight the major third"
         onInputChange={() => {}}
         onSubmit={() => {}}
         onClose={() => {}}
