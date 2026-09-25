@@ -1,22 +1,36 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   createVoiceInputStream,
+  evaluateJevCandidates,
   isVoiceInputSupported,
   listVoiceInputDevices,
   loadVoiceDeviceId,
+  loadVoiceMode,
   mapVoiceMicError,
   pickRecorderMimeType,
   rmsLevel,
   saveVoiceDeviceId,
+  saveVoiceMode,
   trackDeviceId,
   transcribeVoiceRecording,
   type VoiceDeviceOption,
+  type VoiceMode,
   type VoiceStatus,
 } from '~/agent/voice-mic';
 import {
   EMPTY_TRANSCRIPT_MESSAGE,
+  GATEWAY_UNAVAILABLE_MESSAGE,
+  MAX_JEV_SESSION_MS,
   MAX_VOICE_RECORDING_MS,
 } from '~/agent/voice-config';
+import { MCP_UNAVAILABLE_MESSAGE } from '~/agent/chat-config';
+import { isGatewayKeyError } from '~/agent/gateway-key';
+import type { JevEvaluator } from '~/agent/jev';
+import { JevSpeechFilter, type JevTranscriptSegment } from '~/agent/jev-filter';
+import {
+  buildJevTranscriptLines,
+  type JevTranscriptLine,
+} from '~/agent/jev-transcript';
 import {
   appendDictation,
   DictationTranscript,
@@ -35,17 +49,32 @@ export type AgentChatVoice = {
   hasPermission: boolean;
   level: number;
   supported: boolean;
+  mode: VoiceMode;
+  /** Ignored while the mic is active. */
+  onModeChange: (mode: VoiceMode) => void;
+  /** Jev mode: the last session's full transcript with sent spans marked. */
+  jevTranscript: JevTranscriptLine[];
+  jevEvaluating: boolean;
   onSelectDevice: (deviceId: string) => void;
   onStart: () => void;
   /**
-   * Stops dictation and finishes transcribing. Never sends; resolves with the
-   * final composer draft, or null if nothing was being dictated.
+   * Stops listening and finishes transcribing. Dictation never sends and
+   * resolves with the final composer draft; Jev mode submits any last directed
+   * span through `onJevSubmit` and resolves null.
    */
   onStop: () => Promise<string | null>;
-  /** Stops dictation and restores the draft from before the mic started. */
+  /** Stops without sending; dictation restores the draft from before the mic started. */
   onCancel: () => void;
   onRefreshDevices: () => void;
 };
+
+export function isFatalVoiceError(message: string) {
+  return (
+    message === GATEWAY_UNAVAILABLE_MESSAGE ||
+    message === MCP_UNAVAILABLE_MESSAGE ||
+    isGatewayKeyError(message)
+  );
+}
 
 type Segment = {
   index: number;
@@ -78,7 +107,19 @@ type Session = {
   transcript: DictationTranscript;
   baseDraft: string;
   lastError: string | null;
+  mode: VoiceMode;
+  jev: JevSpeechFilter | null;
+  jevLive: boolean;
+  /** Last time each segment heard speech; feeds Jev's quiet interval. */
+  speechAt: Map<number, number>;
 };
+
+function jevSegments(session: Session): JevTranscriptSegment[] {
+  return session.transcript.segments().map(segment => ({
+    ...segment,
+    lastSpeechAt: session.speechAt.get(segment.index),
+  }));
+}
 
 function stopTracks(stream: MediaStream | null | undefined) {
   stream?.getTracks().forEach(track => track.stop());
@@ -105,11 +146,16 @@ export function useAgentChatVoice({
   enabled = true,
   draft,
   onDraftChange,
+  onJevSubmit,
+  evaluateJev = evaluateJevCandidates,
 }: {
   enabled?: boolean;
   /** Current composer text; dictation appends to it. */
   draft: string;
   onDraftChange: (draft: string) => void;
+  /** Jev mode: called with each span classified as directed at the assistant. */
+  onJevSubmit?: (text: string) => void;
+  evaluateJev?: JevEvaluator;
 }): AgentChatVoice {
   const supported = isVoiceInputSupported();
   const [status, setStatusState] = useState<VoiceStatus>('idle');
@@ -120,6 +166,13 @@ export function useAgentChatVoice({
   );
   const [hasPermission, setHasPermission] = useState(false);
   const [level, setLevel] = useState(0);
+  const [mode, setModeState] = useState<VoiceMode>(() => loadVoiceMode());
+  const [jevTranscript, setJevTranscript] = useState<JevTranscriptLine[]>([]);
+  const [jevEvaluating, setJevEvaluating] = useState(false);
+  const onJevSubmitRef = useRef(onJevSubmit);
+  onJevSubmitRef.current = onJevSubmit;
+  const evaluateJevRef = useRef(evaluateJev);
+  evaluateJevRef.current = evaluateJev;
 
   const statusRef = useRef<VoiceStatus>('idle');
   const sessionRef = useRef<Session | null>(null);
@@ -156,8 +209,23 @@ export function useAgentChatVoice({
     }
   }, []);
 
+  const renderJev = useCallback((session: Session) => {
+    if (!session.jev || session.generation !== generationRef.current) return;
+    setJevTranscript(
+      buildJevTranscriptLines(jevSegments(session), session.jev.outcomes(), {
+        live: session.jevLive,
+      }),
+    );
+    setJevEvaluating(session.jevLive && session.jev.evaluating);
+  }, []);
+
   const publish = useCallback((session: Session) => {
     if (session.generation !== generationRef.current) return;
+    if (session.jev) {
+      // Jev mode never touches the composer; the filter decides what is sent.
+      session.jev.update(jevSegments(session));
+      return;
+    }
     onDraftChangeRef.current(
       appendDictation(session.baseDraft, session.transcript.text()),
     );
@@ -206,12 +274,37 @@ export function useAgentChatVoice({
 
   const cancelSession = useCallback(
     (restoreDraft: boolean) => {
+      const active = sessionRef.current;
+      if (active?.jev) {
+        active.jev.stop();
+        active.jevLive = false;
+        renderJev(active);
+      }
       generationRef.current += 1;
       const session = teardownSession();
-      if (restoreDraft && session) onDraftChangeRef.current(session.baseDraft);
+      if (restoreDraft && session?.mode === 'dictation') {
+        onDraftChangeRef.current(session.baseDraft);
+      }
       setStatus('idle');
     },
-    [setStatus, teardownSession],
+    [renderJev, setStatus, teardownSession],
+  );
+
+  /** Jev sessions keep listening through transient errors but stop on credential/service failures. */
+  const reportJevError = useCallback(
+    (session: Session, message: string) => {
+      if (session.generation !== generationRef.current || !session.jevLive) {
+        return;
+      }
+      if (isFatalVoiceError(message)) {
+        cancelSession(false);
+        setError(message);
+        setStatus('error');
+        return;
+      }
+      setError(message);
+    },
+    [cancelSession, setStatus],
   );
 
   const startSegment = useCallback((session: Session): Segment => {
@@ -264,7 +357,10 @@ export function useAgentChatVoice({
             segment.index,
             session.transcript.interimText(segment.index),
           );
-          if (message !== EMPTY_TRANSCRIPT_MESSAGE) session.lastError = message;
+          if (message !== EMPTY_TRANSCRIPT_MESSAGE) {
+            session.lastError = message;
+            if (session.jev) reportJevError(session, message);
+          }
         }
         publish(session);
       })();
@@ -272,7 +368,7 @@ export function useAgentChatVoice({
       void task.finally(() => session.pendingFinals.delete(task));
       return task;
     },
-    [publish],
+    [publish, reportJevError],
   );
 
   const requestInterim = useCallback(
@@ -314,6 +410,7 @@ export function useAgentChatVoice({
         segment.heardSpeech = true;
         session.anySpeech = true;
         session.silentSince = null;
+        session.speechAt.set(segment.index, now);
       } else if (session.silentSince === null) {
         session.silentSince = now;
       }
@@ -407,7 +504,27 @@ export function useAgentChatVoice({
         transcript: new DictationTranscript(),
         baseDraft: draftRef.current,
         lastError: null,
+        mode,
+        jev: null,
+        jevLive: mode === 'jev',
+        speechAt: new Map(),
       } as Omit<Session, 'segment'> as Session;
+      if (mode === 'jev') {
+        session.jev = new JevSpeechFilter({
+          evaluate: (body, signal) => evaluateJevRef.current(body, signal),
+          onSubmit: ({ text }) => {
+            if (session.generation !== generationRef.current) return;
+            setError(current =>
+              current && isFatalVoiceError(current) ? current : null,
+            );
+            onJevSubmitRef.current?.(text);
+          },
+          onChange: () => renderJev(session),
+          onError: message => reportJevError(session, message),
+        });
+        setJevTranscript([]);
+        setJevEvaluating(false);
+      }
       session.segment = startSegment(session);
       sessionRef.current = session;
       startMeter(session);
@@ -419,9 +536,12 @@ export function useAgentChatVoice({
       void refreshDevices();
       setStatus('recording');
 
-      timeoutRef.current = window.setTimeout(() => {
-        if (generationRef.current === generation) void stopRef.current();
-      }, MAX_VOICE_RECORDING_MS);
+      timeoutRef.current = window.setTimeout(
+        () => {
+          if (generationRef.current === generation) void stopRef.current();
+        },
+        mode === 'jev' ? MAX_JEV_SESSION_MS : MAX_VOICE_RECORDING_MS,
+      );
     } catch (err) {
       stopTracks(stream);
       teardownSession();
@@ -430,7 +550,10 @@ export function useAgentChatVoice({
     }
   }, [
     enabled,
+    mode,
     refreshDevices,
+    renderJev,
+    reportJevError,
     selectedDeviceId,
     setSelectedDeviceId,
     setStatus,
@@ -459,13 +582,29 @@ export function useAgentChatVoice({
       session.interimAbort?.abort();
       // With no speech detected anywhere, still transcribe once in case the
       // input is just quiet; otherwise silent tails are dropped to avoid STT
-      // hallucinating on silence.
-      void finalizeSegment(session, session.segment, !session.anySpeech);
+      // hallucinating on silence. An always-on Jev session never forces it.
+      void finalizeSegment(
+        session,
+        session.segment,
+        !session.jev && !session.anySpeech,
+      );
       releaseAudio(session);
       while (session.pendingFinals.size > 0) {
         await Promise.allSettled([...session.pendingFinals]);
       }
       if (session.generation !== generationRef.current) return null;
+
+      if (session.jev) {
+        await session.jev.finish();
+        if (session.generation !== generationRef.current) return null;
+        session.jevLive = false;
+        renderJev(session);
+        sessionRef.current = null;
+        stopPromiseRef.current = null;
+        // Transient errors were already shown live; keep whatever is current.
+        setStatus('idle');
+        return null;
+      }
 
       const text = session.transcript.text();
       const finalDraft = appendDictation(session.baseDraft, text);
@@ -481,7 +620,7 @@ export function useAgentChatVoice({
     })();
     stopPromiseRef.current = promise;
     return promise;
-  }, [finalizeSegment, releaseAudio, setStatus]);
+  }, [finalizeSegment, releaseAudio, renderJev, setStatus]);
 
   stopRef.current = stop;
 
@@ -509,6 +648,14 @@ export function useAgentChatVoice({
     hasPermission,
     level,
     supported,
+    mode,
+    onModeChange: next => {
+      if (sessionRef.current || statusRef.current === 'requesting') return;
+      setModeState(next);
+      saveVoiceMode(next);
+    },
+    jevTranscript,
+    jevEvaluating,
     onSelectDevice: deviceId => setSelectedDeviceId(deviceId),
     onStart: () => {
       void start();

@@ -9,7 +9,20 @@ export type AgentChatMessage = {
   id: string;
   role: string;
   parts: AgentChatPart[];
+  metadata?: unknown;
 };
+
+/** Metadata on user messages that Jev mode sent automatically. */
+export const JEV_MESSAGE_METADATA = { source: 'jev' } as const;
+
+export function isJevChatMessage(message: AgentChatMessage) {
+  const metadata = message.metadata;
+  return (
+    !!metadata &&
+    typeof metadata === 'object' &&
+    (metadata as { source?: unknown }).source === JEV_MESSAGE_METADATA.source
+  );
+}
 
 export type DescribedChatPart =
   | { kind: 'text'; text: string }
