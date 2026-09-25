@@ -37,7 +37,7 @@ const child = spawn(
   },
 );
 console.log(
-  `Jam Dashboard: http://127.0.0.1:${webPort}\nMCP: ${service.url}\nOpen “AI connection” in the app for credentials and setup.\n`,
+  `Jam Dashboard: http://127.0.0.1:${webPort}\nMCP: ${service.url}\nOpen Agent chat and choose “MCP connection” for credentials and setup.\n`,
 );
 let stopping = false;
 async function stop(code = 0) {

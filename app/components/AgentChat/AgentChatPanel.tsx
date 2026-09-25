@@ -7,6 +7,7 @@ import {
   Sparkles,
   X,
 } from 'lucide-react';
+import { McpConnectionButton } from '~/components/AgentConnection';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import JevTranscript from '~/components/JevTranscript';
@@ -119,6 +120,7 @@ export default function AgentChatPanel({
   onSubmit,
   onClose,
   onManageKey,
+  onOpenConnection,
   voice,
   description = (
     <>
@@ -139,6 +141,8 @@ export default function AgentChatPanel({
   onClose: () => void;
   /** Desktop only: opens AI Gateway key settings. */
   onManageKey?: () => void;
+  /** Opens MCP address, token, and connect/disconnect controls. */
+  onOpenConnection?: () => void;
   voice?: AgentChatVoice;
 }) {
   const errorText = error ? chatErrorMessage(error) : null;
@@ -196,6 +200,9 @@ export default function AgentChatPanel({
               >
                 <ScrollText aria-hidden="true" />
               </Button>
+            )}
+            {onOpenConnection && (
+              <McpConnectionButton onClick={onOpenConnection} />
             )}
             {onManageKey && (
               <Button

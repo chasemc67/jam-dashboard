@@ -60,7 +60,7 @@ downloads may leave partial files in the selected folder.
 
 ## AI agent connection
 
-Open **AI connection** below the fretboard to connect Codex, Cursor or another MCP client. The bundled service listens at `http://127.0.0.1:4177/mcp`; the panel provides its private bearer token. Agents can select scales/CAGED coloring, identify chords, show/select basic chord voicings, and analyze songs. The installed app needs no separate Node service. See the [agent setup guide](../docs/agent-tools.md).
+Open Agent chat and choose **MCP connection** to connect Codex, Cursor or another MCP client. The bundled service listens at `http://127.0.0.1:4177/mcp`; the panel provides its private bearer token. Agents can select scales/CAGED coloring, identify chords, show/select basic chord voicings, and analyze songs. The installed app needs no separate Node service. See the [agent setup guide](../docs/agent-tools.md).
 
 For a song's key and BPM, an agent calls `analyze_song` with a song name and artist or a direct YouTube URL, then polls `get_song_analysis` every few seconds using the returned job ID. Read the current job before retrying an uncertain start. In an open dashboard window, the analyzer tab is selected automatically and shows the same search, download, and analysis progress as a manual start. Song searches use the first YouTube match, and MP3s save to the existing destination. The agent sees matched video metadata and BPM/key estimates with confidence; snapshots omit destination and file-path fields. Analysis does not apply the key automatically, but a follow-up `set_view` can use its `analysis.keyScale` when requested.
 

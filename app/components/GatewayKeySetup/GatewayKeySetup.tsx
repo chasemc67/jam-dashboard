@@ -6,6 +6,7 @@ import {
   KeyRound,
   X,
 } from 'lucide-react';
+import { McpConnectionButton } from '~/components/AgentConnection';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
@@ -27,6 +28,7 @@ export default function GatewayKeySetup({
   onSave,
   onClear,
   onBack,
+  onOpenConnection,
   onClose,
 }: {
   titleId: string;
@@ -38,6 +40,8 @@ export default function GatewayKeySetup({
   onClear: () => Promise<GatewayKeyResult>;
   /** Present when the user opened this panel from chat and can return to it. */
   onBack?: () => void;
+  /** Opens MCP address, token, and connect/disconnect controls. */
+  onOpenConnection?: () => void;
   onClose: () => void;
 }) {
   const [value, setValue] = useState('');
@@ -93,16 +97,21 @@ export default function GatewayKeySetup({
               </h2>
             </div>
           </div>
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="-mr-2 -mt-2 shrink-0 rounded-full"
-            aria-label="Close agent chat"
-            onClick={onClose}
-          >
-            <X aria-hidden="true" />
-          </Button>
+          <div className="-mr-2 -mt-2 flex shrink-0 gap-1">
+            {onOpenConnection && (
+              <McpConnectionButton onClick={onOpenConnection} />
+            )}
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="rounded-full"
+              aria-label="Close agent chat"
+              onClick={onClose}
+            >
+              <X aria-hidden="true" />
+            </Button>
+          </div>
         </div>
         <p id={descriptionId} className="mt-2 text-sm text-muted-foreground">
           Agent chat and voice run on this Mac with your own Vercel AI Gateway

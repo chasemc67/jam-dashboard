@@ -1,148 +1,157 @@
-import { useEffect, useState } from 'react';
-import { useAgent } from '~/contexts/AgentContext';
-import {
-  connectBrowser,
-  connectDesktop,
-  type BridgeStatus,
-} from '~/agent/bridge';
-import { registerWebMcp, type ModelContext } from '~/agent/webmcp';
-import type { ConnectionInfo } from '../../../shared/agent/contract';
+import { createContext, useContext, type ReactNode } from 'react';
+import { ArrowLeft, Cable, X } from 'lucide-react';
 import { Button } from '~/components/ui/button';
+import { Input } from '~/components/ui/input';
+import { Label } from '~/components/ui/label';
+import {
+  useAgentConnection,
+  type AgentConnectionModel,
+} from '~/hooks/useAgentConnection';
 
-export default function AgentConnection() {
-  const { controller } = useAgent();
-  const [enabled, setEnabled] = useState(true);
-  const [connection, setConnection] = useState<ConnectionInfo>();
-  const [status, setStatus] = useState<BridgeStatus>({
-    connected: false,
-    message: 'Connecting…',
-  });
-  const [showToken, setShowToken] = useState(false);
-  const [webMcp, setWebMcp] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [copyError, setCopyError] = useState('');
-  useEffect(() => {
-    if (!enabled) {
-      setStatus({ connected: false, message: 'Disconnected' });
-      return;
-    }
-    let disposed = false;
-    let disconnect: (() => void) | undefined;
-    async function start() {
-      const desktop = window.jamAgent;
-      const response = desktop
-        ? await desktop.getConnection()
-        : await fetch('/__jam-agent/config', { cache: 'no-store' }).then(
-            async r => {
-              if (!r.ok)
-                throw new Error(
-                  'Start the local agent app with npm run agent:dev.',
-                );
-              return r.json() as Promise<{
-                connection?: ConnectionInfo;
-                error?: string;
-              }>;
-            },
-          );
-      if (disposed) return;
-      if (!response.connection)
-        throw new Error(response.error ?? 'Agent service unavailable.');
-      setConnection(response.connection);
-      disconnect = desktop
-        ? connectDesktop(controller, desktop, setStatus)
-        : connectBrowser(controller, response.connection, setStatus);
-    }
-    void start().catch(error => {
-      if (!disposed) setStatus({ connected: false, message: error.message });
-    });
-    return () => {
-      disposed = true;
-      disconnect?.();
-    };
-  }, [controller, enabled]);
-  useEffect(() => {
-    if (!enabled) return;
-    const modelContext = (
-      document as Document & { modelContext?: ModelContext }
-    ).modelContext;
-    if (!modelContext) return;
-    let disposed = false;
-    const registration = registerWebMcp(controller, modelContext);
-    void registration.ready
-      .then(() => {
-        if (!disposed) setWebMcp(true);
-      })
-      .catch(() => {
-        if (!disposed) setWebMcp(false);
-      });
-    return () => {
-      disposed = true;
-      registration.dispose();
-      setWebMcp(false);
-    };
-  }, [controller, enabled]);
-  const copyConfig = async () => {
-    if (!connection) return;
-    const config = {
-      mcpServers: {
-        'jam-dashboard': {
-          url: connection.url,
-          headers: { Authorization: `Bearer ${connection.token}` },
-        },
-      },
-    };
-    try {
-      if (window.jamAgent) await window.jamAgent.copyConfiguration();
-      else await navigator.clipboard.writeText(JSON.stringify(config, null, 2));
-      setCopied(true);
-      setCopyError('');
-    } catch {
-      setCopyError('Clipboard unavailable. Use the address and token above.');
-    }
-  };
+const AgentConnectionContext = createContext<AgentConnectionModel | null>(null);
+
+/** Keeps the fretboard bridge connected for this route. Agent Chat only displays it. */
+export function AgentConnectionProvider({ children }: { children: ReactNode }) {
+  const model = useAgentConnection();
   return (
-    <details
-      className="w-full max-w-2xl rounded-lg border px-4 py-3 text-sm"
+    <AgentConnectionContext.Provider value={model}>
+      {children}
+    </AgentConnectionContext.Provider>
+  );
+}
+
+export function useAgentConnectionModel() {
+  return useContext(AgentConnectionContext);
+}
+
+export function McpConnectionButton({ onClick }: { onClick: () => void }) {
+  return (
+    <Button
+      type="button"
+      size="icon"
+      variant="ghost"
+      className="rounded-full"
+      aria-label="MCP connection"
+      title="MCP connection"
+      onClick={onClick}
+    >
+      <Cable aria-hidden="true" />
+    </Button>
+  );
+}
+
+export default function AgentConnection({
+  model,
+  titleId,
+  descriptionId,
+  onBack,
+  onClose,
+}: {
+  model: AgentConnectionModel;
+  titleId: string;
+  descriptionId: string;
+  onBack: () => void;
+  onClose: () => void;
+}) {
+  const {
+    enabled,
+    toggleEnabled,
+    connection,
+    status,
+    webMcp,
+    showToken,
+    setShowToken,
+    copied,
+    copyError,
+    copyConfig,
+  } = model;
+  const addressId = `${titleId}-mcp-address`;
+  const tokenId = `${titleId}-mcp-token`;
+
+  return (
+    <div
+      className="flex min-h-0 flex-1 flex-col [@media(max-height:500px)]:block"
       data-ph-mask
     >
-      <summary className="cursor-pointer">
-        AI connection · <span aria-live="polite">{status.message}</span>
-        {webMcp ? ' · WebMCP available' : ''}
-      </summary>
-      <div className="mt-3 space-y-3">
-        <p>
+      <div className="shrink-0 border-b px-5 pb-4 pt-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-1">
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="-ml-2 -mt-1 h-8 w-8 shrink-0 rounded-full"
+              aria-label="Back to chat"
+              onClick={onBack}
+            >
+              <ArrowLeft aria-hidden="true" />
+            </Button>
+            <div>
+              <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-primary">
+                <Cable className="h-3.5 w-3.5" aria-hidden="true" />
+                Agent setup
+              </div>
+              <h2 id={titleId} className="text-lg font-semibold">
+                MCP connection
+              </h2>
+            </div>
+          </div>
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="-mr-2 -mt-2 shrink-0 rounded-full"
+            aria-label="Close agent chat"
+            onClick={onClose}
+          >
+            <X aria-hidden="true" />
+          </Button>
+        </div>
+        <p id={descriptionId} className="mt-2 text-sm text-muted-foreground">
           Connect your local agent to control this fretboard and use the music
           tools.
         </p>
+      </div>
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-5 py-4 text-sm [@media(max-height:500px)]:overflow-visible">
+        <p role="status" aria-live="polite">
+          {status.message}
+          {webMcp ? ' · WebMCP available' : ''}
+        </p>
         {connection && (
           <>
-            <label className="block">
-              MCP address
-              <input
+            <div className="space-y-1.5">
+              <Label htmlFor={addressId}>MCP address</Label>
+              <Input
+                id={addressId}
                 readOnly
-                className="mt-1 w-full rounded border bg-background p-2"
+                spellCheck={false}
+                className="font-mono text-xs"
                 value={connection.url}
               />
-            </label>
-            <label className="block">
-              Bearer token
-              <input
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor={tokenId}>Bearer token</Label>
+              <Input
+                id={tokenId}
                 readOnly
                 autoComplete="off"
+                spellCheck={false}
                 type={showToken ? 'text' : 'password'}
-                className="mt-1 w-full rounded border bg-background p-2"
+                className="font-mono text-xs"
                 value={connection.token}
               />
-            </label>
+            </div>
             <div className="flex flex-wrap gap-2">
               <Button
+                type="button"
                 size="sm"
                 variant="outline"
-                onClick={() => setShowToken(s => !s)}
+                onClick={() => setShowToken(value => !value)}
               >
                 {showToken ? 'Hide token' : 'Show token'}
               </Button>
               <Button
+                type="button"
                 size="sm"
                 variant="outline"
                 onClick={() => void copyConfig()}
@@ -164,16 +173,14 @@ export default function AgentConnection() {
           </p>
         )}
         <Button
+          type="button"
           size="sm"
           variant="outline"
-          onClick={() => {
-            setEnabled(e => !e);
-            setCopied(false);
-          }}
+          onClick={toggleEnabled}
         >
           {enabled ? 'Disconnect this view' : 'Connect this view'}
         </Button>
       </div>
-    </details>
+    </div>
   );
 }

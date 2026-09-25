@@ -254,14 +254,18 @@ export default function AiGuide({
                 <p>
                   To connect your assistant, open{' '}
                   <span className="font-medium text-foreground">
-                    AI connection
+                    Agent chat
                   </span>{' '}
-                  below the fretboard for the MCP address and token.
+                  and choose{' '}
+                  <span className="font-medium text-foreground">
+                    MCP connection
+                  </span>{' '}
+                  for the address and token.
                 </p>
               ) : (
                 <p>
                   MCP is available in the desktop app or a locally running
-                  Chrome session. Connect your assistant through the app’s AI
+                  Chrome session. Connect your assistant from Agent chat’s MCP
                   connection panel.
                 </p>
               )}

@@ -53,6 +53,9 @@ test('walks through getting a key and names the Keychain item', () => {
   expect(
     screen.queryByRole('button', { name: 'Remove key from Keychain' }),
   ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole('button', { name: 'MCP connection' }),
+  ).not.toBeInTheDocument();
 });
 
 test('saves a trimmed key, then clears the field', async () => {
@@ -114,4 +117,11 @@ test('explains an environment override and shows notices', () => {
   expect(
     screen.queryByRole('button', { name: 'Remove key from Keychain' }),
   ).not.toBeInTheDocument();
+});
+
+test('opens MCP connection from the key screen', () => {
+  const onOpenConnection = jest.fn();
+  renderSetup({ onOpenConnection });
+  fireEvent.click(screen.getByRole('button', { name: 'MCP connection' }));
+  expect(onOpenConnection).toHaveBeenCalledTimes(1);
 });

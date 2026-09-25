@@ -43,7 +43,7 @@ The round **Chat** button (next to **AI**) talks to the local Jam MCP server thr
    stored as `jam-agent-chat-voice-device-id`. Using two different physical mics at
    once is supported; opening the same device twice is often flaky in browsers.
 
-`npm run agent:dev` prints the MCP URL and starts the same-origin `/__jam-agent/config` endpoint the app already uses for AI connection. Do not commit gateway keys or MCP tokens.
+`npm run agent:dev` prints the MCP URL and starts the same-origin `/__jam-agent/config` endpoint the Agent chat MCP connection panel uses. Do not commit gateway keys or MCP tokens.
 
 In the Mac app, each user pastes their own AI Gateway key into Agent chat and it is
 stored in their macOS Keychain (service `Jam Dashboard`, account `AI_GATEWAY_API_KEY`);
