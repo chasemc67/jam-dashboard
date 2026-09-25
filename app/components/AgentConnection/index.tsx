@@ -1,1 +1,6 @@
-export { default } from './AgentConnection';
+export {
+  default,
+  AgentConnectionProvider,
+  McpConnectionButton,
+  useAgentConnectionModel,
+} from './AgentConnection';

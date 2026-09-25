@@ -55,6 +55,27 @@ export const Mobile: Story = {
   parameters: { viewport: { defaultViewport: 'mobile1' } },
 };
 
+export const DesktopControls: StoryObj<typeof AgentChatPanel> = {
+  render: () => (
+    <PanelFrame>
+      <AgentChatPanel
+        titleId="agent-chat-title"
+        descriptionId="agent-chat-description"
+        description="Runs on this Mac with your AI Gateway key and the app’s built-in MCP server."
+        messages={[]}
+        status="ready"
+        input=""
+        onInputChange={() => {}}
+        onSubmit={() => {}}
+        onClose={() => {}}
+        onManageKey={() => {}}
+        onOpenConnection={() => {}}
+        voice={idleVoice}
+      />
+    </PanelFrame>
+  ),
+};
+
 export const WithMessages: StoryObj<typeof AgentChatPanel> = {
   render: () => (
     <PanelFrame>

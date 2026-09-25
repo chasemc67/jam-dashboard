@@ -411,6 +411,54 @@ test('desktop chat offers key settings and a replace action for key errors', () 
   expect(onManageKey).toHaveBeenCalledTimes(2);
 });
 
+test('places MCP connection beside the gateway key', () => {
+  const onOpenConnection = jest.fn();
+  const onManageKey = jest.fn();
+  render(
+    <AgentChatPanel
+      titleId="title"
+      descriptionId="description"
+      messages={[]}
+      status="ready"
+      input=""
+      onInputChange={jest.fn()}
+      onSubmit={jest.fn()}
+      onClose={jest.fn()}
+      onManageKey={onManageKey}
+      onOpenConnection={onOpenConnection}
+    />,
+  );
+  const mcp = screen.getByRole('button', { name: 'MCP connection' });
+  const key = screen.getByRole('button', { name: 'AI Gateway key' });
+  expect(
+    mcp.compareDocumentPosition(key) & Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy();
+  fireEvent.click(mcp);
+  expect(onOpenConnection).toHaveBeenCalledTimes(1);
+});
+
+test('shows MCP connection without gateway key settings', () => {
+  const onOpenConnection = jest.fn();
+  render(
+    <AgentChatPanel
+      titleId="title"
+      descriptionId="description"
+      messages={[]}
+      status="ready"
+      input=""
+      onInputChange={jest.fn()}
+      onSubmit={jest.fn()}
+      onClose={jest.fn()}
+      onOpenConnection={onOpenConnection}
+    />,
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'MCP connection' }));
+  expect(onOpenConnection).toHaveBeenCalledTimes(1);
+  expect(
+    screen.queryByRole('button', { name: 'AI Gateway key' }),
+  ).not.toBeInTheDocument();
+});
+
 test('web chat has no key settings', () => {
   render(
     <AgentChatPanel
@@ -426,6 +474,9 @@ test('web chat has no key settings', () => {
   );
   expect(
     screen.queryByRole('button', { name: 'AI Gateway key' }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole('button', { name: 'MCP connection' }),
   ).not.toBeInTheDocument();
   expect(screen.getByText('npm run agent:dev')).toBeInTheDocument();
 });

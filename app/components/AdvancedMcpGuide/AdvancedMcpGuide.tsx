@@ -60,7 +60,8 @@ export default function AdvancedMcpGuide() {
           <AccordionContent className="space-y-3 text-muted-foreground">
             <p>
               Desktop and local Chrome use Streamable HTTP at the MCP address in
-              AI connection. Authentication is an HTTP header:
+              Agent chat’s MCP connection panel. Authentication is an HTTP
+              header:
             </p>
             <pre className="whitespace-pre-wrap break-words rounded-md bg-muted/60 p-3 font-mono text-xs text-foreground">
               Authorization: Bearer YOUR_TOKEN

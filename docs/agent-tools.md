@@ -8,7 +8,7 @@ V1 exposes music queries and the live fretboard through authenticated, local MCP
 
 **Chrome:** run `npm ci`, then `npm run agent:dev`, and open `http://127.0.0.1:5173` in Chrome. This one command starts the web app and the same MCP service. The endpoint is `http://127.0.0.1:4178/mcp`. Optional `JAM_WEB_PORT` and `JAM_MCP_PORT` environment variables change the web-mode ports. Use the address printed by the command, including `127.0.0.1`.
 
-Open **AI connection** below the fretboard for the endpoint, bearer token and Cursor configuration. Tokens persist across restarts. **Disconnect this view** removes the fretboard view from agent control; pure music queries and desktop song analysis remain available while the service is running. Quit the desktop app or stop `agent:dev` to stop its service.
+Open Agent chat and choose **MCP connection** (beside the AI Gateway key button on desktop) for the endpoint, bearer token and Cursor configuration. Tokens persist across restarts. **Disconnect this view** removes the fretboard view from agent control; pure music queries and desktop song analysis remain available while the service is running. Quit the desktop app or stop `agent:dev` to stop its service.
 
 The round **AI** button in the bottom-left opens an anchored guide. **Guide** offers example requests; **Advanced** lists every exposed tool with its exact agent-facing description, input/output JSON schemas, and annotations from the shared registry. Expand **Agent prompt & instructions** to inspect the server's prompt configuration. This version provides tool descriptions but no server-wide instructions or MCP prompt templates.
 
@@ -36,7 +36,7 @@ bearer_token_env_var = "JAM_DASHBOARD_MCP_TOKEN"
 
 A GUI agent must inherit that environment variable when it starts; an export in an unrelated terminal will not update an already running GUI process. If environment setup is inconvenient, Codex also supports `http_headers = { Authorization = "Bearer YOUR_TOKEN" }` instead of `bearer_token_env_var` in its private configuration. Keep tokens out of committed project files. See [Codex MCP configuration](https://developers.openai.com/codex/mcp).
 
-For Cursor, **Copy Cursor MCP config** provides the following format for its MCP settings. Use `4178` and the web panel's token when targeting Chrome. See [Cursor MCP configuration](https://cursor.com/docs/mcp).
+For Cursor, **Copy Cursor MCP config** provides the following format for its MCP settings. Use `4178` and the web MCP connection panel’s token when targeting Chrome. See [Cursor MCP configuration](https://cursor.com/docs/mcp).
 
 ```json
 {
@@ -170,7 +170,7 @@ The MCP integration tests use real loopback sockets and the official client in b
 
 The repository-wide lint command still reports four pre-existing errors in `Sidebar.tsx`, `ui/command.tsx`, `pitchDetection.test.ts` and `stories/Button.tsx`; the agent implementation introduces no lint errors. The existing Storybook type errors were fixed so the full TypeScript check passes.
 
-- **No connected session:** open the dashboard, expand AI connection and connect this view. Theory tools still work without it.
+- **No connected session:** open the dashboard, open Agent chat, choose MCP connection, and connect this view. Theory tools still work without it.
 - **Port in use:** close the other service before opening desktop; for web choose `JAM_MCP_PORT=...` / `JAM_WEB_PORT=...`. Services never silently attach to a different app.
 - **401 Unauthorized:** the header must be `Authorization: Bearer YOUR_TOKEN`, including the `Bearer ` prefix and space. Use the token belonging to the endpoint you configured; desktop and web tokens are different. After correcting saved credentials, reload the MCP connection or restart your agent.
 - **Web connection rejected:** use the exact `127.0.0.1` web address printed by `agent:dev`; restart and reconnect after changing a token.

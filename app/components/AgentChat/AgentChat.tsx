@@ -8,6 +8,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '~/components/ui/popover';
+import AgentConnection, {
+  useAgentConnectionModel,
+} from '~/components/AgentConnection';
 import GatewayKeySetup from '~/components/GatewayKeySetup';
 import { chatErrorMessage, JEV_MESSAGE_METADATA } from '~/agent/chat-ui';
 import {
@@ -29,12 +32,15 @@ export default function AgentChat({
   const [open, setOpen] = useState(defaultOpen);
   const [input, setInput] = useState('');
   const [managingKey, setManagingKey] = useState(false);
+  const [connectionOpen, setConnectionOpen] = useState(false);
+  const connection = useAgentConnectionModel();
   const gatewayKey = useGatewayKey();
   const needsKey =
     gatewayKey.required &&
     gatewayKey.status !== null &&
     !gatewayKey.status.configured;
   const showKeySetup = needsKey || managingKey;
+  const showConnection = Boolean(connectionOpen && connection);
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
@@ -53,7 +59,7 @@ export default function AgentChat({
   const [jevSendsDone, setJevSendsDone] = useState(0);
   const jevSendingRef = useRef(false);
   const voice = useAgentChatVoice({
-    enabled: chatReady && !showKeySetup,
+    enabled: chatReady && !showKeySetup && !showConnection,
     draft: input,
     onDraftChange: setInput,
     onJevSubmit: text => setJevQueue(queue => [...queue, text]),
@@ -113,7 +119,15 @@ export default function AgentChat({
           onFocusOutside={event => event.preventDefault()}
           className="flex h-[min(28rem,var(--radix-popover-content-available-height))] max-h-[min(38rem,var(--radix-popover-content-available-height))] w-[min(25rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl p-0 shadow-xl [@media(max-height:500px)]:block [@media(max-height:500px)]:h-auto [@media(max-height:500px)]:overflow-y-auto"
         >
-          {showKeySetup ? (
+          {showConnection && connection ? (
+            <AgentConnection
+              model={connection}
+              titleId={titleId}
+              descriptionId={descriptionId}
+              onBack={() => setConnectionOpen(false)}
+              onClose={() => setOpen(false)}
+            />
+          ) : showKeySetup ? (
             <GatewayKeySetup
               titleId={titleId}
               descriptionId={descriptionId}
@@ -131,6 +145,9 @@ export default function AgentChat({
               }}
               onClear={gatewayKey.clear}
               onBack={needsKey ? undefined : () => setManagingKey(false)}
+              onOpenConnection={
+                connection ? () => setConnectionOpen(true) : undefined
+              }
               onClose={() => setOpen(false)}
             />
           ) : (
@@ -164,6 +181,9 @@ export default function AgentChat({
               onClose={() => setOpen(false)}
               onManageKey={
                 gatewayKey.required ? () => setManagingKey(true) : undefined
+              }
+              onOpenConnection={
+                connection ? () => setConnectionOpen(true) : undefined
               }
               voice={voice}
             />
