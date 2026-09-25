@@ -74,12 +74,25 @@ export function splitTranscriptWords(text: string) {
   return text.split(/\s+/).filter(Boolean);
 }
 
+function normalizeWord(word: string) {
+  return word.toLowerCase().replace(/[^\p{L}\p{N}']/gu, '');
+}
+
 /** Case and punctuation differences between interim and final don't count as revisions. */
 function contentKey(words: readonly string[]) {
-  return words
-    .map(word => word.toLowerCase().replace(/[^\p{L}\p{N}']/gu, ''))
-    .filter(Boolean)
-    .join(' ');
+  return words.map(normalizeWord).filter(Boolean).join(' ');
+}
+
+function unchangedPrefix(before: readonly string[], after: readonly string[]) {
+  let index = 0;
+  while (
+    index < before.length &&
+    index < after.length &&
+    normalizeWord(before[index]) === normalizeWord(after[index])
+  ) {
+    index += 1;
+  }
+  return index;
 }
 
 export class JevSpeechFilter {
@@ -147,6 +160,14 @@ export class JevSpeechFilter {
       region.final = region.final || segment.final;
       const key = contentKey(words);
       if (key !== region.key) {
+        // Batch re-transcription can rewrite the whole segment, not just its
+        // tail (Jevis's streaming assumption), so boundaries only survive
+        // while the words before them are unchanged.
+        const kept = unchangedPrefix(region.words, words);
+        if (region.excludedBefore > kept) region.excludedBefore = 0;
+        if (region.startIndex !== null && region.startIndex > kept) {
+          region.startIndex = null;
+        }
         region.words = words;
         region.key = key;
         region.seq = this.nextSeq++;
@@ -154,10 +175,6 @@ export class JevSpeechFilter {
         region.gate = { kind: 'unclear' };
         region.appliedSeq = -1;
         region.error = null;
-        region.excludedBefore = Math.min(region.excludedBefore, words.length);
-        if (region.startIndex !== null && region.startIndex >= words.length) {
-          region.startIndex = null;
-        }
         this.request(region);
       } else {
         // Same content: keep the decision, adopt final punctuation/casing.

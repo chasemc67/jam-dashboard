@@ -142,6 +142,28 @@ test('trims an ambient prefix and submits only the directed suffix', async () =>
   });
 });
 
+test('an interim rewritten from scratch drops the stale ambient exclusion', async () => {
+  const { filter, submitted, calls } = setup();
+  filter.update([seg(0, "You've got tofloat your", false, 0)]);
+  await jest.advanceTimersByTimeAsync(300);
+  filter.update([seg(0, 'Show B major on the fretboard.', true, 0)]);
+  await jest.advanceTimersByTimeAsync(300);
+  expect(calls[1].candidates[0].startIndex).toBe(0);
+  expect(submitted).toEqual(['Show B major on the fretboard.']);
+});
+
+test('ambient words stay excluded while the transcript only grows', async () => {
+  const { filter, submitted, calls } = setup();
+  filter.update([seg(0, 'We already ate dinner.', false, 0)]);
+  await jest.advanceTimersByTimeAsync(300);
+  filter.update([
+    seg(0, 'We already ate dinner. Could you summarize my notes?', true, 0),
+  ]);
+  await jest.advanceTimersByTimeAsync(300);
+  expect(calls[1].candidates[0].startIndex).toBe(4);
+  expect(submitted).toEqual(['Could you summarize my notes?']);
+});
+
 test('a revision revokes a directed decision until re-evaluated', async () => {
   const { filter, submitted, calls } = setup();
   filter.update([seg(0, 'Show B major on the fretboard', false)]);
