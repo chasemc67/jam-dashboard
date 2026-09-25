@@ -5,6 +5,9 @@ import type { Experimental_EvaluationQuestion } from 'ai';
  * from the Jevis harness (github.com/chasemc67/Jevis): sliding-window suffix
  * candidates, a Choice + Boolean question pair per candidate, a confidence gate
  * and fail-closed parsing. Shared by the browser filter and `/api/agent-jev`.
+ *
+ * Read `skills/typesafe-ai/SKILL.md` before changing questions or Gateway
+ * wiring. Jev is only reached through AI Gateway, never the TypeSafe API.
  */
 export const JEV_MODEL = 'typesafe-ai/jev';
 /** Candidate suffix lengths evaluated per update (Jevis `K`). */

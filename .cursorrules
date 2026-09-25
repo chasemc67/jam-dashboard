@@ -50,3 +50,5 @@ When adding new React components, we give each their own folder, with a story an
 ├── ReactComponentName.tsx
 ├── ReactComponentName.stories.tsx
 └── index.tsx
+
+Agent Chat's Jev voice mode classifies directed speech with TypeSafe Jev through Vercel AI Gateway (`typesafe-ai/jev`). Before changing Jev prompts, question shapes, or Gateway wiring (`app/agent/jev*.ts`), read the vendored skill at `skills/typesafe-ai/SKILL.md` and `skills/README.md`. Never call the TypeSafe API directly.
