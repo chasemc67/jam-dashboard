@@ -136,6 +136,10 @@ runs:
         APPLE_ID: ${{ !steps.signing.outputs.api-key-path && inputs.apple-id || '' }}
         APPLE_APP_SPECIFIC_PASSWORD: ${{ !steps.signing.outputs.api-key-path && inputs.apple-app-specific-password || '' }}
         APPLE_TEAM_ID: ${{ !steps.signing.outputs.api-key-path && inputs.apple-team-id || '' }}
+        # desktop/notarize.cjs polls Apple with its own deadline instead of an
+        # unbounded `notarytool --wait`; DEBUG also prints raw notarytool JSON.
+        JAM_NOTARIZE_TIMEOUT_MINUTES: 20
+        DEBUG: ${{ steps.signing.outputs.signed == 'true' && 'electron-notarize*' || '' }}
       run: npm run desktop:package -- --arm64
 
     - name: Verify update feed and signatures

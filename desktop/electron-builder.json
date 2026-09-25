@@ -31,10 +31,12 @@
     "hardenedRuntime": true,
     "entitlements": "desktop/entitlements.mac.plist",
     "entitlementsInherit": "desktop/entitlements.mac.plist",
+    "notarize": false,
     "extendInfo": {
       "NSMicrophoneUsageDescription": "Jam Dashboard listens to your instrument to detect notes."
     }
   },
+  "afterSign": "./desktop/notarize.cjs",
   "artifactName": "Jam-Dashboard-${version}-${arch}.${ext}",
   "publish": [
     {
