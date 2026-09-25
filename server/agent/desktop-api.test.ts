@@ -50,6 +50,10 @@ function setup(
       });
       return new Response('transcribe');
     },
+    jev: async (_request, deps) => {
+      calls.push({ route: 'jev', env: deps!.env!, gateway: deps!.gateway });
+      return new Response('jev');
+    },
     createProvider: apiKey => {
       providers.push(apiKey);
       return { provider: apiKey } as never;
@@ -86,6 +90,17 @@ test('routes chat and voice with the per-request key and local MCP', async () =>
     gateway: { provider: key },
   });
   assert.equal(calls[1].route, 'transcribe');
+});
+
+test('routes Jev classification with the Keychain key, not process env', async () => {
+  const { handle, calls, providers } = setup();
+  assert.equal(await (await handle(post('/api/agent-jev'))).text(), 'jev');
+  assert.deepEqual(providers, [key]);
+  assert.equal(calls[0].route, 'jev');
+  assert.equal(calls[0].env.AI_GATEWAY_API_KEY, key);
+  assert.deepEqual(calls[0].gateway, { provider: key });
+  const missing = setup({ getGatewayKey: async () => null });
+  assert.equal((await missing.handle(post('/api/agent-jev'))).status, 401);
 });
 
 test('rejects unknown routes, other methods, and requests without the app header', async () => {

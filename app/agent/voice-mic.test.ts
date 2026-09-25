@@ -1,10 +1,15 @@
+import { JEV_FAILED_MESSAGE } from './jev';
 import {
   AGENT_CHAT_VOICE_DEVICE_STORAGE_KEY,
+  AGENT_CHAT_VOICE_MODE_STORAGE_KEY,
+  evaluateJevCandidates,
   loadVoiceDeviceId,
+  loadVoiceMode,
   mapVoiceMicError,
   pickRecorderMimeType,
   rmsLevel,
   saveVoiceDeviceId,
+  saveVoiceMode,
   transcribeVoiceRecording,
   voiceAudioFilename,
   voiceStreamConstraints,
@@ -94,6 +99,69 @@ test('transcribeVoiceRecording posts audio and returns text', async () => {
     );
     const body = fetchMock.mock.calls[0][1].body as FormData;
     expect(body.get('audio')).toBeInstanceOf(Blob);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('voice mode defaults to dictation and persists separately', () => {
+  localStorage.clear();
+  expect(loadVoiceMode()).toBe('dictation');
+  saveVoiceMode('jev');
+  expect(localStorage.getItem(AGENT_CHAT_VOICE_MODE_STORAGE_KEY)).toBe('jev');
+  expect(loadVoiceMode()).toBe('jev');
+  localStorage.setItem(AGENT_CHAT_VOICE_MODE_STORAGE_KEY, 'bogus');
+  expect(loadVoiceMode()).toBe('dictation');
+});
+
+test('evaluateJevCandidates posts candidates and fails closed on errors', async () => {
+  const originalFetch = global.fetch;
+  const body = {
+    context: 'Show B major',
+    candidates: [{ startIndex: 0, text: 'Show B major' }],
+  };
+  const decisions = [
+    {
+      startIndex: 0,
+      addressing: 'directed',
+      directedProbability: 0.9,
+      ambientProbability: 0.05,
+      isDirectedProbability: 0.9,
+    },
+  ];
+  const fetchMock = jest
+    .fn()
+    .mockResolvedValueOnce({
+      ok: true,
+      text: async () => JSON.stringify({ decisions }),
+    })
+    .mockResolvedValueOnce({
+      ok: false,
+      text: async () => JSON.stringify({ error: 'Nope' }),
+    })
+    .mockRejectedValueOnce(new TypeError('Failed to fetch'));
+  global.fetch = fetchMock as unknown as typeof fetch;
+  try {
+    const signal = new AbortController().signal;
+    await expect(evaluateJevCandidates(body, signal)).resolves.toEqual({
+      decisions,
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/agent-jev',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: expect.objectContaining({ 'X-Jam-Agent-Request': '1' }),
+      }),
+    );
+    await expect(evaluateJevCandidates(body, signal)).resolves.toEqual({
+      decisions: [],
+      error: 'Nope',
+    });
+    await expect(evaluateJevCandidates(body, signal)).resolves.toEqual({
+      decisions: [],
+      error: JEV_FAILED_MESSAGE,
+    });
   } finally {
     global.fetch = originalFetch;
   }

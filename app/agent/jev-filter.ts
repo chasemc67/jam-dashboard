@@ -133,7 +133,10 @@ export class JevSpeechFilter {
       let region = this.regions.get(segment.index);
       if (!region) {
         if (!words.length && !segment.final) continue;
-        region = this.createRegion(segment.index);
+        region = this.createRegion(
+          segment.index,
+          segment.lastSpeechAt ?? this.clock.now(),
+        );
       }
       if (segment.lastSpeechAt !== undefined) {
         region.lastSpeechAt = Math.max(
@@ -197,13 +200,13 @@ export class JevSpeechFilter {
     this.resolveIdle();
   }
 
-  private createRegion(segment: number): Region {
+  private createRegion(segment: number, lastSpeechAt: number): Region {
     const region: Region = {
       segment,
       words: [],
       key: '',
       final: false,
-      lastSpeechAt: this.clock.now(),
+      lastSpeechAt,
       seq: 0,
       startIndex: null,
       excludedBefore: 0,
