@@ -224,6 +224,14 @@ shipping a half-signed app. After signed releases work, set the repository (or
 environment) **variable** `DESKTOP_REQUIRE_SIGNING=true` so a missing secret
 fails CI rather than publishing an unsigned update.
 
+Notarization runs in `desktop/notarize.cjs` (an electron-builder `afterSign`
+hook) instead of electron-builder's built-in `notarytool submit --wait`, which
+has hung in CI after Apple accepted the submission. The hook logs the submission
+ID, polls `notarytool info` every 30 seconds, and fails the build on `Invalid`,
+`Rejected`, or after `JAM_NOTARIZE_TIMEOUT_MINUTES` (default 20), printing
+Apple's log. If a build times out, check the logged ID with
+`xcrun notarytool info <id>`.
+
 For a signed local build, export the same variables (`APPLE_API_KEY` is the
 `.p8` file path locally) and run `npm run desktop:package`. Check a result with
 `node desktop/verify-release.mjs --version <version> --signed true`. No signing
