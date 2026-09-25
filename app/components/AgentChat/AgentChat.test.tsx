@@ -1,4 +1,7 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
+import { JEV_MESSAGE_METADATA } from '~/agent/chat-ui';
+import type { JevSegmentOutcome } from '~/agent/jev-filter';
+import { buildJevTranscriptLines } from '~/agent/jev-transcript';
 import type { AgentChatVoice } from '~/hooks/useAgentChatVoice';
 import AgentChatPanel from './AgentChatPanel';
 
@@ -15,6 +18,10 @@ const idleVoice = (
   hasPermission: true,
   level: 0,
   supported: true,
+  mode: 'dictation',
+  onModeChange: jest.fn(),
+  jevTranscript: [],
+  jevEvaluating: false,
   onSelectDevice: jest.fn(),
   onStart: jest.fn(),
   onStop: jest.fn(async () => 'draft'),
@@ -222,6 +229,153 @@ test('shows voice permission and STT errors', () => {
     />,
   );
   expect(screen.getByRole('alert')).toHaveTextContent('permission denied');
+});
+
+describe('Jev mode', () => {
+  const lines = buildJevTranscriptLines(
+    [
+      { index: 0, text: 'The TV is still playing.', final: true },
+      {
+        index: 1,
+        text: 'We ate already. Show B major on the fretboard.',
+        final: true,
+      },
+      { index: 2, text: 'Highlight the major third.', final: true },
+    ],
+    new Map<number, JevSegmentOutcome>([
+      [0, { status: 'held', reason: 'ambient' }],
+      [
+        1,
+        {
+          status: 'sent',
+          startWord: 3,
+          text: 'Show B major on the fretboard.',
+          at: 0,
+        },
+      ],
+      [2, { status: 'held', reason: 'unclear' }],
+    ]),
+    { live: true },
+  );
+
+  function renderPanel(
+    voice: AgentChatVoice,
+    props: Partial<Parameters<typeof AgentChatPanel>[0]> = {},
+  ) {
+    const onInputChange = jest.fn();
+    const onSubmit = jest.fn();
+    render(
+      <AgentChatPanel
+        titleId="title"
+        descriptionId="description"
+        messages={[]}
+        status="ready"
+        input=""
+        onInputChange={onInputChange}
+        onSubmit={onSubmit}
+        onClose={jest.fn()}
+        voice={voice}
+        {...props}
+      />,
+    );
+    return { onInputChange, onSubmit };
+  }
+
+  test('the mode switcher picks dictation or Jev', () => {
+    const voice = idleVoice();
+    renderPanel(voice);
+    const group = screen.getByRole('radiogroup', { name: 'Voice mode' });
+    expect(group).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Dictation' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    fireEvent.click(screen.getByRole('radio', { name: 'Jev' }));
+    expect(voice.onModeChange).toHaveBeenCalledWith('jev');
+  });
+
+  test('while listening, typing still works and Send only sends typed text', () => {
+    const voice = idleVoice({ mode: 'jev', status: 'recording', level: 0.5 });
+    const { onSubmit } = renderPanel(voice, { input: '' });
+    const textbox = screen.getByRole('textbox', { name: 'Message' });
+    expect(textbox).not.toHaveAttribute('readonly');
+    expect(screen.getByRole('button', { name: 'Send' })).toBeDisabled();
+    expect(screen.getByRole('status', { name: 'Listening' })).toHaveTextContent(
+      'Jev is listening for requests',
+    );
+    fireEvent.submit(textbox.closest('form')!);
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  test('the mic can be stopped while the agent is answering', () => {
+    const voice = idleVoice({ mode: 'jev', status: 'recording' });
+    renderPanel(voice, { status: 'streaming' });
+    const stop = screen.getByRole('button', { name: 'Stop voice input' });
+    expect(stop).toBeEnabled();
+    fireEvent.click(stop);
+    expect(voice.onStop).toHaveBeenCalledTimes(1);
+  });
+
+  test('the full transcript highlights sent spans and helps recover misses', () => {
+    const voice = idleVoice({
+      mode: 'jev',
+      status: 'recording',
+      jevTranscript: lines,
+    });
+    const { onInputChange } = renderPanel(voice, { input: 'Also' });
+    fireEvent.click(screen.getByRole('button', { name: 'Transcript' }));
+
+    const transcript = screen.getByRole('list', { name: 'Transcribed speech' });
+    const items = within(transcript).getAllByRole('listitem');
+    expect(items).toHaveLength(3);
+    const marks = transcript.querySelectorAll('mark');
+    expect([...marks].map(mark => mark.textContent)).toEqual([
+      'Show B major on the fretboard.',
+    ]);
+    expect(items[1]).toHaveTextContent('We ate already.');
+    expect(items[1]).toHaveTextContent('Sent to chat');
+    expect(items[2]).toHaveTextContent('Unsure, not sent');
+    expect(screen.getByText('1 sent · 2 not sent')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('region', { name: 'Chat messages' }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Add “Highlight the major third.” to message',
+      }),
+    );
+    expect(onInputChange).toHaveBeenCalledWith(
+      'Also Highlight the major third.',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Chat' }));
+    expect(screen.getByLabelText('Chat messages')).toBeInTheDocument();
+  });
+
+  test('the transcript stays available after the session from the header', () => {
+    renderPanel(idleVoice({ mode: 'jev', jevTranscript: lines }));
+    fireEvent.click(screen.getByRole('button', { name: 'Full transcript' }));
+    expect(
+      screen.getByRole('list', { name: 'Transcribed speech' }),
+    ).toBeInTheDocument();
+  });
+
+  test('auto-sent messages are labelled', () => {
+    renderPanel(idleVoice({ mode: 'jev' }), {
+      messages: [
+        {
+          id: 'u1',
+          role: 'user',
+          metadata: JEV_MESSAGE_METADATA,
+          parts: [{ type: 'text', text: 'Show B major on the fretboard.' }],
+        },
+        { id: 'u2', role: 'user', parts: [{ type: 'text', text: 'Typed' }] },
+      ],
+    });
+    expect(screen.getByText('You · via Jev')).toBeInTheDocument();
+    expect(screen.getByText('You')).toBeInTheDocument();
+  });
 });
 
 test('desktop chat offers key settings and a replace action for key errors', () => {

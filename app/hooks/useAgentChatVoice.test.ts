@@ -1,4 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
+import type { JevEvaluator } from '~/agent/jev';
+import { GATEWAY_UNAVAILABLE_MESSAGE } from '~/agent/voice-config';
 import { transcribeVoiceRecording } from '~/agent/voice-mic';
 import { useAgentChatVoice } from './useAgentChatVoice';
 
@@ -179,6 +181,108 @@ test('silence only reports no speech and leaves the draft alone', async () => {
   expect(latest()).toBe('Draft');
   expect(hook.result.current.status).toBe('error');
   expect(hook.result.current.error).toBe('No speech detected. Try again.');
+});
+
+describe('Jev mode', () => {
+  const jevDecisions: JevEvaluator = async body => ({
+    decisions: body.candidates.map(({ startIndex, text }) => {
+      const directed = /fretboard/i.test(text) && !/TV/.test(text);
+      return {
+        startIndex,
+        addressing: directed ? 'directed' : 'ambient',
+        directedProbability: directed ? 0.92 : 0.04,
+        ambientProbability: directed ? 0.04 : 0.92,
+        isDirectedProbability: directed ? 0.9 : 0.05,
+      };
+    }),
+  });
+
+  function setupJev(evaluateJev: JevEvaluator = jevDecisions) {
+    const drafts: string[] = [];
+    const sent: string[] = [];
+    const hook = renderHook(() =>
+      useAgentChatVoice({
+        draft: 'typed draft',
+        onDraftChange: next => drafts.push(next),
+        onJevSubmit: text => sent.push(text),
+        evaluateJev,
+      }),
+    );
+    act(() => hook.result.current.onModeChange('jev'));
+    expect(hook.result.current.mode).toBe('jev');
+    return { hook, drafts, sent };
+  }
+
+  let spoken = '';
+  beforeEach(() => {
+    localStorage.clear();
+    transcribe.mockImplementation(async () => spoken);
+  });
+
+  async function say(text: string, speakMs = 3200, pauseMs = 1000) {
+    spoken = text;
+    micLevel = 0.2;
+    await advance(speakMs);
+    micLevel = 0;
+    await advance(pauseMs);
+  }
+
+  test('auto-sends only directed speech and leaves the composer alone', async () => {
+    const { hook, drafts, sent } = setupJev();
+    await startListening(hook);
+
+    await say('The TV is still playing in the other room.');
+    await say('Show B major on the fretboard.', 3200, 2500);
+    expect(sent).toEqual(['Show B major on the fretboard.']);
+    expect(hook.result.current.status).toBe('recording');
+
+    await say('Now highlight the fretboard thirds.', 3200, 2500);
+    expect(sent).toEqual([
+      'Show B major on the fretboard.',
+      'Now highlight the fretboard thirds.',
+    ]);
+
+    await stopListening(hook);
+    expect(hook.result.current.status).toBe('idle');
+    expect(drafts).toEqual([]);
+    const lines = hook.result.current.jevTranscript;
+    expect(lines.map(line => [line.text, line.status])).toEqual([
+      ['The TV is still playing in the other room.', 'ambient'],
+      ['Show B major on the fretboard.', 'sent'],
+      ['Now highlight the fretboard thirds.', 'sent'],
+    ]);
+  });
+
+  test('stopping flushes a last directed request without waiting', async () => {
+    const { hook, sent } = setupJev();
+    await startListening(hook);
+    spoken = 'Show B major on the fretboard.';
+    micLevel = 0.2;
+    await advance(1600);
+    await stopListening(hook);
+    expect(sent).toEqual(['Show B major on the fretboard.']);
+  });
+
+  test('credential errors stop the hot mic', async () => {
+    const { hook, sent } = setupJev();
+    transcribe.mockRejectedValue(new Error(GATEWAY_UNAVAILABLE_MESSAGE));
+    await startListening(hook);
+    await say('Show B major on the fretboard.');
+    expect(hook.result.current.status).toBe('error');
+    expect(hook.result.current.error).toBe(GATEWAY_UNAVAILABLE_MESSAGE);
+    expect(sent).toEqual([]);
+  });
+
+  test('mode is remembered and locked while listening', async () => {
+    const { hook } = setupJev();
+    expect(localStorage.getItem('jam-agent-chat-voice-mode')).toBe('jev');
+    await startListening(hook);
+    act(() => hook.result.current.onModeChange('dictation'));
+    expect(hook.result.current.mode).toBe('jev');
+    act(() => hook.result.current.onCancel());
+    act(() => hook.result.current.onModeChange('dictation'));
+    expect(hook.result.current.mode).toBe('dictation');
+  });
 });
 
 test('cancel restores the draft from before dictation', async () => {

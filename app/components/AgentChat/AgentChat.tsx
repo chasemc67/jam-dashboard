@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { MessageCircle } from 'lucide-react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
@@ -9,7 +9,7 @@ import {
   PopoverTrigger,
 } from '~/components/ui/popover';
 import GatewayKeySetup from '~/components/GatewayKeySetup';
-import { chatErrorMessage } from '~/agent/chat-ui';
+import { chatErrorMessage, JEV_MESSAGE_METADATA } from '~/agent/chat-ui';
 import {
   DESKTOP_AGENT_REQUEST_HEADER,
   GATEWAY_KEY_REJECTED_MESSAGE,
@@ -47,17 +47,34 @@ export default function AgentChat({
     transport,
   });
   const chatReady = status === 'ready' || status === 'error';
+  // Jev can hear a request while the agent is still answering; queue it and
+  // send each one as a normal user message once chat is ready again.
+  const [jevQueue, setJevQueue] = useState<string[]>([]);
+  const [jevSendsDone, setJevSendsDone] = useState(0);
+  const jevSendingRef = useRef(false);
   const voice = useAgentChatVoice({
     enabled: chatReady && !showKeySetup,
     draft: input,
     onDraftChange: setInput,
+    onJevSubmit: text => setJevQueue(queue => [...queue, text]),
   });
+  useEffect(() => {
+    if (jevSendingRef.current || !chatReady || jevQueue.length === 0) return;
+    const [text, ...rest] = jevQueue;
+    jevSendingRef.current = true;
+    setJevQueue(rest);
+    void sendMessage({ text, metadata: JEV_MESSAGE_METADATA }).finally(() => {
+      jevSendingRef.current = false;
+      setJevSendsDone(count => count + 1);
+    });
+  }, [chatReady, jevQueue, jevSendsDone, sendMessage]);
   const sendDraft = (draft: string) => {
     const text = draft.trim();
     if (!text || !chatReady) return;
     void sendMessage({ text });
     setInput('');
   };
+  const listening = voice.status === 'recording';
   const chatError = error ? chatErrorMessage(error) : null;
   const keyError = [chatError, voice.error].find(isGatewayKeyError) ?? null;
   const { refresh: refreshKey } = gatewayKey;
@@ -72,11 +89,17 @@ export default function AgentChat({
         <PopoverTrigger asChild>
           <Button
             size="icon"
-            className="h-11 w-11 rounded-full shadow-lg"
-            aria-label="Agent chat"
-            title="Agent chat"
+            className="relative h-11 w-11 rounded-full shadow-lg"
+            aria-label={listening ? 'Agent chat (mic on)' : 'Agent chat'}
+            title={listening ? 'Agent chat — mic is on' : 'Agent chat'}
           >
             <MessageCircle className="h-5 w-5" aria-hidden="true" />
+            {listening && (
+              <span
+                aria-hidden="true"
+                className="absolute right-0.5 top-0.5 h-3 w-3 animate-pulse rounded-full border-2 border-background bg-destructive"
+              />
+            )}
           </Button>
         </PopoverTrigger>
         <PopoverContent
@@ -126,8 +149,9 @@ export default function AgentChat({
               onInputChange={setInput}
               onSubmit={() => {
                 if (
-                  voice.status === 'recording' ||
-                  voice.status === 'transcribing'
+                  voice.mode === 'dictation' &&
+                  (voice.status === 'recording' ||
+                    voice.status === 'transcribing')
                 ) {
                   // Explicit Send while dictating: finish the transcript first.
                   void voice.onStop().then(draft => {

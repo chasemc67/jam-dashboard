@@ -1,6 +1,7 @@
 import { createGateway } from 'ai';
 import { handleAgentChatRequest } from '../../app/agent/chat.server';
 import { handleAgentTranscribeRequest } from '../../app/agent/voice.server';
+import { handleAgentJevRequest } from '../../app/agent/jev.server';
 import { MCP_UNAVAILABLE_MESSAGE } from '../../app/agent/chat-config';
 import {
   DESKTOP_AGENT_REQUEST_HEADER,
@@ -11,6 +12,7 @@ import type { ConnectionInfo } from '../../shared/agent/contract';
 const ROUTES = {
   '/api/agent-chat': 'chat',
   '/api/agent-transcribe': 'transcribe',
+  '/api/agent-jev': 'jev',
 } as const;
 
 type Env = Record<string, string | undefined>;
@@ -47,6 +49,7 @@ export function createDesktopAgentApi({
   env = process.env,
   chat = handleAgentChatRequest,
   transcribe = handleAgentTranscribeRequest,
+  jev = handleAgentJevRequest,
   createProvider = apiKey => createGateway({ apiKey }),
 }: {
   getGatewayKey: () => Promise<string | null>;
@@ -54,6 +57,7 @@ export function createDesktopAgentApi({
   env?: Env;
   chat?: typeof handleAgentChatRequest;
   transcribe?: typeof handleAgentTranscribeRequest;
+  jev?: typeof handleAgentJevRequest;
   createProvider?: (apiKey: string) => Gateway;
 }) {
   return async function handle(request: Request): Promise<Response> {
@@ -84,8 +88,8 @@ export function createDesktopAgentApi({
       JAM_AGENT_TRANSCRIBE_MODEL: env.JAM_AGENT_TRANSCRIBE_MODEL,
     };
     const gateway = createProvider(key);
-    return route === 'chat'
-      ? chat(request, { env: requestEnv, gateway })
-      : transcribe(request, { env: requestEnv, gateway });
+    if (route === 'chat') return chat(request, { env: requestEnv, gateway });
+    if (route === 'jev') return jev(request, { env: requestEnv, gateway });
+    return transcribe(request, { env: requestEnv, gateway });
   };
 }

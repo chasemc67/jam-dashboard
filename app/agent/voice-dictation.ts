@@ -83,15 +83,20 @@ export class DictationTranscript {
     return this.interims.get(segment)?.text ?? '';
   }
 
-  text() {
-    const segments = new Set([...this.finals.keys(), ...this.interims.keys()]);
-    return [...segments]
+  segments() {
+    const indices = new Set([...this.finals.keys(), ...this.interims.keys()]);
+    return [...indices]
       .sort((a, b) => a - b)
-      .map(segment =>
-        this.finals.has(segment)
-          ? this.finals.get(segment)!
-          : this.interimText(segment),
-      )
+      .map(index => ({
+        index,
+        text: this.finals.get(index) ?? this.interimText(index),
+        final: this.finals.has(index),
+      }));
+  }
+
+  text() {
+    return this.segments()
+      .map(segment => segment.text)
       .filter(Boolean)
       .join(' ');
   }

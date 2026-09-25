@@ -1,6 +1,15 @@
 import { checkMicPermission, listInputDevices } from '~/utils/audioInput';
 import { DESKTOP_AGENT_REQUEST_HEADER } from './gateway-key';
 import {
+  JEV_FAILED_MESSAGE,
+  JEV_TIMEOUT_MESSAGE,
+  JEV_TIMEOUT_MS,
+  readJevResponse,
+  type JevEvaluator,
+} from './jev';
+
+const JEV_CLIENT_TIMEOUT_MS = JEV_TIMEOUT_MS + 2000;
+import {
   EMPTY_TRANSCRIPT_MESSAGE,
   readTranscribeResult,
   TRANSCRIBE_FAILED_MESSAGE,
@@ -19,6 +28,13 @@ import {
  */
 export const AGENT_CHAT_VOICE_DEVICE_STORAGE_KEY =
   'jam-agent-chat-voice-device-id';
+export const AGENT_CHAT_VOICE_MODE_STORAGE_KEY = 'jam-agent-chat-voice-mode';
+
+/**
+ * `dictation` fills the composer and waits for Send; `jev` keeps the mic on and
+ * auto-sends only the speech Jev classifies as directed at the assistant.
+ */
+export type VoiceMode = 'dictation' | 'jev';
 
 const RECORDER_MIME_CANDIDATES = [
   'audio/webm;codecs=opus',
@@ -60,6 +76,26 @@ export function saveVoiceDeviceId(deviceId: string | null) {
     localStorage.setItem(AGENT_CHAT_VOICE_DEVICE_STORAGE_KEY, deviceId);
   } catch {
     // Private mode may block persistence; recording still works.
+  }
+}
+
+export function loadVoiceMode(): VoiceMode {
+  if (typeof localStorage === 'undefined') return 'dictation';
+  try {
+    return localStorage.getItem(AGENT_CHAT_VOICE_MODE_STORAGE_KEY) === 'jev'
+      ? 'jev'
+      : 'dictation';
+  } catch {
+    return 'dictation';
+  }
+}
+
+export function saveVoiceMode(mode: VoiceMode) {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(AGENT_CHAT_VOICE_MODE_STORAGE_KEY, mode);
+  } catch {
+    // Private mode may block persistence.
   }
 }
 
@@ -189,6 +225,42 @@ export async function transcribeVoiceRecording(
   }
   return result.text;
 }
+
+/** Client for `/api/agent-jev`. Failures resolve as an error evaluation (fail closed). */
+export const evaluateJevCandidates: JevEvaluator = async (body, signal) => {
+  const timeout = new AbortController();
+  const timer = setTimeout(() => timeout.abort(), JEV_CLIENT_TIMEOUT_MS);
+  const onAbort = () => timeout.abort();
+  signal.addEventListener('abort', onAbort, { once: true });
+  try {
+    const response = await fetch('/api/agent-jev', {
+      method: 'POST',
+      headers: {
+        [DESKTOP_AGENT_REQUEST_HEADER]: '1',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+      signal: timeout.signal,
+    });
+    const raw = await response.text();
+    let parsed: unknown = raw;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      // Non-JSON bodies still fail closed below.
+    }
+    return readJevResponse(parsed, response.ok, raw);
+  } catch (error) {
+    if (signal.aborted) throw error;
+    return {
+      decisions: [],
+      error: timeout.signal.aborted ? JEV_TIMEOUT_MESSAGE : JEV_FAILED_MESSAGE,
+    };
+  } finally {
+    clearTimeout(timer);
+    signal.removeEventListener('abort', onAbort);
+  }
+};
 
 function isOverconstrained(error: unknown) {
   return (

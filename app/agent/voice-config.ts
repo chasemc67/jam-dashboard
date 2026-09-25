@@ -109,3 +109,6 @@ export function readTranscribeResult(body: unknown, ok: boolean, raw: string) {
   }
   return { ok: false as const, error: EMPTY_TRANSCRIPT_MESSAGE };
 }
+
+/** Jev mode keeps the mic on; this only bounds a forgotten session. */
+export const MAX_JEV_SESSION_MS = 30 * 60_000;
