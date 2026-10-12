@@ -2,11 +2,13 @@ import type { FretTrackerModelId } from '~/types/fretTracker';
 
 // Fretboard models bundled with the desktop app (desktop/tracker.cjs).
 export const TRACKER_MODELS: { id: FretTrackerModelId; label: string }[] = [
-  { id: 'v3', label: 'FretNet v3 (permissive)' },
   { id: 'v1', label: 'YOLO v1 (AGPL)' },
+  { id: 'v3', label: 'FretNet v3 (permissive)' },
 ];
 
-export const DEFAULT_TRACKER_MODEL: FretTrackerModelId = 'v3';
+// v1 stays the default: v3 tracks the grid as well or better but numbers frets
+// worse on the frozen eval set (guitar-overlay eval/model_permissive.md).
+export const DEFAULT_TRACKER_MODEL: FretTrackerModelId = 'v1';
 
 export const TRACKER_MODEL_KEY = 'jam-live-fretboard-model';
 

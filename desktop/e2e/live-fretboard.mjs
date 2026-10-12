@@ -136,24 +136,28 @@ async function pressKey(key, code = key, keyCode = 13) {
     });
 }
 
-// Radix Select ignores synthetic option clicks; pick the option by keyboard.
+// Radix Select ignores synthetic option clicks; pick the option by keyboard and
+// check the trigger (Radix focuses the selected item right after opening).
 async function chooseModel(id) {
-  if (!(await evaluate(`!!document.querySelector('[role=option]')`)))
-    await click(`document.querySelector('[data-testid=live-fretboard-model]')`);
-  await waitFor(
-    `!!document.querySelector('[role=option]')`,
-    5000,
-    'the model list',
-  );
-  await evaluate(
-    `[...document.querySelectorAll('[role=option]')].find(o => o.textContent.includes(' ${id} ')).focus()`,
-  );
-  await pressKey('Enter');
-  await waitFor(
-    `!document.querySelector('[role=option]')`,
-    5000,
-    'the model list to close',
-  );
+  const selected = `document.querySelector('[data-testid=live-fretboard-model]').textContent.includes(' ${id} ')`;
+  for (let attempt = 0; attempt < 4 && !(await evaluate(selected)); attempt++) {
+    if (!(await evaluate(`!!document.querySelector('[role=option]')`)))
+      await click(
+        `document.querySelector('[data-testid=live-fretboard-model]')`,
+      );
+    await waitFor(
+      `!!document.querySelector('[role=option]')`,
+      5000,
+      'the model list',
+    );
+    await sleep(400);
+    await evaluate(
+      `[...document.querySelectorAll('[role=option]')].find(o => o.textContent.includes(' ${id} ')).focus()`,
+    );
+    await pressKey('Enter');
+    await sleep(400);
+  }
+  if (!(await evaluate(selected))) throw new Error(`Could not select ${id}`);
 }
 
 const summary = { video, lefty, shots: [], stats: [] };
@@ -170,7 +174,12 @@ try {
   const settingsChanged = await evaluate(`(() => {
     const key = 'jam-dashboard-settings';
     const stored = JSON.parse(localStorage.getItem(key) || '{}');
-    if (stored.isLefty === ${lefty}) return false;
+    // The persisted model loads after mount, so start from the first one.
+    const model = ${JSON.stringify(models[0] ?? null)};
+    const modelKey = 'jam-live-fretboard-model';
+    const modelChanged = !!model && localStorage.getItem(modelKey) !== model;
+    if (model) localStorage.setItem(modelKey, model);
+    if (stored.isLefty === ${lefty} && !modelChanged) return false;
     localStorage.setItem(key, JSON.stringify({ ...stored, isLefty: ${lefty} }));
     return true;
   })()`);

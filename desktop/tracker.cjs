@@ -14,7 +14,7 @@ const MAX_STDOUT_LINE = 1 << 20;
 // head layout). v1 = YOLO11s-pose (AGPL-3.0), v3 = FretNet ResNet-50 heatmaps
 // (permissive). See desktop/README.md.
 const MODEL_IDS = ['v1', 'v3'];
-const DEFAULT_MODEL = 'v3';
+const DEFAULT_MODEL = 'v1'; // see app/components/LiveFretboard/trackerModels.ts
 
 function trackerError(code, message) {
   return Object.assign(new Error(message), { code });

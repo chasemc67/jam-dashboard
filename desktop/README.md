@@ -70,24 +70,48 @@ has `com.apple.security.device.camera`). Video stays on the Mac.
 - The renderer letterboxes each frame to 640×640 RGBA and sends it over IPC to
   `desktop/tracker.cjs`, which keeps one frame in flight to the bundled
   `FretTrackerCLI` helper (frames that arrive while it is busy are skipped).
-- The helper runs the YOLO11s-pose CoreML model (`FretTrackerV1.mlmodelc`,
-  compiled from `native/models/FretTrackerV1.mlpackage` at build time) and the
-  Swift port of the guitar-overlay tracker post-processing (RANSAC homography,
-  board-end vote, One-Euro smoothing), and returns H, the fret count and wire
-  endpoints in source pixels. See [`native/README.md`](native/README.md).
+- The helper runs one of two bundled CoreML models, compiled from
+  `native/models/FretTracker{V1,V3}.mlpackage` at build time, and the Swift port
+  of the guitar-overlay tracker post-processing (RANSAC homography, board-end
+  vote, One-Euro smoothing). It returns H, the fret count and wire endpoints in
+  source pixels. See [`native/README.md`](native/README.md).
+- **Tracking model** picker: **FretNet v3** (`FretTrackerV3`, ResNet-50 + FPN
+  heatmaps trained from torchvision ImageNet weights; permissive: own code +
+  BSD-3-Clause weights) or **YOLO v1** (`FretTrackerV1`, YOLO11s-pose;
+  **AGPL-3.0**, from Ultralytics). Switching takes effect on the next frame
+  (the helper restarts with the other model, so smoothing and the fret-count
+  vote start over) and is remembered across launches. The default is v1:
+  v3 lines up the grid as well or better but numbers frets less reliably on
+  the frozen eval set. Both models
+  take the same 640×640 input and emit the same raw head layout, so pre- and
+  post-processing are shared. Licences, training and evaluation are documented in
+  guitar-overlay (`LICENSES.md`, `eval/model_permissive.md`). Shipping v1 keeps
+  the AGPL-3.0 obligation for the app; drop `FretTrackerV1` from
+  `electron-builder.json`, `build-helper.sh` and `main.cjs` to remove it.
 - WebGL2 draws the video and the notes from the same marker logic as the
   fretboard diagram (`app/utils/fretNoteMarkers.ts`), projected through H onto
   the cells between wires with six evenly spaced strings.
-- **Left-handed / mirrored** flips both the model input and the display (for a
-  left-handed guitar, or a right-handed one seen through a mirrored camera). It
-  is remembered across launches.
+- Orientation has no control of its own (`app/components/LiveFretboard/orientation.ts`):
+  - **Model input** is flipped when the page-level **Left-handed** setting is on.
+    The tracker needs a right-handed view (guitar-overlay D1), and cameras and
+    video files deliver unmirrored pixels, so a lefty is exactly the frame that
+    needs flipping.
+  - **Display** is mirrored (selfie view) for live cameras, unless the camera
+    reports `facingMode: "environment"` (faces away from you). Video files are
+    shown as recorded. The tracker answers in source pixels, so the overlay
+    follows the display either way.
+  - Not handled: a recording that was itself saved mirrored (e.g. by a selfie
+    camera app). It plays as recorded and is tracked as a guitar of the other
+    handedness.
+- **Full screen** (button at the top right of the video) shows only the video
+  and overlay; leave with **Esc** or the same button.
 
 End-to-end check (macOS, after `npm run desktop:build`; pass `--app` to test a
 packaged build):
 
 ```sh
 node desktop/e2e/live-fretboard.mjs --video clip.mp4 --out /tmp/live-fretboard \
-  [--app "release/mac-arm64/Jam Dashboard.app"]
+  [--app "release/mac-arm64/Jam Dashboard.app"] [--models v3,v1] [--lefty]
 ```
 
 ## AI agent connection
