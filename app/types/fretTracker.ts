@@ -33,6 +33,7 @@ export type FretTrackerResult = {
 };
 
 export type DesktopFretTrackerAPI = {
-  track: (frame: FretTrackerFrame) => Promise<FretTrackerResult>;
+  /** Null when the frame was skipped (tracker busy or stopping). */
+  track: (frame: FretTrackerFrame) => Promise<FretTrackerResult | null>;
   stop: () => Promise<void>;
 };

@@ -58,6 +58,38 @@ launched or included in the package. Quitting Jam Dashboard cancels an active jo
 A failed analysis preserves the downloaded file and its Finder action; cancelled
 downloads may leave partial files in the selected folder.
 
+## Live Fretboard (camera tracking)
+
+The desktop-only **Live Fretboard** tab (next to **YouTube Analyzer**) shows the
+camera with the currently selected key/scale, quick colors or CAGED shapes drawn
+onto the guitar's frets. Choose a camera, or **Video file…/Open video** to play a
+local clip instead (useful for testing), then press **Start**. macOS asks for
+camera access the first time (`NSCameraUsageDescription`; the hardened runtime
+has `com.apple.security.device.camera`). Video stays on the Mac.
+
+- The renderer letterboxes each frame to 640×640 RGBA and sends it over IPC to
+  `desktop/tracker.cjs`, which keeps one frame in flight to the bundled
+  `FretTrackerCLI` helper (frames that arrive while it is busy are skipped).
+- The helper runs the YOLO11s-pose CoreML model (`FretTrackerV1.mlmodelc`,
+  compiled from `native/models/FretTrackerV1.mlpackage` at build time) and the
+  Swift port of the guitar-overlay tracker post-processing (RANSAC homography,
+  board-end vote, One-Euro smoothing), and returns H, the fret count and wire
+  endpoints in source pixels. See [`native/README.md`](native/README.md).
+- WebGL2 draws the video and the notes from the same marker logic as the
+  fretboard diagram (`app/utils/fretNoteMarkers.ts`), projected through H onto
+  the cells between wires with six evenly spaced strings.
+- **Left-handed / mirrored** flips both the model input and the display (for a
+  left-handed guitar, or a right-handed one seen through a mirrored camera). It
+  is remembered across launches.
+
+End-to-end check (macOS, after `npm run desktop:build`; pass `--app` to test a
+packaged build):
+
+```sh
+node desktop/e2e/live-fretboard.mjs --video clip.mp4 --out /tmp/live-fretboard \
+  [--app "release/mac-arm64/Jam Dashboard.app"]
+```
+
 ## AI agent connection
 
 Open Agent chat and choose **MCP connection** to connect Codex, Cursor or another MCP client. The bundled service listens at `http://127.0.0.1:4177/mcp`; the panel provides its private bearer token. Agents can select scales/CAGED coloring, identify chords, show/select basic chord voicings, and analyze songs. The installed app needs no separate Node service. See the [agent setup guide](../docs/agent-tools.md).

@@ -12,6 +12,7 @@ const {
   systemPreferences,
 } = require('electron');
 const { AnalyzerService, AUDIO_EXTENSIONS } = require('./analyzer.cjs');
+const { FretTrackerService } = require('./tracker.cjs');
 const {
   startAgentService,
   loadAgentToken,
@@ -42,6 +43,7 @@ const {
 
 let mainWindow;
 let analyzer;
+let fretTracker;
 let agentService;
 let agentConnection;
 let agentSession;
@@ -116,6 +118,7 @@ async function createWindow() {
   });
   mainWindow.on('closed', () => {
     detachAgent();
+    fretTracker?.stop();
     mainWindow = undefined;
   });
   mainWindow.webContents.on('render-process-gone', detachAgent);
@@ -210,11 +213,13 @@ if (!app.requestSingleInstanceLock()) {
 
       const trusted = (contents, origin) =>
         contents === mainWindow?.webContents && isAppURL(origin);
+      // The microphone (note detection, voice) and camera (live fretboard).
+      const MEDIA_ACCESS = { audio: 'microphone', video: 'camera' };
       session.defaultSession.setPermissionCheckHandler(
         (contents, permission, origin, details) =>
           trusted(contents, origin) &&
           permission === 'media' &&
-          details.mediaType === 'audio',
+          Object.hasOwn(MEDIA_ACCESS, details.mediaType),
       );
       session.defaultSession.setPermissionRequestHandler(
         async (contents, permission, callback, details) => {
@@ -222,25 +227,35 @@ if (!app.requestSingleInstanceLock()) {
             !trusted(contents, details.requestingUrl) ||
             permission !== 'media' ||
             !details.mediaTypes?.length ||
-            details.mediaTypes.some(type => type !== 'audio')
+            details.mediaTypes.some(type => !Object.hasOwn(MEDIA_ACCESS, type))
           ) {
             callback(false);
             return;
           }
           try {
-            callback(await systemPreferences.askForMediaAccess('microphone'));
+            for (const type of new Set(details.mediaTypes)) {
+              if (
+                !(await systemPreferences.askForMediaAccess(MEDIA_ACCESS[type]))
+              ) {
+                callback(false);
+                return;
+              }
+            }
+            callback(true);
           } catch {
             callback(false);
           }
         },
       );
+      const helperDirectory = app.isPackaged
+        ? process.resourcesPath
+        : path.join(__dirname, 'native', 'dist');
+      fretTracker = new FretTrackerService({
+        helperPath: path.join(helperDirectory, 'FretTrackerCLI'),
+        modelPath: path.join(helperDirectory, 'FretTrackerV1.mlmodelc'),
+      });
       analyzer = new AnalyzerService({
-        helperPath: path.join(
-          app.isPackaged
-            ? process.resourcesPath
-            : path.join(__dirname, 'native', 'dist'),
-          'MusicAnalyzerCLI',
-        ),
+        helperPath: path.join(helperDirectory, 'MusicAnalyzerCLI'),
         destination: app.getPath('desktop'),
         onChange: state => {
           const contents = mainWindow?.webContents;
@@ -354,6 +369,17 @@ if (!app.requestSingleInstanceLock()) {
         },
         true,
       );
+      handle(
+        'jam:tracker-frame',
+        frame =>
+          fretTracker.track(frame).catch(error => {
+            // Skipped frames are routine, not errors.
+            if (['busy', 'stopped'].includes(error.code)) return null;
+            throw error;
+          }),
+        true,
+      );
+      handle('jam:tracker-stop', () => fretTracker.stop(), true);
       handle('jam:analyzer-state', () => analyzer.getState(), true);
       handle('jam:analyzer-youtube', input => analyzer.startYouTube(input));
       handle('jam:analyzer-local', file => analyzer.startFile(file));
@@ -420,6 +446,7 @@ if (!app.requestSingleInstanceLock()) {
   // Standard macOS behavior: keep the app available from the Dock after closing a window.
   app.on('before-quit', () => {
     analyzer?.stop();
+    fretTracker?.stop();
     void agentService?.close().catch(console.error);
   });
   app.on('window-all-closed', () => {

@@ -10,6 +10,7 @@
     "preload.cjs",
     "policy.cjs",
     "analyzer.cjs",
+    "tracker.cjs",
     "agent-service.cjs",
     "updater.cjs",
     "electron-updater.cjs",
@@ -21,6 +22,14 @@
     {
       "from": "desktop/native/dist/${arch}/MusicAnalyzerCLI",
       "to": "MusicAnalyzerCLI"
+    },
+    {
+      "from": "desktop/native/dist/${arch}/FretTrackerCLI",
+      "to": "FretTrackerCLI"
+    },
+    {
+      "from": "desktop/native/dist/FretTrackerV1.mlmodelc",
+      "to": "FretTrackerV1.mlmodelc"
     }
   ],
   "mac": {
@@ -33,7 +42,8 @@
     "entitlementsInherit": "desktop/entitlements.mac.plist",
     "notarize": false,
     "extendInfo": {
-      "NSMicrophoneUsageDescription": "Jam Dashboard listens to your instrument to detect notes."
+      "NSMicrophoneUsageDescription": "Jam Dashboard listens to your instrument to detect notes.",
+      "NSCameraUsageDescription": "Jam Dashboard uses the camera to track your guitar's fretboard and draw scales on it. Video stays on your Mac."
     }
   },
   "afterSign": "./desktop/notarize.cjs",

@@ -47,10 +47,8 @@ for (const arch of arches) {
     JAM_DESKTOP_ARCH: arch === 'x64' ? 'x86_64' : 'arm64',
   });
   mkdirSync(path.join(dist, arch), { recursive: true });
-  copyFileSync(
-    path.join(dist, 'MusicAnalyzerCLI'),
-    path.join(dist, arch, 'MusicAnalyzerCLI'),
-  );
+  for (const helper of ['MusicAnalyzerCLI', 'FretTrackerCLI'])
+    copyFileSync(path.join(dist, helper), path.join(dist, arch, helper));
 }
 run('npm', ['run', 'agent:build']);
 run('node', ['scripts/build-updater.mjs']);

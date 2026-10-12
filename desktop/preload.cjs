@@ -41,3 +41,10 @@ contextBridge.exposeInMainWorld(
     onAnalyzerOpen: callback => subscribe('jam:analyzer-open', callback),
   }),
 );
+contextBridge.exposeInMainWorld(
+  'jamFretTracker',
+  Object.freeze({
+    track: frame => ipcRenderer.invoke('jam:tracker-frame', frame),
+    stop: () => ipcRenderer.invoke('jam:tracker-stop'),
+  }),
+);

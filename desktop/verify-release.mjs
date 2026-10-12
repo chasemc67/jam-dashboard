@@ -72,12 +72,17 @@ async function verify({ directory, version, signed }) {
     if (process.platform !== 'darwin') continue;
 
     const app = path.join(directory, appDirectory[arch], APP);
-    const helper = path.join(app, 'Contents/Resources/MusicAnalyzerCLI');
+    const helpers = ['MusicAnalyzerCLI', 'FretTrackerCLI'].map(name =>
+      path.join(app, 'Contents/Resources', name),
+    );
     if (!existsSync(path.join(app, 'Contents/Resources/app-update.yml')))
       errors.push(`${arch}: app-update.yml is missing`);
+    const model = 'Contents/Resources/FretTrackerV1.mlmodelc/coremldata.bin';
+    if (!existsSync(path.join(app, model)))
+      errors.push(`${arch}: the fret tracker model is missing`);
     for (const binary of [
       path.join(app, 'Contents/MacOS/Jam Dashboard'),
-      helper,
+      ...helpers,
     ]) {
       const archs = tool('/usr/bin/lipo', ['-archs', binary]).output.trim();
       if (archs !== machO[arch])
@@ -96,11 +101,18 @@ async function verify({ directory, version, signed }) {
       if (!result.ok)
         errors.push(`${arch}: ${label} check failed\n${result.output}`);
     }
-    for (const file of [app, helper])
-      if (!isDeveloperIdSigned(signatureOf(file)))
+    for (const file of [app, ...helpers]) {
+      const signature = signatureOf(file);
+      if (!isDeveloperIdSigned(signature))
         errors.push(
           `${arch}: ${path.basename(file)} is not Developer ID signed`,
         );
+      // Notarization requires the hardened runtime on every executable.
+      if (!/flags=0x[0-9a-f]*\(.*runtime.*\)/.test(signature))
+        errors.push(
+          `${arch}: ${path.basename(file)} lacks the hardened runtime`,
+        );
+    }
   }
   return errors;
 }

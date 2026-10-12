@@ -136,7 +136,8 @@ export default function LiveFretboard() {
     const capture = document.createElement('canvas');
     capture.width = INPUT;
     capture.height = INPUT;
-    const context = capture.getContext('2d', { willReadFrequently: true });
+    // GPU-backed, so only the 640x640 letterbox is read back, not the source frame.
+    const context = capture.getContext('2d');
     let latest: FretTrackerResult | undefined;
     let inFlight = false;
     let reset = true;
@@ -183,7 +184,7 @@ export default function LiveFretboard() {
       api
         .track({ t, width, height, mirrored: flip, reset: frameReset, pixels })
         .then(next => {
-          if (cancelled) return;
+          if (cancelled || !next) return;
           latest = next;
           frames += 1;
           const now = performance.now();
