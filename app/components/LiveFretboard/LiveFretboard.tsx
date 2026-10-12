@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Camera, FileVideo, Loader2 } from 'lucide-react';
+import { Camera, FileVideo, Loader2, Maximize, Minimize } from 'lucide-react';
 import { Button } from '~/components/ui/button';
-import { Checkbox } from '~/components/ui/checkbox';
-import { Label } from '~/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -21,6 +19,7 @@ import type {
   FretTrackerResult,
 } from '~/types/fretTracker';
 import { EMPTY_OVERLAY, buildOverlay } from './overlayGeometry';
+import { displayMirror, modelFlip } from './orientation';
 import { OverlayRenderer } from './overlayRenderer';
 import {
   TRACKER_MODELS,
@@ -28,7 +27,6 @@ import {
   storedTrackerModel,
 } from './trackerModels';
 
-const MIRROR_KEY = 'jam-live-fretboard-mirrored';
 const FILE_SOURCE = 'file';
 const INPUT = 640;
 
@@ -84,7 +82,8 @@ export default function LiveFretboard() {
   const [source, setSource] = useState<string>('');
   const [fileName, setFileName] = useState<string>();
   const [fileURL, setFileURL] = useState<string>();
-  const [mirrored, setMirrored] = useState(false);
+  const [mirroredView, setMirroredView] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
   const [model, setModel] = useState<FretTrackerModelId>(() =>
     storedTrackerModel(null),
   );
@@ -96,17 +95,20 @@ export default function LiveFretboard() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const viewRef = useRef<HTMLDivElement>(null);
   const markersRef = useRef(markers);
   markersRef.current = markers;
   const stringCountRef = useRef(rootNotes.length);
   stringCountRef.current = rootNotes.length;
-  const mirroredRef = useRef(mirrored);
-  mirroredRef.current = mirrored;
+  // Model flip from the page-level Left-handed setting; display mirror from the
+  // source (see ./orientation.ts).
+  const flipRef = useRef(modelFlip(settings.isLefty));
+  flipRef.current = modelFlip(settings.isLefty);
+  const mirrorViewRef = useRef(false);
   const modelRef = useRef(model);
   modelRef.current = model;
 
   useEffect(() => {
-    setMirrored(localStorage.getItem(MIRROR_KEY) === 'true');
     setModel(storedTrackerModel(localStorage.getItem(TRACKER_MODEL_KEY)));
   }, []);
 
@@ -156,7 +158,7 @@ export default function LiveFretboard() {
     let inFlight = false;
     let reset = true;
     let lastT = -Infinity;
-    let lastMirrored = mirroredRef.current;
+    let lastMirrored = flipRef.current;
     let lastModel = modelRef.current;
     let frames = 0;
     let fps = 0;
@@ -171,9 +173,9 @@ export default function LiveFretboard() {
       if (!width || !height) return;
       const isFile = source === FILE_SOURCE;
       const t = isFile ? video.currentTime : performance.now() / 1000;
-      const flip = mirroredRef.current;
+      const flip = flipRef.current;
       const trackerModel = modelRef.current;
-      // loop, mirror toggle or model switch (the helper restarts with the new model)
+      // loop, left-handed toggle or model switch (the helper restarts with the new model)
       if (t < lastT || flip !== lastMirrored || trackerModel !== lastModel) {
         reset = true;
         latest = undefined;
@@ -263,10 +265,10 @@ export default function LiveFretboard() {
                 markers: markersRef.current,
                 stringCount: stringCountRef.current,
                 width,
-                mirrored: mirroredRef.current,
+                mirrored: mirrorViewRef.current,
               })
             : EMPTY_OVERLAY;
-        renderer.render(video, width, height, mirroredRef.current, overlay);
+        renderer.render(video, width, height, mirrorViewRef.current, overlay);
       }
       schedule();
     };
@@ -285,6 +287,7 @@ export default function LiveFretboard() {
           video.srcObject = null;
           video.src = fileURL;
           video.loop = true;
+          mirrorViewRef.current = displayMirror('file');
         } else {
           stream = await navigator.mediaDevices.getUserMedia({
             audio: false,
@@ -298,8 +301,13 @@ export default function LiveFretboard() {
           if (cancelled) return;
           video.removeAttribute('src');
           video.srcObject = stream;
+          mirrorViewRef.current = displayMirror(
+            'camera',
+            stream.getVideoTracks()[0]?.getSettings().facingMode,
+          );
           void refreshDevices();
         }
+        setMirroredView(mirrorViewRef.current);
         video.muted = true;
         await video.play();
         schedule();
@@ -346,9 +354,33 @@ export default function LiveFretboard() {
     localStorage.setItem(TRACKER_MODEL_KEY, next);
   };
 
-  const toggleMirror = (value: boolean) => {
-    setMirrored(value);
-    localStorage.setItem(MIRROR_KEY, String(value));
+  useEffect(() => {
+    const update = () =>
+      setFullscreen(
+        !!viewRef.current && document.fullscreenElement === viewRef.current,
+      );
+    // Esc leaves full screen; Electron does not always do it for HTML fullscreen.
+    const onKey = (event: KeyboardEvent) => {
+      if (
+        event.key === 'Escape' &&
+        viewRef.current &&
+        document.fullscreenElement === viewRef.current
+      )
+        void document.exitFullscreen();
+    };
+    document.addEventListener('fullscreenchange', update);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('fullscreenchange', update);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, []);
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) void document.exitFullscreen();
+    else
+      void viewRef.current?.requestFullscreen().catch(cause => {
+        setError(`Full screen is not available: ${(cause as Error).message}`);
+      });
   };
 
   return (
@@ -356,7 +388,7 @@ export default function LiveFretboard() {
       <p className="text-sm text-muted-foreground">
         Point a camera at your guitar neck to see the selected key, scale and
         coloring drawn on the frets. Tracking runs on this Mac; video never
-        leaves it.
+        leaves it. Left-handed follows the Left-handed setting.
       </p>
       <div className="flex flex-wrap items-center gap-2">
         <Select
@@ -417,14 +449,6 @@ export default function LiveFretboard() {
             </>
           )}
         </Button>
-        <div className="flex items-center gap-2">
-          <Checkbox
-            id="live-fretboard-mirror"
-            checked={mirrored}
-            onCheckedChange={value => toggleMirror(value === true)}
-          />
-          <Label htmlFor="live-fretboard-mirror">Left-handed / mirrored</Label>
-        </div>
         <Select value={model} onValueChange={chooseModel}>
           <SelectTrigger
             className="h-9 w-[220px]"
@@ -447,13 +471,42 @@ export default function LiveFretboard() {
           {error}
         </p>
       )}
-      <div className="relative w-full overflow-hidden rounded-md bg-black">
+      <div
+        ref={viewRef}
+        className={
+          fullscreen
+            ? 'relative flex h-full w-full items-center justify-center bg-black'
+            : 'relative w-full overflow-hidden rounded-md bg-black'
+        }
+        data-testid="live-fretboard-view"
+      >
         <video ref={videoRef} className="hidden" playsInline muted />
         <canvas
           ref={canvasRef}
-          className={running ? 'block h-auto w-full' : 'hidden'}
+          className={
+            !running
+              ? 'hidden'
+              : fullscreen
+                ? 'block h-full w-full object-contain'
+                : 'block h-auto w-full'
+          }
           data-testid="live-fretboard-canvas"
         />
+        <Button
+          variant="secondary"
+          size="icon"
+          className="absolute right-2 top-2 h-8 w-8 opacity-80 hover:opacity-100"
+          onClick={toggleFullscreen}
+          aria-label={fullscreen ? 'Exit full screen' : 'Full screen'}
+          title={fullscreen ? 'Exit full screen (Esc)' : 'Full screen'}
+          data-testid="live-fretboard-fullscreen"
+        >
+          {fullscreen ? (
+            <Minimize className="h-4 w-4" />
+          ) : (
+            <Maximize className="h-4 w-4" />
+          )}
+        </Button>
         {running && !stats && !error && (
           <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
             <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Starting tracker…
@@ -473,6 +526,8 @@ export default function LiveFretboard() {
           data-valid={result?.valid ? 'true' : 'false'}
           data-frets={result?.nFrets}
           data-model={result?.model}
+          data-lefty={settings.isLefty ? 'true' : 'false'}
+          data-mirrored-view={mirroredView ? 'true' : 'false'}
         >
           {result?.valid
             ? `Tracking ${result.nFrets} frets${result.held ? ' (holding)' : ''}`
@@ -482,6 +537,8 @@ export default function LiveFretboard() {
           {stats.modelMs !== null && ` · model ${stats.modelMs.toFixed(1)} ms`}
           {stats.postMs !== null && ` · post ${stats.postMs.toFixed(1)} ms`}
           {result && ` · ${result.model}`}
+          {` · ${settings.isLefty ? 'left' : 'right'}-handed (Settings)`}
+          {mirroredView && ' · mirrored view'}
         </p>
       )}
     </div>

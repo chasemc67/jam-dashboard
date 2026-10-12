@@ -3,8 +3,9 @@
 // tracking and saves screenshots of the overlay.
 //
 //   node desktop/e2e/live-fretboard.mjs --video clip.mp4 --out shots/ \
-//     [--app "release/mac-arm64/Jam Dashboard.app"] [--shots 10] [--mirror-shots 2] \
-//     [--models v3,v1]
+//     [--app "release/mac-arm64/Jam Dashboard.app"] [--shots 10] [--lefty] \
+//     [--models v3,v1] [--fullscreen-shots 1]
+// --lefty turns on the page-level Left-handed setting (model input flipped).
 // --models picks each tracking model in turn from the picker while the video keeps
 // running (runtime switch, no restart); shots are prefixed with the model id.
 import { spawn } from 'node:child_process';
@@ -26,7 +27,8 @@ const video = path.resolve(option('--video', ''));
 const out = path.resolve(option('--out', 'e2e-out'));
 const appBundle = option('--app');
 const shots = Number(option('--shots', '10'));
-const mirrorShots = Number(option('--mirror-shots', '2'));
+const lefty = args.includes('--lefty');
+const fullscreenShots = Number(option('--fullscreen-shots', '1'));
 const port = Number(option('--port', '9339'));
 const interval = Number(option('--interval-ms', '700'));
 const models = option('--models', '').split(',').filter(Boolean);
@@ -124,19 +126,37 @@ async function click(selectorExpression) {
     });
 }
 
+async function pressKey(key, code = key, keyCode = 13) {
+  for (const type of ['keyDown', 'keyUp'])
+    await send('Input.dispatchKeyEvent', {
+      type,
+      key,
+      code,
+      windowsVirtualKeyCode: keyCode,
+    });
+}
+
+// Radix Select ignores synthetic option clicks; pick the option by keyboard.
 async function chooseModel(id) {
-  await click(`document.querySelector('[data-testid=live-fretboard-model]')`);
+  if (!(await evaluate(`!!document.querySelector('[role=option]')`)))
+    await click(`document.querySelector('[data-testid=live-fretboard-model]')`);
   await waitFor(
     `!!document.querySelector('[role=option]')`,
     5000,
     'the model list',
   );
-  await click(
-    `[...document.querySelectorAll('[role=option]')].find(o => o.textContent.includes(' ${id} '))`,
+  await evaluate(
+    `[...document.querySelectorAll('[role=option]')].find(o => o.textContent.includes(' ${id} ')).focus()`,
+  );
+  await pressKey('Enter');
+  await waitFor(
+    `!document.querySelector('[role=option]')`,
+    5000,
+    'the model list to close',
   );
 }
 
-const summary = { video, shots: [], stats: [] };
+const summary = { video, lefty, shots: [], stats: [] };
 try {
   await send('Runtime.enable');
   await send('DOM.enable');
@@ -146,6 +166,23 @@ try {
     30000,
     'the dashboard',
   );
+  // The page-level Left-handed setting drives the model flip; set it, then reload.
+  const settingsChanged = await evaluate(`(() => {
+    const key = 'jam-dashboard-settings';
+    const stored = JSON.parse(localStorage.getItem(key) || '{}');
+    if (stored.isLefty === ${lefty}) return false;
+    localStorage.setItem(key, JSON.stringify({ ...stored, isLefty: ${lefty} }));
+    return true;
+  })()`);
+  if (settingsChanged) {
+    await evaluate('location.reload()').catch(() => {});
+    await sleep(1000);
+    await waitFor(
+      `document.readyState === 'complete' && !!document.querySelector('[role=tab]')`,
+      30000,
+      'the dashboard after reload',
+    );
+  }
   await send('Emulation.setDeviceMetricsOverride', {
     width: 1440,
     height: 1000,
@@ -160,16 +197,6 @@ try {
     10000,
     'the Live Fretboard tab',
   );
-  // Start unmirrored regardless of the persisted setting.
-  await evaluate(
-    `localStorage.setItem('jam-live-fretboard-mirrored', 'false')`,
-  );
-  if (
-    await evaluate(
-      `document.querySelector('#live-fretboard-mirror')?.getAttribute('data-state') === 'checked'`,
-    )
-  )
-    await click(`document.querySelector('#live-fretboard-mirror')`);
   if (models.length) await chooseModel(models[0]);
   const { root: doc } = await send('DOM.getDocument', { depth: -1 });
   const { nodeId } = await send('DOM.querySelector', {
@@ -221,16 +248,45 @@ try {
       await sleep(interval);
     }
   }
-  if (mirrorShots > 0) {
-    await click(`document.querySelector('#live-fretboard-mirror')`);
-    await sleep(2500);
-    for (let i = 0; i < mirrorShots; i++) {
-      await capture(
-        `${models.at(-1) ?? ''}${models.length ? '-' : ''}live-fretboard-mirrored-${String(i + 1).padStart(2, '0')}`,
+  if (fullscreenShots > 0) {
+    await click(
+      `document.querySelector('[data-testid=live-fretboard-fullscreen]')`,
+    );
+    await waitFor(
+      `document.fullscreenElement?.dataset.testid === 'live-fretboard-view'`,
+      5000,
+      'full screen',
+    );
+    await sleep(1500);
+    for (let i = 0; i < fullscreenShots; i++) {
+      const { data } = await send('Page.captureScreenshot', { format: 'png' });
+      const file = path.join(
+        out,
+        `fullscreen-${String(i + 1).padStart(2, '0')}.png`,
       );
+      writeFileSync(file, Buffer.from(data, 'base64'));
+      summary.shots.push({ file, fullscreen: true });
       await sleep(interval);
     }
-    await click(`document.querySelector('#live-fretboard-mirror')`);
+    await pressKey('Escape', 'Escape', 27);
+    summary.fullscreenExitedWithEsc = await waitFor(
+      `!document.fullscreenElement`,
+      3000,
+      'Esc',
+    ).catch(() => false);
+    if (!summary.fullscreenExitedWithEsc) {
+      await click(
+        `document.querySelector('[data-testid=live-fretboard-fullscreen]')`,
+      );
+      summary.fullscreenExitedWithButton = await waitFor(
+        `!document.fullscreenElement`,
+        3000,
+        'leaving full screen',
+      );
+    }
+    console.log(
+      `fullscreen: Esc exit ${summary.fullscreenExitedWithEsc}, button exit ${summary.fullscreenExitedWithButton ?? 'n/a'}`,
+    );
   }
   summary.error = await evaluate(
     `document.querySelector('[data-testid=live-fretboard] [role=alert]')?.textContent ?? null`,

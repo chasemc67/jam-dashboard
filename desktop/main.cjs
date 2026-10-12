@@ -223,6 +223,11 @@ if (!app.requestSingleInstanceLock()) {
       );
       session.defaultSession.setPermissionRequestHandler(
         async (contents, permission, callback, details) => {
+          // HTML fullscreen (Live Fretboard video view) for the app's own page only.
+          if (permission === 'fullscreen') {
+            callback(trusted(contents, details.requestingUrl));
+            return;
+          }
           if (
             !trusted(contents, details.requestingUrl) ||
             permission !== 'media' ||
