@@ -48,3 +48,24 @@ is ignored so single-video options are predictable.
 
 Run `npm run desktop:test:native` from the repo root. BPM/key are estimates;
 half/double tempo and ambiguous harmony need a musician's judgment.
+
+## Fretboard tracker helper (`FretTrackerCLI`)
+
+`FretCore` is a pure-Swift port of the guitar-overlay `gro` post-processing (letterbox/decode, RANSAC + Huber
+homography fit, board-end ridge test + fret-count vote, One-Euro smoothing, tracker state machine).
+`FretTrackerCLI` runs `dist/FretTrackerV1.mlmodelc` (compiled from `models/FretTrackerV1.mlpackage` by
+`scripts/build-helper.sh`) and speaks a binary-in / JSON-lines-out protocol on stdin/stdout:
+
+```sh
+FretTrackerCLI --model dist/FretTrackerV1.mlmodelc [--compute-units all|cpuAndNeuralEngine|cpuAndGPU|cpuOnly] [--frets N]
+FretTrackerCLI --bench 200 --model dist/FretTrackerV1.mlmodelc   # one {"type":"bench"} line, median/p95 ms
+```
+
+Each frame on stdin is a 32-byte little-endian header (`"FRT1"`, u32 frameId, f64 t, u32 srcWidth, u32 srcHeight,
+u32 flags: bit0 mirrored / bit1 reset, u32 payloadBytes = 640*640*4) followed by the 640x640 RGBA8 letterboxed
+canonical frame. The helper prints `{"type":"ready",...}` once, then one `{"type":"frame",...}` line per frame
+(H, wires, nFrets, ... in original-frame px; non-finite numbers are null). `--emit-kpts` adds the raw keypoints
+(debug / parity). The board-end ridge test samples the 640 letterbox instead of the full-resolution frame.
+
+Parity against the Python tracker: `scripts/fret_parity.py` (Mac, needs gro + coremltools). Test fixtures:
+`scripts/fret_fixtures.py` regenerates `Tests/FretCoreTests/Fixtures/gro_reference.json`.
