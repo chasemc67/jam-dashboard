@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { HighlightedNote } from '~/components/Fret';
+import type { HighlightedNote } from '~/utils/fretNoteMarkers';
 import { useScaleKey } from './ScaleKeyContext';
 import { useSettings } from './SettingsContext';
 import { getEveryChordInScale } from '~/utils/scaleChords';
@@ -14,7 +14,7 @@ interface HighlightContextType {
 }
 
 const COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink'];
-export const INTERVALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+export { INTERVALS } from '~/utils/fretNoteMarkers';
 
 const HighlightContext = createContext<HighlightContextType | undefined>(
   undefined,
