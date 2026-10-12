@@ -5,6 +5,7 @@ import RandomPlayer from '~/components/RandomPlayer';
 import ChordExplorer from '~/components/ChordExplorer';
 import NoteDetector from '~/components/NoteDetector';
 import DesktopAnalyzer from '~/components/DesktopAnalyzer';
+import LiveFretboard from '~/components/LiveFretboard';
 import { useHighlight } from '~/contexts/HighlightContext';
 
 const TabChordView: React.FC = () => {
@@ -41,6 +42,11 @@ const TabChordView: React.FC = () => {
               YouTube Analyzer
             </TabsTrigger>
           )}
+          {import.meta.env.JAM_DESKTOP && (
+            <TabsTrigger value="live-fretboard" className="flex-1">
+              Live Fretboard
+            </TabsTrigger>
+          )}
         </TabsList>
         <TabsContent value="chord-explorer">
           <ChordExplorer />
@@ -60,6 +66,12 @@ const TabChordView: React.FC = () => {
             className="data-[state=inactive]:hidden"
           >
             <DesktopAnalyzer />
+          </TabsContent>
+        )}
+        {/* Unmounted when hidden so the camera and tracker stop. */}
+        {import.meta.env.JAM_DESKTOP && (
+          <TabsContent value="live-fretboard">
+            <LiveFretboard />
           </TabsContent>
         )}
       </Tabs>

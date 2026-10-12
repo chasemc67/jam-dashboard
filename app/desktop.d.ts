@@ -7,4 +7,5 @@ interface Window {
   jamDesktop?: import('./types/analyzer').DesktopAPI;
   jamAgent?: import('./agent/bridge').DesktopAgentAPI;
   jamGatewayKey?: import('./agent/gateway-key').DesktopGatewayKeyAPI;
+  jamFretTracker?: import('./types/fretTracker').DesktopFretTrackerAPI;
 }
