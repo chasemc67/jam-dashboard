@@ -16,9 +16,17 @@ import { useScaleKey } from '~/contexts/ScaleKeyContext';
 import { useSettings } from '~/contexts/SettingsContext';
 import { getFretboardNoteMarkers } from '~/utils/fretNoteMarkers';
 import { letterbox } from '~/utils/fretProjection';
-import type { FretTrackerResult } from '~/types/fretTracker';
+import type {
+  FretTrackerModelId,
+  FretTrackerResult,
+} from '~/types/fretTracker';
 import { EMPTY_OVERLAY, buildOverlay } from './overlayGeometry';
 import { OverlayRenderer } from './overlayRenderer';
+import {
+  TRACKER_MODELS,
+  TRACKER_MODEL_KEY,
+  storedTrackerModel,
+} from './trackerModels';
 
 const MIRROR_KEY = 'jam-live-fretboard-mirrored';
 const FILE_SOURCE = 'file';
@@ -77,6 +85,9 @@ export default function LiveFretboard() {
   const [fileName, setFileName] = useState<string>();
   const [fileURL, setFileURL] = useState<string>();
   const [mirrored, setMirrored] = useState(false);
+  const [model, setModel] = useState<FretTrackerModelId>(() =>
+    storedTrackerModel(null),
+  );
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string>();
   const [stats, setStats] = useState<Stats>();
@@ -91,9 +102,12 @@ export default function LiveFretboard() {
   stringCountRef.current = rootNotes.length;
   const mirroredRef = useRef(mirrored);
   mirroredRef.current = mirrored;
+  const modelRef = useRef(model);
+  modelRef.current = model;
 
   useEffect(() => {
     setMirrored(localStorage.getItem(MIRROR_KEY) === 'true');
+    setModel(storedTrackerModel(localStorage.getItem(TRACKER_MODEL_KEY)));
   }, []);
 
   const refreshDevices = async () => {
@@ -143,6 +157,7 @@ export default function LiveFretboard() {
     let reset = true;
     let lastT = -Infinity;
     let lastMirrored = mirroredRef.current;
+    let lastModel = modelRef.current;
     let frames = 0;
     let fps = 0;
     let lastDone = 0;
@@ -157,9 +172,15 @@ export default function LiveFretboard() {
       const isFile = source === FILE_SOURCE;
       const t = isFile ? video.currentTime : performance.now() / 1000;
       const flip = mirroredRef.current;
-      if (t < lastT || flip !== lastMirrored) reset = true; // loop or toggle
+      const trackerModel = modelRef.current;
+      // loop, mirror toggle or model switch (the helper restarts with the new model)
+      if (t < lastT || flip !== lastMirrored || trackerModel !== lastModel) {
+        reset = true;
+        latest = undefined;
+      }
       lastT = t;
       lastMirrored = flip;
+      lastModel = trackerModel;
       const box = letterbox(width, height, INPUT);
       context.setTransform(1, 0, 0, 1, 0, 0);
       context.fillStyle = 'rgb(114, 114, 114)';
@@ -182,9 +203,17 @@ export default function LiveFretboard() {
       const frameReset = reset;
       reset = false;
       api
-        .track({ t, width, height, mirrored: flip, reset: frameReset, pixels })
+        .track({
+          t,
+          width,
+          height,
+          mirrored: flip,
+          reset: frameReset,
+          pixels,
+          model: trackerModel,
+        })
         .then(next => {
-          if (cancelled || !next) return;
+          if (cancelled || !next || next.model !== modelRef.current) return;
           latest = next;
           frames += 1;
           const now = performance.now();
@@ -310,6 +339,13 @@ export default function LiveFretboard() {
     setRunning(true);
   };
 
+  const chooseModel = (value: string) => {
+    const next = storedTrackerModel(value);
+    setModel(next);
+    setError(undefined);
+    localStorage.setItem(TRACKER_MODEL_KEY, next);
+  };
+
   const toggleMirror = (value: boolean) => {
     setMirrored(value);
     localStorage.setItem(MIRROR_KEY, String(value));
@@ -389,6 +425,22 @@ export default function LiveFretboard() {
           />
           <Label htmlFor="live-fretboard-mirror">Left-handed / mirrored</Label>
         </div>
+        <Select value={model} onValueChange={chooseModel}>
+          <SelectTrigger
+            className="h-9 w-[220px]"
+            aria-label="Tracking model"
+            data-testid="live-fretboard-model"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {TRACKER_MODELS.map(option => (
+              <SelectItem key={option.id} value={option.id}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       {error && (
         <p className="text-sm text-feedback-incorrect" role="alert">
@@ -420,6 +472,7 @@ export default function LiveFretboard() {
           data-frames={stats.frames}
           data-valid={result?.valid ? 'true' : 'false'}
           data-frets={result?.nFrets}
+          data-model={result?.model}
         >
           {result?.valid
             ? `Tracking ${result.nFrets} frets${result.held ? ' (holding)' : ''}`
@@ -428,6 +481,7 @@ export default function LiveFretboard() {
           {stats.roundTripMs.toFixed(0)} ms
           {stats.modelMs !== null && ` · model ${stats.modelMs.toFixed(1)} ms`}
           {stats.postMs !== null && ` · post ${stats.postMs.toFixed(1)} ms`}
+          {result && ` · ${result.model}`}
         </p>
       )}
     </div>

@@ -252,7 +252,10 @@ if (!app.requestSingleInstanceLock()) {
         : path.join(__dirname, 'native', 'dist');
       fretTracker = new FretTrackerService({
         helperPath: path.join(helperDirectory, 'FretTrackerCLI'),
-        modelPath: path.join(helperDirectory, 'FretTrackerV1.mlmodelc'),
+        models: {
+          v1: path.join(helperDirectory, 'FretTrackerV1.mlmodelc'),
+          v3: path.join(helperDirectory, 'FretTrackerV3.mlmodelc'),
+        },
       });
       analyzer = new AnalyzerService({
         helperPath: path.join(helperDirectory, 'MusicAnalyzerCLI'),

@@ -10,6 +10,11 @@ const MAX_SOURCE_SIDE = 16384;
 const FRAME_TIMEOUT_MS = 5000;
 const READY_TIMEOUT_MS = 30000;
 const MAX_STDOUT_LINE = 1 << 20;
+// Bundled fretboard models (FretTrackerCLI loads either; both emit the same raw
+// head layout). v1 = YOLO11s-pose (AGPL-3.0), v3 = FretNet ResNet-50 heatmaps
+// (permissive). See desktop/README.md.
+const MODEL_IDS = ['v1', 'v3'];
+const DEFAULT_MODEL = 'v3';
 
 function trackerError(code, message) {
   return Object.assign(new Error(message), { code });
@@ -33,7 +38,7 @@ function encodeFrame({ id, t, width, height, mirrored, reset, pixels }) {
 function validateFrame(frame) {
   if (!frame || typeof frame !== 'object')
     throw trackerError('invalid', 'Invalid frame.');
-  const { t, width, height, mirrored, reset, pixels } = frame;
+  const { t, width, height, mirrored, reset, pixels, model } = frame;
   if (!Number.isFinite(t)) throw trackerError('invalid', 'Invalid frame time.');
   for (const side of [width, height])
     if (!Number.isInteger(side) || side < 1 || side > MAX_SOURCE_SIDE)
@@ -43,7 +48,17 @@ function validateFrame(frame) {
     pixels.byteLength !== FRAME_BYTES
   )
     throw trackerError('invalid', 'Frames must be 640x640 RGBA.');
-  return { t, width, height, mirrored: !!mirrored, reset: !!reset, pixels };
+  if (model !== undefined && !MODEL_IDS.includes(model))
+    throw trackerError('invalid', 'Unknown tracker model.');
+  return {
+    t,
+    width,
+    height,
+    mirrored: !!mirrored,
+    reset: !!reset,
+    pixels,
+    model,
+  };
 }
 
 const finiteOrNull = value => (Number.isFinite(value) ? value : null);
@@ -97,16 +112,26 @@ function validateResult(value) {
 }
 
 class FretTrackerService {
+  /**
+   * `models` maps model ids (MODEL_IDS) to compiled .mlmodelc paths; a bare
+   * `modelPath` is the single-model form. A frame naming another model than the
+   * running one restarts the helper with that model (fresh smoothing and vote).
+   */
   constructor({
     helperPath,
     modelPath,
+    models = modelPath ? { v1: modelPath } : {},
+    defaultModel = models[DEFAULT_MODEL]
+      ? DEFAULT_MODEL
+      : Object.keys(models)[0],
     spawnProcess = spawn,
     frameTimeoutMs = FRAME_TIMEOUT_MS,
     readyTimeoutMs = READY_TIMEOUT_MS,
     log = console,
   }) {
     this.helperPath = helperPath;
-    this.modelPath = modelPath;
+    this.models = models;
+    this.model = defaultModel;
     this.spawnProcess = spawnProcess;
     this.frameTimeoutMs = frameTimeoutMs;
     this.readyTimeoutMs = readyTimeoutMs;
@@ -122,7 +147,7 @@ class FretTrackerService {
     if (this.ready) return this.ready;
     const child = this.spawnProcess(
       this.helperPath,
-      ['--model', this.modelPath],
+      ['--model', this.models[this.model]],
       { stdio: ['pipe', 'pipe', 'pipe'] },
     );
     this.child = child;
@@ -188,6 +213,7 @@ class FretTrackerService {
     }
     if (event.type === 'ready') {
       this.info = {
+        model: this.model,
         computeUnits: String(event.computeUnits ?? ''),
         loadMs: finiteOrNull(event.loadMs),
       };
@@ -203,7 +229,7 @@ class FretTrackerService {
       this.pending = undefined;
       clearTimeout(pending.timer);
       try {
-        pending.resolve(validateResult(event));
+        pending.resolve({ ...validateResult(event), model: this.model });
       } catch (error) {
         pending.reject(error);
       }
@@ -232,6 +258,13 @@ class FretTrackerService {
   async track(input) {
     const frame = validateFrame(input);
     if (this.pending) throw trackerError('busy', 'The tracker is busy.');
+    const model = frame.model ?? this.model;
+    if (!this.models[model])
+      throw trackerError('invalid', `The ${model} model is not installed.`);
+    if (model !== this.model) {
+      this.stop();
+      this.model = model;
+    }
     const id = this.nextId++ >>> 0;
     const result = new Promise((resolve, reject) => {
       this.pending = { id, resolve, reject, timer: undefined };
@@ -266,6 +299,8 @@ class FretTrackerService {
 
 module.exports = {
   FretTrackerService,
+  MODEL_IDS,
+  DEFAULT_MODEL,
   encodeFrame,
   validateFrame,
   validateResult,

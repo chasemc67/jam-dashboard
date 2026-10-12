@@ -3,7 +3,10 @@
 // tracking and saves screenshots of the overlay.
 //
 //   node desktop/e2e/live-fretboard.mjs --video clip.mp4 --out shots/ \
-//     [--app "release/mac-arm64/Jam Dashboard.app"] [--shots 10] [--mirror-shots 2]
+//     [--app "release/mac-arm64/Jam Dashboard.app"] [--shots 10] [--mirror-shots 2] \
+//     [--models v3,v1]
+// --models picks each tracking model in turn from the picker while the video keeps
+// running (runtime switch, no restart); shots are prefixed with the model id.
 import { spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -26,6 +29,7 @@ const shots = Number(option('--shots', '10'));
 const mirrorShots = Number(option('--mirror-shots', '2'));
 const port = Number(option('--port', '9339'));
 const interval = Number(option('--interval-ms', '700'));
+const models = option('--models', '').split(',').filter(Boolean);
 if (!option('--video')) throw new Error('--video is required');
 mkdirSync(out, { recursive: true });
 
@@ -120,6 +124,18 @@ async function click(selectorExpression) {
     });
 }
 
+async function chooseModel(id) {
+  await click(`document.querySelector('[data-testid=live-fretboard-model]')`);
+  await waitFor(
+    `!!document.querySelector('[role=option]')`,
+    5000,
+    'the model list',
+  );
+  await click(
+    `[...document.querySelectorAll('[role=option]')].find(o => o.textContent.includes(' ${id} '))`,
+  );
+}
+
 const summary = { video, shots: [], stats: [] };
 try {
   await send('Runtime.enable');
@@ -154,6 +170,7 @@ try {
     )
   )
     await click(`document.querySelector('#live-fretboard-mirror')`);
+  if (models.length) await chooseModel(models[0]);
   const { root: doc } = await send('DOM.getDocument', { depth: -1 });
   const { nodeId } = await send('DOM.querySelector', {
     nodeId: doc.nodeId,
@@ -186,16 +203,30 @@ try {
     summary.shots.push({ file, stats });
     console.log(`${name}: ${stats?.text}`);
   };
+  const prefix = models.length ? `${models[0]}-` : '';
   for (let i = 0; i < shots; i++) {
-    await capture(`live-fretboard-${String(i + 1).padStart(2, '0')}`);
+    await capture(`${prefix}live-fretboard-${String(i + 1).padStart(2, '0')}`);
     await sleep(interval);
+  }
+  for (const id of models.slice(1)) {
+    await chooseModel(id);
+    await waitFor(
+      `document.querySelector('[data-testid=live-fretboard-stats]')?.dataset.model === '${id}'`,
+      60000,
+      `results from ${id}`,
+    );
+    await sleep(2500);
+    for (let i = 0; i < shots; i++) {
+      await capture(`${id}-live-fretboard-${String(i + 1).padStart(2, '0')}`);
+      await sleep(interval);
+    }
   }
   if (mirrorShots > 0) {
     await click(`document.querySelector('#live-fretboard-mirror')`);
     await sleep(2500);
     for (let i = 0; i < mirrorShots; i++) {
       await capture(
-        `live-fretboard-mirrored-${String(i + 1).padStart(2, '0')}`,
+        `${models.at(-1) ?? ''}${models.length ? '-' : ''}live-fretboard-mirrored-${String(i + 1).padStart(2, '0')}`,
       );
       await sleep(interval);
     }

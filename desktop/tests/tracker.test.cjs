@@ -195,6 +195,53 @@ test('reports a helper that fails to load the model', async () => {
   assert.equal(service.pending, undefined);
 });
 
+test('defaults to v3 and restarts the helper when the frame names another model', async t => {
+  const helper = fakeHelper();
+  const service = new FretTrackerService({
+    helperPath: 'x',
+    models: {
+      v1: '/app/FretTrackerV1.mlmodelc',
+      v3: '/app/FretTrackerV3.mlmodelc',
+    },
+    spawnProcess: helper.spawnProcess,
+    log: quiet,
+  });
+  t.after(() => service.stop());
+  assert.equal((await service.track(frame())).model, 'v3');
+  assert.deepEqual(helper.children[0].args, [
+    '--model',
+    '/app/FretTrackerV3.mlmodelc',
+  ]);
+  assert.equal((await service.track(frame({ model: 'v3' }))).model, 'v3');
+  assert.equal(helper.children.length, 1);
+  const switched = await service.track(frame({ model: 'v1' }));
+  assert.equal(switched.model, 'v1');
+  assert.equal(service.info.model, 'v1');
+  assert.deepEqual(helper.children[0].killed, ['SIGKILL']);
+  assert.deepEqual(helper.children[1].args, [
+    '--model',
+    '/app/FretTrackerV1.mlmodelc',
+  ]);
+  // A frame without a model keeps the running one.
+  assert.equal((await service.track(frame())).model, 'v1');
+  assert.equal(helper.children.length, 2);
+});
+
+test('rejects unknown or missing models', async () => {
+  const helper = fakeHelper();
+  const service = new FretTrackerService({
+    helperPath: 'x',
+    modelPath: '/app/FretTrackerV1.mlmodelc',
+    spawnProcess: helper.spawnProcess,
+    log: quiet,
+  });
+  await assert.rejects(service.track(frame({ model: 'v9' })), {
+    code: 'invalid',
+  });
+  await assert.rejects(service.track(frame({ model: 'v3' })), /not installed/);
+  assert.equal(helper.children.length, 0);
+});
+
 test('result validation drops non-finite values and bad wires', () => {
   const result = validateResult({
     type: 'frame',

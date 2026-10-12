@@ -1,5 +1,8 @@
 // Renderer contract for the desktop fret tracker (desktop/tracker.cjs).
 
+/** Bundled fretboard models: v1 = YOLO11s-pose (AGPL-3.0), v3 = FretNet (permissive). */
+export type FretTrackerModelId = 'v1' | 'v3';
+
 export type FretTrackerFrame = {
   /** Capture time in seconds. */
   t: number;
@@ -12,10 +15,14 @@ export type FretTrackerFrame = {
   reset: boolean;
   /** 640x640 RGBA, letterboxed like ultralytics (gray 114 padding). */
   pixels: Uint8Array | Uint8ClampedArray;
+  /** Model to run; switching restarts the helper (new smoothing and fret vote). */
+  model?: FretTrackerModelId;
 };
 
 export type FretTrackerResult = {
   id: number;
+  /** Model that produced this result. */
+  model: FretTrackerModelId;
   t: number | null;
   valid: boolean;
   held: boolean;
