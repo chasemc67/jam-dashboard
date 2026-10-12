@@ -13,6 +13,10 @@ import Foundation
 // stdin: binary frames (32-byte little-endian header "FRT1", frameId u32, t f64, srcWidth u32, srcHeight u32,
 // flags u32 (bit0 mirrored, bit1 reset), payloadBytes u32 = 640*640*4, then 640x640 RGBA8 letterboxed canonical frame).
 // stdout: one JSON line per frame. See desktop/native/README.md.
+//
+// Models: FretTrackerV1 (YOLO11s-pose, output (1, 155, 8400)) and FretTrackerV3 (FretNet, output (1, 155, 1)) share
+// the input (640x640 image, 1/255 baked in) and the raw head layout, so pre- and post-processing are the same; only the
+// anchor count differs and is read from the output shape.
 
 let inputSize = modelInputSize
 let payloadSize = inputSize * inputSize * 4
@@ -342,6 +346,7 @@ var ready = JSONLine()
 ready.str("type", "ready")
 ready.str("computeUnits", computeUnitsName)
 ready.num("loadMs", loadMs)
+ready.str("output", outputName)
 
 if let benchCount { runBench(benchCount) }
 emitLine(ready.text)

@@ -15,7 +15,10 @@ for PRODUCT in MusicAnalyzerCLI FretTrackerCLI; do
   cp "$BUILD_DIRECTORY/release/$PRODUCT" "$PROJECT_DIRECTORY/dist/$PRODUCT"
   codesign --force --sign - "$PROJECT_DIRECTORY/dist/$PRODUCT"
 done
-# Fretboard pose model (YOLO11s-pose, CoreML fp16) -> compiled dist/FretTrackerV1.mlmodelc
-rm -rf "$PROJECT_DIRECTORY/dist/FretTrackerV1.mlmodelc"
-xcrun coremlcompiler compile "$PROJECT_DIRECTORY/models/FretTrackerV1.mlpackage" "$PROJECT_DIRECTORY/dist/" >/dev/null
-test -d "$PROJECT_DIRECTORY/dist/FretTrackerV1.mlmodelc"
+# Fretboard models (CoreML fp16) -> compiled dist/FretTrackerV*.mlmodelc
+# V1 = YOLO11s-pose (AGPL-3.0), V3 = FretNet ResNet-50 heatmaps (permissive); see desktop/README.md.
+for MODEL in FretTrackerV1 FretTrackerV3; do
+  rm -rf "$PROJECT_DIRECTORY/dist/$MODEL.mlmodelc"
+  xcrun coremlcompiler compile "$PROJECT_DIRECTORY/models/$MODEL.mlpackage" "$PROJECT_DIRECTORY/dist/" >/dev/null
+  test -d "$PROJECT_DIRECTORY/dist/$MODEL.mlmodelc"
+done

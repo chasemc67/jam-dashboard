@@ -77,9 +77,13 @@ async function verify({ directory, version, signed }) {
     );
     if (!existsSync(path.join(app, 'Contents/Resources/app-update.yml')))
       errors.push(`${arch}: app-update.yml is missing`);
-    const model = 'Contents/Resources/FretTrackerV1.mlmodelc/coremldata.bin';
-    if (!existsSync(path.join(app, model)))
-      errors.push(`${arch}: the fret tracker model is missing`);
+    for (const model of ['FretTrackerV1', 'FretTrackerV3'])
+      if (
+        !existsSync(
+          path.join(app, `Contents/Resources/${model}.mlmodelc/coremldata.bin`),
+        )
+      )
+        errors.push(`${arch}: the ${model} fret tracker model is missing`);
     for (const binary of [
       path.join(app, 'Contents/MacOS/Jam Dashboard'),
       ...helpers,

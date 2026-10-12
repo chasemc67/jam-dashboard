@@ -132,6 +132,19 @@ final class FretCoreTests: XCTestCase {
         XCTAssertTrue(anchorsFrom(low.kpts).isEmpty)
     }
 
+    /// FretNet (v3) emits v1's layout with a single anchor: (155, 1).
+    func testDecodeSingleAnchorV3Layout() {
+        var raw = [Float](repeating: 0, count: 155)
+        raw[4] = 0.8
+        for c in 0..<150 { raw[5 + c] = Float(c) + 0.5 }
+        let det = decode(raw: raw, anchorCount: 1)
+        XCTAssertEqual(det.score, 0.8, accuracy: 1e-6)
+        XCTAssertEqual(det.kpts[0], 0.5)
+        XCTAssertEqual(det.kpts[149], 149.5)
+        raw[4] = 0.1
+        XCTAssertTrue(decode(raw: raw, anchorCount: 1).kpts.allSatisfy { $0.isNaN })
+    }
+
     func testDLTRecoversKnownH() throws {
         let ref = try loadReference()
         let src = ref.dlt.src.map { Point($0[0], $0[1]) }

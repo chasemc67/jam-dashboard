@@ -53,8 +53,11 @@ half/double tempo and ambiguous harmony need a musician's judgment.
 
 `FretCore` is a pure-Swift port of the guitar-overlay `gro` post-processing (letterbox/decode, RANSAC + Huber
 homography fit, board-end ridge test + fret-count vote, One-Euro smoothing, tracker state machine).
-`FretTrackerCLI` runs `dist/FretTrackerV1.mlmodelc` (compiled from `models/FretTrackerV1.mlpackage` by
-`scripts/build-helper.sh`) and speaks a binary-in / JSON-lines-out protocol on stdin/stdout:
+`FretTrackerCLI` runs `dist/FretTrackerV1.mlmodelc` or `dist/FretTrackerV3.mlmodelc` (compiled from
+`models/*.mlpackage` by `scripts/build-helper.sh`) and speaks a binary-in / JSON-lines-out protocol on stdin/stdout.
+Both models take a 640x640 image (1/255 scale baked in) and emit the same raw head layout, `(1, 155, A)`: v1
+(YOLO11s-pose, AGPL-3.0) has A = 8400 anchors, v3 (FretNet, permissive; guitar-overlay `scripts/export_fretnet.py`)
+has A = 1. The decoder reads A from the output shape, so pre- and post-processing are shared.
 
 ```sh
 FretTrackerCLI --model dist/FretTrackerV1.mlmodelc [--compute-units all|cpuAndNeuralEngine|cpuAndGPU|cpuOnly] [--frets N]
