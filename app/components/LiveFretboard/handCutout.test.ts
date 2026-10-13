@@ -11,7 +11,7 @@ import {
 test('cutout defaults off and restores the selected option separately', () => {
   expect(storedHandSettings(null, null)).toEqual({
     enabled: false,
-    option: 'vision-fast',
+    option: 'skin',
   });
   localStorage.setItem(HAND_CUTOUT_KEY, 'true');
   localStorage.setItem(HAND_OPTION_KEY, 'vision-balanced');
@@ -27,9 +27,23 @@ test('cutout defaults off and restores the selected option separately', () => {
   });
   expect(storedHandSettings('bad', 'removed')).toEqual({
     enabled: false,
-    option: 'vision-fast',
+    option: 'skin',
   });
 });
+
+test.each(['true', 'false'])(
+  'saved Vision fast is preserved with cutout %s',
+  enabled => {
+    localStorage.setItem(HAND_CUTOUT_KEY, enabled);
+    localStorage.setItem(HAND_OPTION_KEY, 'vision-fast');
+    expect(
+      storedHandSettings(
+        localStorage.getItem(HAND_CUTOUT_KEY),
+        localStorage.getItem(HAND_OPTION_KEY),
+      ),
+    ).toEqual({ enabled: enabled === 'true', option: 'vision-fast' });
+  },
+);
 
 test.each([640, 832])(
   'mask UV crops landscape letterbox at %i, applying both flips once',

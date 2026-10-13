@@ -323,7 +323,8 @@ References: [Electron protocol](https://www.electronjs.org/docs/latest/api/proto
 
 **Hand cutout** (default off), beside the tracking model picker, reveals hands
 above the overlay. Vision fast, Vision balanced, and a skin-color baseline run
-natively with any tracking model. The checkbox and selected option are stored
+natively with any tracking model. The selected method defaults to Skin color
+(baseline) (`skin`); saved method choices are preserved. The checkbox and selected option are stored
 independently in localStorage (`jam-live-fretboard-hand-cutout` and
 `jam-live-fretboard-hand-option`). Fast prioritizes latency; balanced gives finer
 edges. Person segmentation restricted to hand boxes can still erase guitar

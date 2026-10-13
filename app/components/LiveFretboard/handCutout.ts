@@ -25,7 +25,7 @@ export function storedHandSettings(
     enabled: enabled === 'true',
     option:
       HAND_OPTIONS.find(item => item.id === option)?.id ??
-      ('vision-fast' as HandCutoutOption),
+      ('skin' as HandCutoutOption),
   };
 }
 
