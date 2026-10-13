@@ -2,6 +2,15 @@ import { letterbox } from '~/utils/fretProjection';
 import type { HandCutoutOption } from '~/types/fretTracker';
 
 export const HAND_CUTOUT_KEY = 'jam-live-fretboard-hand-cutout';
+export const HAND_OPACITY_KEY = 'jam-live-fretboard-hand-opacity';
+export function handOpacity(value: string | null): number {
+  const parsed = value?.trim() ? Number(value) : NaN;
+  return Number.isFinite(parsed) ? Math.max(0, Math.min(100, parsed)) : 100;
+}
+
+// Shared shader expression, exercised by the compositing math tests.
+export const HAND_ALPHA_GLSL = '1.0 - u_handOpacity * handAlpha';
+
 export const HAND_OPTION_KEY = 'jam-live-fretboard-hand-option';
 export const HAND_OPTIONS: { id: HandCutoutOption; label: string }[] = [
   { id: 'vision-fast', label: 'Vision fast' },

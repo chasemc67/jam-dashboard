@@ -4,7 +4,7 @@
 //
 //   node desktop/e2e/live-fretboard.mjs --video clip.mp4 --out shots/ \
 //     [--app "release/mac-arm64/Jam Dashboard.app"] [--shots 10] [--lefty] \
-//     [--models v3,v1] [--fullscreen-shots 1] [--hand-cutout vision-fast]
+//     [--models v3,v1] [--fullscreen-shots 1] [--hand-cutout vision-fast] [--hand-opacity 100]
 // --lefty turns on the page-level Left-handed setting (model input flipped).
 // --models picks each tracking model in turn from the picker while the video keeps
 // running (runtime switch, no restart); shots are prefixed with the model id.
@@ -29,6 +29,9 @@ const appBundle = option('--app');
 const shots = Number(option('--shots', '10'));
 const lefty = args.includes('--lefty');
 const handCutout = option('--hand-cutout', 'off');
+const handOpacity = Number(option('--hand-opacity', '100'));
+if (!Number.isFinite(handOpacity) || handOpacity < 0 || handOpacity > 100)
+  throw new Error('Invalid --hand-opacity (expected 0–100)');
 const seek = Number(option('--seek-seconds', '0'));
 if (!Number.isFinite(seek) || seek < 0)
   throw new Error('Invalid --seek-seconds');
@@ -166,7 +169,7 @@ async function chooseModel(id) {
   if (!(await evaluate(selected))) throw new Error(`Could not select ${id}`);
 }
 
-const summary = { video, lefty, handCutout, shots: [], stats: [] };
+const summary = { video, lefty, handCutout, handOpacity, shots: [], stats: [] };
 try {
   await send('Runtime.enable');
   await send('DOM.enable');
@@ -178,6 +181,8 @@ try {
   );
   // The page-level Left-handed setting drives the model flip; set it, then reload.
   const settingsChanged = await evaluate(`(() => {
+    const opacityChanged = localStorage.getItem('jam-live-fretboard-hand-opacity') !== ${JSON.stringify(String(handOpacity))};
+    localStorage.setItem('jam-live-fretboard-hand-opacity', ${JSON.stringify(String(handOpacity))});
     const handChanged = localStorage.getItem('jam-live-fretboard-hand-cutout') !== ${JSON.stringify(String(handCutout !== 'off'))} || localStorage.getItem('jam-live-fretboard-hand-option') !== ${JSON.stringify(handCutout)};
     localStorage.setItem('jam-live-fretboard-hand-cutout', ${JSON.stringify(String(handCutout !== 'off'))});
     localStorage.setItem('jam-live-fretboard-hand-option', ${JSON.stringify(handCutout)});
@@ -188,7 +193,7 @@ try {
     const modelKey = 'jam-live-fretboard-model';
     const modelChanged = !!model && localStorage.getItem(modelKey) !== model;
     if (model) localStorage.setItem(modelKey, model);
-    if (stored.isLefty === ${lefty} && !modelChanged && !handChanged) return false;
+    if (stored.isLefty === ${lefty} && !modelChanged && !handChanged && !opacityChanged) return false;
     localStorage.setItem(key, JSON.stringify({ ...stored, isLefty: ${lefty} }));
     return true;
   })()`);
@@ -269,6 +274,25 @@ try {
     if (!summary.handPersistenceVerified)
       throw new Error('Hand setting did not persist');
   }
+  summary.handOpacityRestored = await evaluate(
+    `Number(document.querySelector('[data-testid=live-fretboard-hand-opacity]').value) === ${handOpacity}`,
+  );
+  if (!summary.handOpacityRestored)
+    throw new Error('Hand opacity did not restore');
+  // Exercise React's actual range handler, then return to the requested screenshot value.
+  for (const value of [handOpacity === 0 ? 100 : 0, handOpacity]) {
+    await evaluate(`(() => {
+      const slider = document.querySelector('[data-testid=live-fretboard-hand-opacity]');
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(slider, ${value});
+      slider.dispatchEvent(new Event('input', { bubbles: true }));
+    })()`);
+    await waitFor(
+      `localStorage.getItem('jam-live-fretboard-hand-opacity') === '${value}' && document.querySelector('[data-testid=live-fretboard-stats]').dataset.handOpacity === '${value}'`,
+      5000,
+      'opacity change and persistence',
+    );
+  }
+  summary.handOpacityPersistenceVerified = true;
   const capture = async name => {
     const clip = await evaluate(`(() => {
       const canvas = document.querySelector('[data-testid=live-fretboard-canvas]');

@@ -1,3 +1,4 @@
+import { HAND_ALPHA_GLSL } from './handCutout';
 import type { HandMask } from '~/types/fretTracker';
 // WebGL2 renderer for the live fretboard: draws the video frame, then the
 // projected note patches, wires, strings and labels on top, in source pixels.
@@ -48,11 +49,12 @@ in vec2 v_screen;
 uniform sampler2D u_hand;
 uniform vec4 u_handTransform;
 uniform float u_hasHand;
+uniform float u_handOpacity;
 out vec4 color;
 void main() {
   float alpha = u_text > 0.5 ? texture(u_atlas, v_uv).a : 1.0;
   float handAlpha = u_hasHand > 0.5 ? texture(u_hand, v_screen * u_handTransform.xy + u_handTransform.zw).r : 0.0;
-  color = vec4(v_color.rgb, v_color.a * alpha * (1.0 - handAlpha));
+  color = vec4(v_color.rgb, v_color.a * alpha * (${HAND_ALPHA_GLSL}));
 }`;
 
 const ATLAS_CELL = 64;
@@ -243,6 +245,7 @@ export class OverlayRenderer {
     overlay: OverlayGeometry,
     handMask: HandMask | null = null,
     handTransform: [number, number, number, number] = [1, 1, 0, 0],
+    handOpacity = 1,
   ) {
     const gl = this.gl;
     if (this.canvas.width !== width || this.canvas.height !== height) {
@@ -359,6 +362,10 @@ export class OverlayRenderer {
       );
       this.lastHand = handMask;
     }
+    gl.uniform1f(
+      gl.getUniformLocation(this.shapeProgram, 'u_handOpacity'),
+      handOpacity,
+    );
     gl.uniform1i(gl.getUniformLocation(this.shapeProgram, 'u_hand'), 1);
     gl.uniform1f(
       gl.getUniformLocation(this.shapeProgram, 'u_hasHand'),

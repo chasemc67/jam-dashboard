@@ -1,5 +1,8 @@
 import {
   HAND_CUTOUT_KEY,
+  HAND_OPACITY_KEY,
+  HAND_ALPHA_GLSL,
+  handOpacity,
   HAND_OPTION_KEY,
   storedHandSettings,
   handMaskTransform,
@@ -54,3 +57,37 @@ test('portrait padding is horizontal and square input has none', () => {
     0.5625, 1, 0.21875, 0,
   ]);
 });
+
+test.each([null, '', ' ', 'bad', 'NaN', 'Infinity'])(
+  'opacity defaults to 100 for %s',
+  value => {
+    expect(handOpacity(value)).toBe(100);
+  },
+);
+test.each([
+  ['-10', 0],
+  ['150', 100],
+  ['0', 0],
+  ['50', 50],
+  ['100', 100],
+])('opacity clamps/restores %s', (value, expected) => {
+  localStorage.setItem(HAND_OPACITY_KEY, value);
+  expect(handOpacity(localStorage.getItem(HAND_OPACITY_KEY))).toBe(expected);
+});
+test.each([
+  [100, 1, 0],
+  [50, 1, 0.5],
+  [0, 1, 1],
+  [100, 0, 1],
+  [50, 0.4, 0.8],
+])(
+  'shader opacity %s and mask %s leave alpha %s',
+  (opacity, mask, expected) => {
+    const shaderMath = new Function(
+      'u_handOpacity',
+      'handAlpha',
+      `return ${HAND_ALPHA_GLSL};`,
+    );
+    expect(shaderMath(opacity / 100, mask)).toBeCloseTo(expected);
+  },
+);

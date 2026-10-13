@@ -1,5 +1,7 @@
 import {
   HAND_CUTOUT_KEY,
+  HAND_OPACITY_KEY,
+  handOpacity,
   HAND_OPTION_KEY,
   HAND_OPTIONS,
   storedHandSettings,
@@ -95,6 +97,9 @@ export default function LiveFretboard() {
     storedTrackerModel(null),
   );
   const [hand, setHand] = useState(() => storedHandSettings(null, null));
+  const [opacity, setOpacity] = useState(100);
+  const opacityRef = useRef(opacity);
+  opacityRef.current = opacity;
   const handRef = useRef(hand);
   handRef.current = hand;
   const [running, setRunning] = useState(false);
@@ -119,6 +124,7 @@ export default function LiveFretboard() {
   modelRef.current = model;
 
   useEffect(() => {
+    setOpacity(handOpacity(localStorage.getItem(HAND_OPACITY_KEY)));
     setHand(
       storedHandSettings(
         localStorage.getItem(HAND_CUTOUT_KEY),
@@ -323,6 +329,7 @@ export default function LiveFretboard() {
             lastMirrored,
             mirrorViewRef.current,
           ),
+          opacityRef.current / 100,
         );
       }
       schedule();
@@ -559,6 +566,26 @@ export default function LiveFretboard() {
             </option>
           ))}
         </select>
+        <label className="flex items-center gap-2 text-sm">
+          Hand cutout opacity
+          <input
+            type="range"
+            min="0"
+            max="100"
+            step="1"
+            aria-label="Hand cutout opacity"
+            aria-valuetext={`${opacity}%`}
+            data-testid="live-fretboard-hand-opacity"
+            disabled={!hand.enabled}
+            value={opacity}
+            onChange={event => {
+              const next = handOpacity(event.target.value);
+              setOpacity(next);
+              localStorage.setItem(HAND_OPACITY_KEY, String(next));
+            }}
+          />
+          <output>{opacity}%</output>
+        </label>
       </div>
       {error && (
         <p className="text-sm text-feedback-incorrect" role="alert">
@@ -621,6 +648,7 @@ export default function LiveFretboard() {
           data-frets={result?.nFrets}
           data-model={result?.model}
           data-hand-cutout={result?.handCutout}
+          data-hand-opacity={opacity}
           data-hand-ms={result?.handMs}
           data-hand-mask={!!result?.handMask}
           data-lefty={settings.isLefty ? 'true' : 'false'}
