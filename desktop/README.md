@@ -67,17 +67,20 @@ local clip instead (useful for testing), then press **Start**. macOS asks for
 camera access the first time (`NSCameraUsageDescription`; the hardened runtime
 has `com.apple.security.device.camera`). Video stays on the Mac.
 
-- The renderer letterboxes each frame to 640×640 RGBA and sends it over IPC to
-  `desktop/tracker.cjs`, which keeps one frame in flight to the bundled
+- The renderer letterboxes each frame to model-sized RGBA (512×512 by default)
+  and sends it over IPC to `desktop/tracker.cjs`, which keeps one frame in flight to the bundled
   `FretTrackerCLI` helper (frames that arrive while it is busy are skipped).
-- The helper runs one of three bundled CoreML models, compiled from
-  `native/models/FretTracker{V1,V3,V4Q832}.mlpackage` at build time, and the Swift port
+- The helper runs one of five bundled CoreML models, compiled from
+  `native/models/FretTracker{V1,V3,V4Q832,R832W8A8,Extended512W8A8}.mlpackage`
+  at build time, and the Swift port
   of the guitar-overlay tracker post-processing (RANSAC homography, board-end
   vote, One-Euro smoothing). It returns H, the fret count and wire endpoints in
   source pixels. See [`native/README.md`](native/README.md).
 - **Tracking model** picker offers **YOLO v1 (AGPL)**, **FretNet v3 (permissive)**,
-  and **v4q-832 (permissive)**. Switching restarts the helper and resets temporal
-  state; the choice is remembered across launches. v1 remains the default.
+  **v4q-832 (permissive)**, **v4q-832 fast (8-bit)**, and **ResNet-34 512 fast (8-bit)**.
+  Switching restarts the helper and resets temporal
+  state; the choice is remembered across launches. **ResNet-34 512 fast (8-bit)**
+  (`extended_512_w8a8`) is the default for new users and unknown saved values.
   v4q-832 uses a torchvision ResNet-50/FPN with keypoint queries, an 832×832
   input, and a native robust-fit reindexing step before unletterboxing. Points
   at least 0.30 fret from the nearest fitted wire are dropped; observed positions
@@ -85,7 +88,7 @@ has `com.apple.security.device.camera`). Video stays on the Mac.
   The fixed held-out result is eval-v2 numbering 0.7142, wire mean/median
   5.28/2.16 px, coverage 0.8461; 09-06 numbering 1.000, D13 0.762 px,
   coverage 0.9872. v1/v3 retain their 640×640 input and existing processing.
-  v1 remains the speed-oriented default; see guitar-overlay
+  See guitar-overlay
   `eval/refit_validation.md` for validation, conversion parity and latency.
   The permissive models use own code and BSD-3-Clause torchvision weights.
   Shipping v1 retains the app's AGPL-3.0 obligation; remove its entries from
@@ -470,7 +473,8 @@ The picker also bundles `r832_w8a8` (**v4q-832 fast (8-bit)**, 832 input) and
 `extended_512_w8a8` (**ResNet-34 512 fast (8-bit)**, 512 input). Both use the same
 query-head decoder and 0.30-fret refit/renumber pipeline as v4q-832, with
 CPU_AND_NE compute. Model dimensions control RGBA letterboxing and IPC validation.
-V1 remains default; hand cutout remains off with skin as its default method.
+`extended_512_w8a8` (**ResNet-34 512 fast (8-bit)**) is the default; hand cutout
+remains off with skin as its default method.
 
 The exact measured exports, package SHA-256 identities and output contracts are
 in `desktop/native/models/speedup-provenance.json` (relative to repository root).

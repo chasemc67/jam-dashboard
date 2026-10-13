@@ -118,7 +118,8 @@ The picker also bundles `r832_w8a8` (**v4q-832 fast (8-bit)**, 832 input) and
 `extended_512_w8a8` (**ResNet-34 512 fast (8-bit)**, 512 input). Both use the same
 query-head decoder and 0.30-fret refit/renumber pipeline as v4q-832, with
 CPU_AND_NE compute. Model dimensions control RGBA letterboxing and IPC validation.
-V1 remains default; hand cutout remains off with skin as its default method.
+`extended_512_w8a8` (**ResNet-34 512 fast (8-bit)**) is the default; hand cutout
+remains off with skin as its default method.
 
 The exact measured exports, package SHA-256 identities and output contracts are
 in `desktop/native/models/speedup-provenance.json` (relative to repository root).

@@ -22,7 +22,7 @@ const MODEL_CONFIG = {
 const MODEL_IDS = Object.keys(MODEL_CONFIG);
 const inputSizeForModel = model => MODEL_CONFIG[model].size;
 const HAND_OPTIONS = ['off', 'vision-fast', 'vision-balanced', 'skin'];
-const DEFAULT_MODEL = 'v1'; // see app/components/LiveFretboard/trackerModels.ts
+const DEFAULT_MODEL = 'extended_512_w8a8'; // see app/components/LiveFretboard/trackerModels.ts
 
 function trackerError(code, message) {
   return Object.assign(new Error(message), { code });

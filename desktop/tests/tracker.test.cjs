@@ -199,37 +199,49 @@ test('reports a helper that fails to load the model', async () => {
   assert.equal(service.pending, undefined);
 });
 
-test('defaults to v1 and restarts the helper when the frame names another model', async t => {
+test('defaults to extended_512_w8a8 and restarts the helper when the frame names another model', async t => {
   const helper = fakeHelper();
   const service = new FretTrackerService({
     helperPath: 'x',
     models: {
       v1: '/app/FretTrackerV1.mlmodelc',
       v3: '/app/FretTrackerV3.mlmodelc',
+      extended_512_w8a8: '/app/FretTrackerExtended512W8A8.mlmodelc',
     },
     spawnProcess: helper.spawnProcess,
     log: quiet,
   });
   t.after(() => service.stop());
-  assert.equal((await service.track(frame())).model, 'v1');
+  const pixels = new Uint8Array(512 * 512 * 4);
+  await assert.rejects(service.track(frame()), /512x512/);
+  assert.equal(
+    (await service.track(frame({ pixels }))).model,
+    'extended_512_w8a8',
+  );
   assert.deepEqual(helper.children[0].args, [
     '--emit-kpts',
     '--model',
-    '/app/FretTrackerV1.mlmodelc',
+    '/app/FretTrackerExtended512W8A8.mlmodelc',
+    '--compute-units',
+    'cpuAndNeuralEngine',
   ]);
-  assert.equal((await service.track(frame({ model: 'v1' }))).model, 'v1');
+  assert.equal(helper.children[0].received[0].payload, pixels.byteLength);
+  assert.equal(
+    (await service.track(frame({ model: 'extended_512_w8a8', pixels }))).model,
+    'extended_512_w8a8',
+  );
   assert.equal(helper.children.length, 1);
-  const switched = await service.track(frame({ model: 'v3' }));
-  assert.equal(switched.model, 'v3');
-  assert.equal(service.info.model, 'v3');
+  const switched = await service.track(frame({ model: 'v1' }));
+  assert.equal(switched.model, 'v1');
+  assert.equal(service.info.model, 'v1');
   assert.deepEqual(helper.children[0].killed, ['SIGKILL']);
   assert.deepEqual(helper.children[1].args, [
     '--emit-kpts',
     '--model',
-    '/app/FretTrackerV3.mlmodelc',
+    '/app/FretTrackerV1.mlmodelc',
   ]);
   // A frame without a model keeps the running one.
-  assert.equal((await service.track(frame())).model, 'v3');
+  assert.equal((await service.track(frame())).model, 'v1');
   assert.equal(helper.children.length, 2);
 });
 
@@ -281,7 +293,7 @@ for (const [model, size, packageName] of [
       log: quiet,
     });
     t.after(() => service.stop());
-    await service.track(frame());
+    await service.track(frame({ model: 'v1' }));
     await assert.rejects(
       service.track(frame({ model })),
       new RegExp(`${size}x${size}`),
@@ -313,14 +325,16 @@ test('hand options are validated and encoded independently of model/reset/mirror
     'vision-balanced',
     'skin',
   ].entries()) {
-    const validated = validateFrame(frame({ handCutout, reset: true }));
+    const validated = validateFrame(
+      frame({ model: 'v1', handCutout, reset: true }),
+    );
     assert.equal(
       encodeFrame({ ...validated, id: 1 })[0].readUInt32LE(24),
       3 | (index << 2),
     );
   }
   assert.throws(
-    () => validateFrame(frame({ handCutout: 'arbitrary' })),
+    () => validateFrame(frame({ model: 'v1', handCutout: 'arbitrary' })),
     /Unknown hand/,
   );
 });

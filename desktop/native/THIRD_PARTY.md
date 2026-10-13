@@ -4,7 +4,7 @@
 
 The two new bundles use the provenance recorded in guitar-overlay `LICENSES.md`
 ("Model v3" and "Speed experiments"). The permissive-only requirement applies to
-these additions; the existing AGPL-3.0 V1 bundle remains unchanged and default.
+these additions; the existing AGPL-3.0 V1 bundle remains unchanged and available.
 
 | Bundle / candidate | Code, weights and training provenance |
 | --- | --- |

@@ -9,9 +9,7 @@ export const TRACKER_MODELS: { id: FretTrackerModelId; label: string }[] = [
   { id: 'extended_512_w8a8', label: 'ResNet-34 512 fast (8-bit)' },
 ];
 
-// Keep v1 as the speed-oriented default. v4q832 improves held-out accuracy;
-// see guitar-overlay eval/refit_validation.md for the full comparison.
-export const DEFAULT_TRACKER_MODEL: FretTrackerModelId = 'v1';
+export const DEFAULT_TRACKER_MODEL: FretTrackerModelId = 'extended_512_w8a8';
 
 export const trackerInputSize = (model: FretTrackerModelId): number =>
   ({ v1: 640, v3: 640, v4q832: 832, r832_w8a8: 832, extended_512_w8a8: 512 })[
