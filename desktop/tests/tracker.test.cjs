@@ -295,3 +295,50 @@ test('v4q832 switches input size and rejects a mismatched payload', async t => {
   assert.equal((await service.track(frame({ model: 'v1' }))).model, 'v1');
   assert.equal(helper.children[2].received[0].payload, FRAME_BYTES);
 });
+
+test('hand options are validated and encoded independently of model/reset/mirror', () => {
+  const { validateFrame } = require('../tracker.cjs');
+  for (const [index, handCutout] of [
+    'off',
+    'vision-fast',
+    'vision-balanced',
+    'skin',
+  ].entries()) {
+    const validated = validateFrame(frame({ handCutout, reset: true }));
+    assert.equal(
+      encodeFrame({ ...validated, id: 1 })[0].readUInt32LE(24),
+      3 | (index << 2),
+    );
+  }
+  assert.throws(
+    () => validateFrame(frame({ handCutout: 'arbitrary' })),
+    /Unknown hand/,
+  );
+});
+
+test('hand mask IPC accepts bounded alpha and rejects malformed or oversized payloads', () => {
+  const mask = {
+    width: 2,
+    height: 2,
+    alpha: Buffer.from([0, 128, 255, 0]).toString('base64'),
+  };
+  const result = {
+    type: 'frame',
+    id: 1,
+    handCutout: 'vision-fast',
+    handMask: mask,
+    handMs: 12,
+  };
+  assert.deepEqual(validateResult(result).handMask, mask);
+  for (const invalid of [
+    { ...mask, width: 257 },
+    { ...mask, height: 0 },
+    { ...mask, alpha: '!!!!====' },
+    { ...mask, alpha: 'AAAA' },
+  ])
+    assert.throws(
+      () => validateResult({ ...result, handMask: invalid }),
+      /Invalid hand mask/,
+    );
+  assert.equal(validateResult({ type: 'frame', id: 1 }).handMask, null);
+});

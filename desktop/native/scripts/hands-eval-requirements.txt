@@ -1,0 +1,7 @@
+# Python 3.12, arm64 macOS; evaluation only, never bundled.
+mediapipe==1.1.0
+opencv-python==5.0.0.93
+numpy==2.5.4
+torch==2.14.1
+torchvision==0.29.1
+pillow==12.3.0

@@ -15,20 +15,35 @@ const MAX_STDOUT_LINE = 1 << 20;
 // (permissive). See desktop/README.md.
 const MODEL_IDS = ['v1', 'v3', 'v4q832'];
 const inputSizeForModel = model => (model === 'v4q832' ? 832 : INPUT_SIZE);
+const HAND_OPTIONS = ['off', 'vision-fast', 'vision-balanced', 'skin'];
 const DEFAULT_MODEL = 'v1'; // see app/components/LiveFretboard/trackerModels.ts
 
 function trackerError(code, message) {
   return Object.assign(new Error(message), { code });
 }
 
-function encodeFrame({ id, t, width, height, mirrored, reset, pixels }) {
+function encodeFrame({
+  id,
+  t,
+  width,
+  height,
+  mirrored,
+  reset,
+  pixels,
+  handCutout = 'off',
+}) {
   const header = Buffer.alloc(HEADER_BYTES);
   header.write('FRT1', 0, 'ascii');
   header.writeUInt32LE(id, 4);
   header.writeDoubleLE(t, 8);
   header.writeUInt32LE(width, 16);
   header.writeUInt32LE(height, 20);
-  header.writeUInt32LE((mirrored ? 1 : 0) | (reset ? 2 : 0), 24);
+  header.writeUInt32LE(
+    (mirrored ? 1 : 0) |
+      (reset ? 2 : 0) |
+      (HAND_OPTIONS.indexOf(handCutout) << 2),
+    24,
+  );
   header.writeUInt32LE(pixels.byteLength, 28);
   return [
     header,
@@ -39,7 +54,16 @@ function encodeFrame({ id, t, width, height, mirrored, reset, pixels }) {
 function validateFrame(frame, currentModel = DEFAULT_MODEL) {
   if (!frame || typeof frame !== 'object')
     throw trackerError('invalid', 'Invalid frame.');
-  const { t, width, height, mirrored, reset, pixels, model } = frame;
+  const {
+    t,
+    width,
+    height,
+    mirrored,
+    reset,
+    pixels,
+    model,
+    handCutout = 'off',
+  } = frame;
   const inputSize = inputSizeForModel(model ?? currentModel);
   if (!Number.isFinite(t)) throw trackerError('invalid', 'Invalid frame time.');
   for (const side of [width, height])
@@ -55,7 +79,10 @@ function validateFrame(frame, currentModel = DEFAULT_MODEL) {
     );
   if (model !== undefined && !MODEL_IDS.includes(model))
     throw trackerError('invalid', 'Unknown tracker model.');
+  if (!HAND_OPTIONS.includes(handCutout))
+    throw trackerError('invalid', 'Unknown hand cutout option.');
   return {
+    handCutout,
     t,
     width,
     height,
@@ -71,6 +98,24 @@ const isPoint = point =>
   Array.isArray(point) &&
   point.length === 2 &&
   point.every(value => Number.isFinite(value));
+
+function validateHandMask(mask) {
+  if (mask == null) return null;
+  if (
+    !Number.isInteger(mask.width) ||
+    !Number.isInteger(mask.height) ||
+    mask.width < 1 ||
+    mask.height < 1 ||
+    mask.width > 256 ||
+    mask.height > 256 ||
+    typeof mask.alpha !== 'string' ||
+    mask.alpha.length !== 4 * Math.ceil((mask.width * mask.height) / 3) ||
+    !/^[A-Za-z0-9+/]*={0,2}$/.test(mask.alpha) ||
+    Buffer.from(mask.alpha, 'base64').length !== mask.width * mask.height
+  )
+    throw trackerError('helper', 'Invalid hand mask.');
+  return { width: mask.width, height: mask.height, alpha: mask.alpha };
+}
 
 // Only pass on what the renderer draws, in a fixed shape.
 function validateResult(value) {
@@ -101,6 +146,15 @@ function validateResult(value) {
         )
       : {};
   return {
+    handMask: validateHandMask(value.handMask),
+    handCutout: HAND_OPTIONS.includes(value.handCutout)
+      ? value.handCutout
+      : 'off',
+    handMs: finiteOrNull(value.handMs),
+    handError:
+      typeof value.handError === 'string'
+        ? value.handError.slice(0, 300)
+        : null,
     id: value.id,
     t: finiteOrNull(value.t),
     valid: valid && !!H && H.every(Number.isFinite),

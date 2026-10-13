@@ -236,6 +236,11 @@ func predict() throws -> MLMultiArray {
 // MARK: - Per-frame pipeline
 
 let tracker = FretboardTracker(frets: fixedFrets)
+var handTracker: HandMaskTracker?
+var handOption = 0
+var currentHandMask: HandMask?
+var handMs = 0.0
+var handError: String?
 var payloadArray = [UInt8](repeating: 0, count: payloadSize)  // RGBA8 frame, reused (no copy into GrayImage)
 let header = UnsafeMutableRawPointer.allocate(byteCount: headerSize, alignment: 8)
 
@@ -262,7 +267,17 @@ func processFrame(srcWidth: Int, srcHeight: Int, mirrored: Bool, t: Double?) thr
     tm.prep = t1 - t0
     tm.model = t2 - t1
     tm.post = t3 - t2
-    tm.total = t3 - t0
+    currentHandMask = nil
+    handError = nil
+    handMs = 0
+    if handOption != 0 {
+        let start = nowMs()
+        if handTracker == nil { handTracker = HandMaskTracker() }
+        do { currentHandMask = try handTracker!.mask(pixelBuffer, option: handOption) }
+        catch { handError = error.localizedDescription }
+        handMs = nowMs() - start
+    }
+    tm.total = nowMs() - t0
     return (state, tm)
 }
 
@@ -288,6 +303,13 @@ func frameJSON(id: UInt32, state: TrackState, timings: FrameTimings) -> String {
         j.raw("wires", "null")
         j.num("tau", defaultTau)
     }
+    if let mask = currentHandMask {
+        j.raw("handMask", "{\"width\":\(mask.width),\"height\":\(mask.height),\"alpha\":\(jsonString(Data(mask.alpha).base64EncodedString()))}")
+        j.raw("handBoxes", "[" + mask.boxes.map { "[" + $0.map { jsonNumber($0) }.joined(separator: ",") + "]" }.joined(separator: ",") + "]")
+    }
+    j.str("handCutout", ["off", "vision-fast", "vision-balanced", "skin"][handOption])
+    if let handError { j.str("handError", handError) }
+    j.num("handMs", handMs)
     j.int("anchors", state.anchorCount)
     j.num("rmsePx", state.rmsePx)
     j.int("endEstimate", state.endEstimate)
@@ -397,7 +419,9 @@ while true {
     if srcWidth <= 0 || srcHeight <= 0 || srcWidth > 16384 || srcHeight > 16384 {
         fail("bad source size \(srcWidth)x\(srcHeight)")
     }
-    if flags & 2 != 0 { tracker.reset() }
+    if flags & 2 != 0 { tracker.reset(); handTracker = nil }
+    handOption = Int((flags >> 2) & 3)
+    if handOption == 0 { handTracker = nil }
     do {
         let (state, tm) = try processFrame(srcWidth: srcWidth, srcHeight: srcHeight, mirrored: flags & 1 != 0,
                                            t: t.isFinite ? t : nil)
