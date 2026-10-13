@@ -200,6 +200,11 @@ export class OverlayRenderer {
     return rgba;
   }
 
+  /** Exact cached colors used by the most recent draw, for recording replay. */
+  recordingColors(): Record<string, RGBA> {
+    return Object.fromEntries(this.colors);
+  }
+
   /** Forget cached theme colors (after a theme change). */
   resetColors() {
     this.colors.clear();

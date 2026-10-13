@@ -41,6 +41,8 @@ export type FretTrackerResult = {
   wires: [number, number][][] | null;
   boardScore: number | null;
   anchors: number;
+  /** Flattened 50 x (x, y, confidence), unmirrored source pixels. */
+  kpts?: (number | null)[] | null;
   rmsePx: number | null;
   timingsMs: Partial<
     Record<'prep' | 'model' | 'post' | 'total', number | null>

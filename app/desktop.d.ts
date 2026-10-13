@@ -4,6 +4,7 @@ interface ImportMetaEnv {
 }
 
 interface Window {
+  jamRecording?: import('./components/LiveFretboard/recording').RecordingAPI;
   jamDesktop?: import('./types/analyzer').DesktopAPI;
   jamAgent?: import('./agent/bridge').DesktopAgentAPI;
   jamGatewayKey?: import('./agent/gateway-key').DesktopGatewayKeyAPI;

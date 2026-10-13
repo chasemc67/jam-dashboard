@@ -118,6 +118,7 @@ test('tracks a frame through the helper and returns a sanitized result', async t
   t.after(() => service.stop());
   const result = await service.track(frame());
   assert.deepEqual(helper.children[0].args, [
+    '--emit-kpts',
     '--model',
     '/app/FretTrackerV1.mlmodelc',
   ]);
@@ -212,6 +213,7 @@ test('defaults to v1 and restarts the helper when the frame names another model'
   t.after(() => service.stop());
   assert.equal((await service.track(frame())).model, 'v1');
   assert.deepEqual(helper.children[0].args, [
+    '--emit-kpts',
     '--model',
     '/app/FretTrackerV1.mlmodelc',
   ]);
@@ -222,6 +224,7 @@ test('defaults to v1 and restarts the helper when the frame names another model'
   assert.equal(service.info.model, 'v3');
   assert.deepEqual(helper.children[0].killed, ['SIGKILL']);
   assert.deepEqual(helper.children[1].args, [
+    '--emit-kpts',
     '--model',
     '/app/FretTrackerV3.mlmodelc',
   ]);
@@ -282,6 +285,7 @@ test('v4q832 switches input size and rejects a mismatched payload', async t => {
   );
   assert.equal(helper.children[1].received[0].payload, pixels.byteLength);
   assert.deepEqual(helper.children[1].args, [
+    '--emit-kpts',
     '--model',
     '/app/FretTrackerV4Q832.mlmodelc',
     '--compute-units',

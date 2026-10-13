@@ -13,6 +13,8 @@ const {
 } = require('electron');
 const { AnalyzerService, AUDIO_EXTENSIONS } = require('./analyzer.cjs');
 const { FretTrackerService } = require('./tracker.cjs');
+const { RecordingService, registerRecordingIPC } = require('./recording.cjs');
+let recordings;
 const {
   startAgentService,
   loadAgentToken,
@@ -119,6 +121,7 @@ async function createWindow() {
   mainWindow.on('closed', () => {
     detachAgent();
     fretTracker?.stop();
+    void recordings?.close();
     mainWindow = undefined;
   });
   mainWindow.webContents.on('render-process-gone', detachAgent);
@@ -289,6 +292,12 @@ if (!app.requestSingleInstanceLock()) {
             return { ok: false, error: error.message };
           }
         });
+      recordings = new RecordingService({
+        directory: path.join(app.getPath('videos'), 'Jam Dashboard Recordings'),
+        appVersion: app.getVersion(),
+        reveal: file => shell.showItemInFolder(file),
+      });
+      registerRecordingIPC(handle, recordings);
       try {
         const token = await loadAgentToken(
           path.join(app.getPath('userData'), 'agent-token'),

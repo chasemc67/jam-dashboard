@@ -48,3 +48,16 @@ contextBridge.exposeInMainWorld(
     stop: () => ipcRenderer.invoke('jam:tracker-stop'),
   }),
 );
+
+contextBridge.exposeInMainWorld(
+  'jamRecording',
+  Object.freeze({
+    start: metadata => ipcRenderer.invoke('jam:recording-start', metadata),
+    append: (id, stream, data) =>
+      ipcRenderer.invoke('jam:recording-append', id, stream, data),
+    stop: (id, note, error) =>
+      ipcRenderer.invoke('jam:recording-stop', id, note, error),
+    note: (id, note) => ipcRenderer.invoke('jam:recording-note', id, note),
+    show: id => ipcRenderer.invoke('jam:recording-show', id),
+  }),
+);

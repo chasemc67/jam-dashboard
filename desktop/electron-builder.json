@@ -11,6 +11,7 @@
     "policy.cjs",
     "analyzer.cjs",
     "tracker.cjs",
+    "recording.cjs",
     "agent-service.cjs",
     "updater.cjs",
     "electron-updater.cjs",

@@ -340,3 +340,126 @@ node desktop/e2e/live-fretboard.mjs --video clip.mp4 --out out/hands/e2e \
 
 `--lefty` must match the recorded orientation (09-06 needs it). The e2e also toggles
 hand cutout off/on, verifies zero native work while off, and checks persistence.
+
+## Live Fretboard recordings
+
+With a camera running, **Record** beside the model picker records locally. Stop
+recording (or stop/change the camera) to finalize it. Edit the recording note
+while recording or after stopping; **Show in Finder** reveals the saved sidecar.
+Recording is hidden on the web and disabled for file playback. Files live under
+Electron's user Videos directory (normally `~/Movies` on macOS), in
+`Jam Dashboard Recordings/YYYY-MM-DD_HH-MM-SS_<model-id>_<unique-suffix>/`.
+The timestamp is UTC; the suffix prevents same-second collisions.
+
+- `raw.webm`: VP8 camera stream, before any display mirror, with no audio.
+- `overlay.webm`: VP8 capture of the actual WebGL canvas, including the camera,
+  note patches, labels, fitted wires, and hand occlusion at the selected opacity.
+- `session.json`: schema below. Built from streamed frames on stop, without
+  loading the full recording into memory; note edits replace it atomically.
+- `note.txt`: UTF-8 note, also stored in `session.json.note`.
+- `frames.jsonl` and `settingChanges.jsonl`: append-only frame and settings-change
+  journals, retained for recovery if the app terminates before finalization. An
+  interrupted WebM may be incomplete.
+
+### Sidecar schema (version 2)
+
+Top-level fields: `schemaVersion`, main-process `appVersion`, ISO `startedAt`,
+`performanceStart` (renderer monotonic milliseconds), `folderName`, `mimeType`,
+initial `model`, `leftHanded`, `mirrored`, `handCutout` (`enabled`, `option`,
+`opacity` in 0–1), raw video `width`/`height`, `note`, `error` (recording failure or null),
+`settings` (independent initial snapshot), `settingChanges` (ordered array, empty
+when nothing changed), and `frames` (ordered array). The legacy top-level setting
+fields remain initial values for compatibility. The folder's model is the initial
+model; it may change during recording.
+
+`settings` and each frame's `settings` contain:
+
+- `model`: tracker model id; `leftHanded`: model-input handedness;
+  `mirrored`: actual display mirror; `handCutout`: `enabled`, `option` (method id),
+  and `opacity` (0–1, including when disabled).
+- `width`/`height`: decoded raw-video pixel dimensions; `source`: selected camera
+  device id (`""` means default camera, `"file"` means file playback);
+  `fullscreen`: presentation state.
+- `camera.deviceId` and `camera.label`: active video track identity, null when
+  unavailable. `camera.requested` stores the exact video constraints passed to
+  `getUserMedia` (currently ideal 1280 × 720 at 30 fps and, if selected, exact
+  device id). `camera.actual` contains `width`, `height`, and `frameRate` from
+  `MediaStreamTrack.getSettings()`; unsupported values are null, never invented
+  from requested values. Frame rate is in frames per second.
+- `overlay`: `key`, `scale`, `notes`, `pentatonicNotes`, `highlightedNotes` (note
+  and color pairs), `rootNotes` (ordered string tuning), and the full agent
+  `display` selection (including optional exact positions). `options` contains
+  all shared settings: `isLefty`, `numberOfFrets`, `numberOfStrings`,
+  `showTextNotes`, `quickColors`, `cagedModeEnabled`, `cagedShape`,
+  `showMajorMinorScales`, `showHarmonicMelodicScales`, and `showModes`.
+  `fretRange` records the live overlay's effective marker range (`from: 1`,
+  `to: 24`), which is independent of the diagram's fret-count preference.
+  Exact rendered geometry and resolved theme colors remain in each frame.
+
+Every `settingChanges` entry is `{t_ms, key, from, to}`. `t_ms` is
+`performance.now() - performanceStart`, the same clock as frame `t_ms` (not
+wall time or camera media time). `key` is a dotted path relative to `settings`,
+for example `handCutout.opacity`, `overlay.key`, or `camera.actual.frameRate`.
+Nested objects are diffed by field; arrays are replaced as a whole. Missing
+optional fields use null in changes. Apply entries in order to a copy of the
+initial snapshot; multiple changes can share a timestamp. Identical snapshots
+do not emit changes. Committed UI changes are observed even without a new video
+frame; actual track settings are also sampled on each draw.
+
+Changing the camera/source still finalizes the current recording. The final
+`source` change records the newly selected device id before closing, while
+`camera` describes the track actually recorded. A new recording snapshots the
+new camera's resolved identity and actual format. This avoids implying that the
+old raw video contains frames from the newly selected camera. Changes are streamed
+through main-process IPC and assembled into `session.json` on stop, including
+changes after the last frame; editing a saved note preserves both arrays.
+
+Each frame describes one displayed canvas draw, including draws reusing an older
+inference result. Fields:
+
+- `frameIndex`: zero-based draw index; `t_ms`: draw time minus `performanceStart`.
+  Both encoders start on this same `performance.now()` clock. `encoderStart_ms`
+  records their individual `raw` and `overlay` start-call offsets, so subtract the
+  relevant offset from `t_ms` when aligning to the corresponding encoded video.
+  MediaRecorder does not guarantee identical first-frame presentation times;
+  these are monotonic start-call timestamps, not container PTS values.
+- `mediaTime`: camera frame time in seconds from `requestVideoFrameCallback`, or
+  null with the animation-frame fallback. `inferenceCapturedAt` is the input
+  capture's relative monotonic milliseconds; `inferenceMediaTime` identifies its
+  camera frame. These differ from draw time due to asynchronous inference.
+- `settings`: full current snapshot described above on every draw. Use the
+  top-level `settingChanges` journal for transitions between draws as well.
+- `keypoints`: flattened 50 × `(x, y, confidence)` array, slots `0 bass`,
+  `0 treble`, …, `24 treble`; nonfinite entries are null. Coordinates are raw,
+  **unmirrored** video pixels, with integer pixel centers and top-left origin.
+  Null means the helper supplied no keypoints. `confidence` is the board score.
+- `tracking`: validated tracker result, including `H` (row-major canonical board
+  to unmirrored source pixels), `tau`, `nFrets`, fitted `wires`, anchor count,
+  held/valid state, RMSE and timings; null before the first result. The tracker
+  reverses its left-handed model-input flip before returning these coordinates.
+- `overlay`: the **exact geometry passed to the renderer**, in display pixels:
+  colored cell quads, fitted wire/string endpoints, and labels with text, center,
+  and size. Empty geometry means nothing was drawn, even if a stale result exists.
+  `colors` stores the renderer's cached RGBA theme colors. Renderer styling is
+  defined by `app/components/LiveFretboard/overlayRenderer.ts`: cells alpha .82,
+  strings white alpha .35, wires `[.95,.95,.85,.6]`, labels `[.06,.06,.08,1]`.
+- `mask`: the exact applied hand mask (`width`, `height`, base64 row-major uint8
+  `alpha`), or null, including when a stale mask was suppressed. `maskTransform`
+  maps display UV to model-letterboxed mask UV as `[scaleX,scaleY,offsetX,offsetY]`.
+  The overlay alpha multiplier is `1 - handCutout.opacity * maskAlpha`.
+
+To reproduce the displayed output, mirror raw video if that frame's
+`settings.mirrored` is true, then render the stored display-space geometry and
+mask. Do not mirror `overlay` again. To put the geometry on an unmirrored raw
+frame instead, transform every display x as `width - 1 - x` when mirrored;
+likewise compose the inverse horizontal flip into the mask UV transform.
+`tracking.H`, `tracking.wires`, and `keypoints` are already in raw coordinates.
+Use stored geometry for replay rather than recomputing from current scale or
+color settings. Source frames and inference timestamps are both retained because
+tracking may lag the displayed camera image.
+
+All recording writes and Finder access go through the existing trusted-main-frame
+IPC gate and isolated preload. Renderer requests contain opaque session IDs,
+fixed stream names, and bounded chunks, never filesystem paths. MediaRecorder
+emits one-second chunks. A bounded renderer queue stops recording with an error
+if disk writes fall behind, rather than retaining an entire session in memory.

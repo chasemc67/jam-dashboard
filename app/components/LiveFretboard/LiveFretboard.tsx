@@ -7,7 +7,7 @@ import {
   storedHandSettings,
   handMaskTransform,
 } from './handCutout';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Camera, FileVideo, Loader2, Maximize, Minimize } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import {
@@ -30,6 +30,7 @@ import type {
 import { EMPTY_OVERLAY, buildOverlay } from './overlayGeometry';
 import { displayMirror, modelFlip } from './orientation';
 import { OverlayRenderer } from './overlayRenderer';
+import { FretboardRecording, type RecordingSettings } from './recording';
 import {
   TRACKER_MODELS,
   trackerInputSize,
@@ -47,13 +48,8 @@ type Stats = {
   frames: number;
 };
 
-type VideoWithFrameCallback = HTMLVideoElement & {
-  requestVideoFrameCallback?: (callback: () => void) => number;
-  cancelVideoFrameCallback?: (handle: number) => void;
-};
-
 export default function LiveFretboard() {
-  const { notes, pentatonicNotes } = useScaleKey();
+  const { key, scale, notes, pentatonicNotes } = useScaleKey();
   const { getHighlightedNotes } = useHighlight();
   const { settings } = useSettings();
   const { rootNotes, display } = useAgent();
@@ -106,6 +102,17 @@ export default function LiveFretboard() {
   const [error, setError] = useState<string>();
   const [stats, setStats] = useState<Stats>();
   const [result, setResult] = useState<FretTrackerResult>();
+  const recordingRef = useRef<FretboardRecording>();
+  const [recordingState, setRecordingState] = useState<
+    'idle' | 'starting' | 'recording' | 'saving' | 'saved'
+  >('idle');
+  const [recordingId, setRecordingId] = useState<string>();
+  const [note, setNote] = useState('');
+  const noteRef = useRef('');
+  const [canRecord, setCanRecord] = useState(false);
+  useEffect(() => {
+    setCanRecord(!!window.jamRecording && typeof MediaRecorder !== 'undefined');
+  }, []);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -122,6 +129,114 @@ export default function LiveFretboard() {
   const mirrorViewRef = useRef(false);
   const modelRef = useRef(model);
   modelRef.current = model;
+
+  const settingsContextRef = useRef({
+    source,
+    fullscreen,
+    overlay: {
+      key,
+      scale,
+      notes,
+      pentatonicNotes,
+      highlightedNotes,
+      rootNotes,
+      display,
+      options: settings,
+      fretRange: { from: 1, to: 24 },
+    },
+  });
+  settingsContextRef.current = {
+    source,
+    fullscreen,
+    overlay: {
+      key,
+      scale,
+      notes,
+      pentatonicNotes,
+      highlightedNotes,
+      rootNotes,
+      display,
+      options: settings,
+      fretRange: { from: 1, to: 24 },
+    },
+  };
+  const requestedCameraRef = useRef<MediaTrackConstraints>({});
+  const recordingSettings = useCallback((): RecordingSettings => {
+    const stream = videoRef.current?.srcObject as MediaStream | null;
+    const track = stream?.getVideoTracks()[0];
+    const actual = track?.getSettings();
+    return {
+      ...settingsContextRef.current,
+      camera: {
+        deviceId: actual?.deviceId ?? null,
+        label: track?.label ?? null,
+        requested: requestedCameraRef.current,
+        actual: {
+          width: actual?.width ?? null,
+          height: actual?.height ?? null,
+          frameRate: actual?.frameRate ?? null,
+        },
+      },
+      model: modelRef.current,
+      leftHanded: flipRef.current,
+      mirrored: mirrorViewRef.current,
+      handCutout: { ...handRef.current, opacity: opacityRef.current / 100 },
+      width: videoRef.current?.videoWidth ?? 0,
+      height: videoRef.current?.videoHeight ?? 0,
+    };
+  }, []);
+  // Observe committed settings even while camera frames are stalled.
+  useEffect(() => {
+    recordingRef.current?.updateSettings(recordingSettings());
+  });
+  const stopRecording = useCallback(async () => {
+    const recording = recordingRef.current;
+    if (!recording) return;
+    recordingRef.current = undefined;
+    setRecordingState('saving');
+    try {
+      await recording.stop(noteRef.current);
+    } catch (cause) {
+      setError((cause as Error).message);
+    } finally {
+      setRecordingId(recording.id || undefined);
+      setRecordingState('saved');
+    }
+  }, []);
+  const startRecording = async () => {
+    const video = videoRef.current;
+    if (
+      !window.jamRecording ||
+      !video ||
+      !(video.srcObject instanceof MediaStream) ||
+      !canvasRef.current ||
+      !video.videoWidth
+    ) {
+      setError('Start a camera before recording.');
+      return;
+    }
+    setRecordingState('starting');
+    setError(undefined);
+    setRecordingId(undefined);
+    setNote('');
+    noteRef.current = '';
+    const recording = new FretboardRecording(window.jamRecording, cause => {
+      setError(cause.message);
+      void stopRecording();
+    });
+    recordingRef.current = recording;
+    try {
+      await recording.open(
+        video.srcObject,
+        canvasRef.current,
+        recordingSettings(),
+      );
+      if (recordingRef.current === recording) setRecordingState('recording');
+    } catch (cause) {
+      setError((cause as Error).message);
+      await stopRecording();
+    }
+  };
 
   useEffect(() => {
     setOpacity(handOpacity(localStorage.getItem(HAND_OPACITY_KEY)));
@@ -152,7 +267,7 @@ export default function LiveFretboard() {
   // Open the selected source and run the capture -> track -> draw loop.
   useEffect(() => {
     if (!running) return;
-    const video = videoRef.current as VideoWithFrameCallback | null;
+    const video = videoRef.current;
     const canvas = canvasRef.current;
     const api = window.jamFretTracker;
     if (!video || !canvas) return;
@@ -187,6 +302,8 @@ export default function LiveFretboard() {
     let frameHandle: number | undefined;
     let statsAt = 0;
     let maskCapturedAt = -Infinity;
+    let inferenceMediaTime: number | null = null;
+    let mediaTime: number | null = null;
 
     const send = () => {
       if (inFlight || !context || video.readyState < 2) return;
@@ -228,6 +345,7 @@ export default function LiveFretboard() {
       }
       const pixels = context.getImageData(0, 0, inputSize, inputSize).data;
       const started = performance.now();
+      const capturedMediaTime = mediaTime;
       inFlight = true;
       const frameReset = reset;
       reset = false;
@@ -254,6 +372,7 @@ export default function LiveFretboard() {
             return;
           latest = next;
           maskCapturedAt = started;
+          inferenceMediaTime = capturedMediaTime;
           frames += 1;
           const now = performance.now();
           if (lastDone) {
@@ -287,7 +406,8 @@ export default function LiveFretboard() {
         });
     };
 
-    const draw = () => {
+    const draw = (_now?: number, metadata?: VideoFrameCallbackMetadata) => {
+      mediaTime = metadata?.mediaTime ?? null;
       if (cancelled) return;
       if (video.readyState >= 2 && video.videoWidth) {
         send();
@@ -331,6 +451,26 @@ export default function LiveFretboard() {
           ),
           opacityRef.current / 100,
         );
+        recordingRef.current?.frame({
+          now: performance.now(),
+          mediaTime,
+          settings: recordingSettings(),
+          result: latest,
+          overlay,
+          mask,
+          maskTransform: handMaskTransform(
+            width,
+            height,
+            trackerInputSize(lastModel),
+            lastMirrored,
+            mirrorViewRef.current,
+          ),
+          inferenceCapturedAt: Number.isFinite(maskCapturedAt)
+            ? maskCapturedAt
+            : null,
+          inferenceMediaTime,
+          colors: renderer.recordingColors(),
+        });
       }
       schedule();
     };
@@ -351,14 +491,15 @@ export default function LiveFretboard() {
           video.loop = true;
           mirrorViewRef.current = displayMirror('file');
         } else {
+          requestedCameraRef.current = {
+            deviceId: source ? { exact: source } : undefined,
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            frameRate: { ideal: 30 },
+          };
           stream = await navigator.mediaDevices.getUserMedia({
             audio: false,
-            video: {
-              deviceId: source ? { exact: source } : undefined,
-              width: { ideal: 1280 },
-              height: { ideal: 720 },
-              frameRate: { ideal: 30 },
-            },
+            video: requestedCameraRef.current,
           });
           if (cancelled) return;
           video.removeAttribute('src');
@@ -388,6 +529,8 @@ export default function LiveFretboard() {
 
     return () => {
       cancelled = true;
+      recordingRef.current?.updateSettings(recordingSettings());
+      void stopRecording();
       if (frameHandle !== undefined) {
         if (video.cancelVideoFrameCallback)
           video.cancelVideoFrameCallback(frameHandle);
@@ -399,7 +542,7 @@ export default function LiveFretboard() {
       renderer.dispose();
       void api.stop().catch(() => {});
     };
-  }, [running, source, fileURL]);
+  }, [running, source, fileURL, recordingSettings, stopRecording]);
 
   const chooseFile = (file: File | undefined) => {
     if (!file) return;
@@ -532,6 +675,29 @@ export default function LiveFretboard() {
             ))}
           </SelectContent>
         </Select>
+        {canRecord && (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={
+              recordingState === 'starting' ||
+              recordingState === 'saving' ||
+              (!recordingRef.current && (!running || source === FILE_SOURCE))
+            }
+            onClick={() => {
+              if (recordingRef.current) void stopRecording();
+              else void startRecording();
+            }}
+          >
+            {recordingState === 'recording'
+              ? 'Stop recording'
+              : recordingState === 'saving'
+                ? 'Saving…'
+                : recordingState === 'starting'
+                  ? 'Starting…'
+                  : 'Record'}
+          </Button>
+        )}
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
@@ -587,6 +753,42 @@ export default function LiveFretboard() {
           <output>{opacity}%</output>
         </label>
       </div>
+      {canRecord && recordingState !== 'idle' && (
+        <div className="flex flex-col gap-2">
+          <label className="text-sm">
+            Recording note
+            <textarea
+              aria-label="Recording note"
+              className="mt-1 block w-full rounded-md border bg-background p-2"
+              maxLength={100000}
+              value={note}
+              disabled={recordingState === 'saving'}
+              onChange={event => {
+                const value = event.target.value;
+                setNote(value);
+                noteRef.current = value;
+                if (recordingState === 'saved' && recordingId)
+                  void window.jamRecording
+                    ?.note(recordingId, value)
+                    .catch(cause => setError(cause.message));
+              }}
+            />
+          </label>
+          {recordingId && recordingState === 'saved' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                void window.jamRecording
+                  ?.show(recordingId)
+                  .catch(cause => setError(cause.message));
+              }}
+            >
+              Show in Finder
+            </Button>
+          )}
+        </div>
+      )}
       {error && (
         <p className="text-sm text-feedback-incorrect" role="alert">
           {error}

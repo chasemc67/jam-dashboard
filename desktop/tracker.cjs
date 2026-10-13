@@ -163,6 +163,10 @@ function validateResult(value) {
     tau: finiteOrNull(value.tau) ?? 0.3,
     H: H && H.every(Number.isFinite) ? H : null,
     wires,
+    kpts:
+      Array.isArray(value.kpts) && value.kpts.length === 150
+        ? value.kpts.map(finiteOrNull)
+        : null,
     boardScore: finiteOrNull(value.boardScore),
     anchors: Number.isInteger(value.anchors) ? value.anchors : 0,
     rmsePx: finiteOrNull(value.rmsePx),
@@ -207,6 +211,7 @@ class FretTrackerService {
     const child = this.spawnProcess(
       this.helperPath,
       [
+        '--emit-kpts',
         '--model',
         this.models[this.model],
         ...(this.model === 'v4q832'
