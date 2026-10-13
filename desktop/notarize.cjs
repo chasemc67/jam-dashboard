@@ -190,6 +190,34 @@ async function waitForNotarization(
   }
 }
 
+async function stapleApp(
+  appPath,
+  {
+    run = exec,
+    sleep = ms => new Promise(resolve => setTimeout(resolve, ms)),
+  } = {},
+) {
+  for (let attempt = 1; attempt <= 4; attempt += 1) {
+    try {
+      const stapled = await run('xcrun', ['stapler', 'staple', appPath], {
+        timeoutMs: 5 * MINUTE,
+        label: 'stapler staple',
+      });
+      if (stapled.code !== 0)
+        throw new Error(
+          `stapler exited ${stapled.code}: ${stapled.stdout}${stapled.stderr}`,
+        );
+      return;
+    } catch (error) {
+      if (attempt === 4) throw error;
+      log(
+        `stapler staple attempt ${attempt}/4 failed; retrying in ${attempt * 20}s`,
+      );
+      await sleep(attempt * 20_000);
+    }
+  }
+}
+
 async function notarizeApp(appPath, { auth, timeoutMs }) {
   const tool = notarytool(auth);
   const dir = await mkdtemp(path.join(os.tmpdir(), 'jam-notarize-'));
@@ -225,14 +253,7 @@ async function notarizeApp(appPath, { auth, timeoutMs }) {
       throw error;
     }
 
-    const stapled = await exec('xcrun', ['stapler', 'staple', appPath], {
-      timeoutMs: 5 * MINUTE,
-      label: 'stapler staple',
-    });
-    if (stapled.code !== 0)
-      throw new Error(
-        `stapler exited ${stapled.code}: ${stapled.stdout}${stapled.stderr}`,
-      );
+    await stapleApp(appPath);
     log(`${id} accepted and stapled`);
   } finally {
     await rm(dir, { recursive: true, force: true });
@@ -269,4 +290,5 @@ Object.assign(module.exports, {
   credentials,
   timeoutMinutes,
   waitForNotarization,
+  stapleApp,
 });

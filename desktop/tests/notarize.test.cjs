@@ -4,6 +4,7 @@ const {
   credentials,
   timeoutMinutes,
   waitForNotarization,
+  stapleApp,
 } = require('../notarize.cjs');
 const builderConfig = require('../electron-builder.json');
 
@@ -33,6 +34,35 @@ function poller(statuses) {
 }
 
 const quiet = () => {};
+
+for (const successOn of [1, 2, 4, Infinity]) {
+  test(`stapling retries failures only (success on attempt ${successOn})`, async () => {
+    let attempts = 0;
+    const delays = [];
+    const result = stapleApp('/tmp/Jam Dashboard.app', {
+      run: async (command, args, options) => {
+        attempts += 1;
+        assert.equal(command, 'xcrun');
+        assert.deepEqual(args, ['stapler', 'staple', '/tmp/Jam Dashboard.app']);
+        assert.equal(options.timeoutMs, 5 * MINUTE);
+        return {
+          code: attempts === successOn ? 0 : 68,
+          stdout: 'CloudKit ',
+          stderr: 'NSURLErrorDomain -1005',
+        };
+      },
+      sleep: async ms => delays.push(ms),
+    });
+    if (successOn === Infinity)
+      await assert.rejects(
+        result,
+        /stapler exited 68: CloudKit NSURLErrorDomain -1005/,
+      );
+    else await result;
+    assert.equal(attempts, Math.min(successOn, 4));
+    assert.deepEqual(delays, [20_000, 40_000, 60_000].slice(0, attempts - 1));
+  });
+}
 
 test('the builder skips its unbounded notarytool wait and runs the hook', () => {
   assert.equal(builderConfig.mac.notarize, false);

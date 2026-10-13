@@ -49,6 +49,23 @@ function tool(command, args) {
 const signatureOf = file =>
   tool('/usr/bin/codesign', ['-dv', '--verbose=2', file]).output;
 
+export async function validateStapledTicket(
+  app,
+  {
+    run = tool,
+    sleep = ms => new Promise(resolve => setTimeout(resolve, ms)),
+  } = {},
+) {
+  for (let attempt = 1; attempt <= 4; attempt += 1) {
+    const result = run('/usr/bin/xcrun', ['stapler', 'validate', app]);
+    if (result.ok || attempt === 4) return result;
+    console.log(
+      `stapler validate attempt ${attempt}/4 failed; retrying in ${attempt * 20}s`,
+    );
+    await sleep(attempt * 20_000);
+  }
+}
+
 async function verify({ directory, version, signed }) {
   const errors = [];
   const feedFile = path.join(directory, 'latest-mac.yml');
@@ -101,7 +118,10 @@ async function verify({ directory, version, signed }) {
       ['Gatekeeper', ['/usr/sbin/spctl', '--assess', '--type', 'execute', app]],
       ['stapled ticket', ['/usr/bin/xcrun', 'stapler', 'validate', app]],
     ]) {
-      const result = tool(args[0], args.slice(1));
+      const result =
+        label === 'stapled ticket'
+          ? await validateStapledTicket(app)
+          : tool(args[0], args.slice(1));
       if (!result.ok)
         errors.push(`${arch}: ${label} check failed\n${result.output}`);
     }
