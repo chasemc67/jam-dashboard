@@ -139,7 +139,7 @@ async function pressKey(key, code = key, keyCode = 13) {
 // Radix Select ignores synthetic option clicks; pick the option by keyboard and
 // check the trigger (Radix focuses the selected item right after opening).
 async function chooseModel(id) {
-  const selected = `document.querySelector('[data-testid=live-fretboard-model]').textContent.includes(' ${id} ')`;
+  const selected = `document.querySelector('[data-testid=live-fretboard-model]').dataset.modelId === ${JSON.stringify(id)}`;
   for (let attempt = 0; attempt < 4 && !(await evaluate(selected)); attempt++) {
     if (!(await evaluate(`!!document.querySelector('[role=option]')`)))
       await click(
@@ -152,7 +152,7 @@ async function chooseModel(id) {
     );
     await sleep(400);
     await evaluate(
-      `[...document.querySelectorAll('[role=option]')].find(o => o.textContent.includes(' ${id} ')).focus()`,
+      `[...document.querySelectorAll('[role=option]')].find(o => o.dataset.modelId === ${JSON.stringify(id)}).focus()`,
     );
     await pressKey('Enter');
     await sleep(400);

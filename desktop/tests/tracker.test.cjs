@@ -38,7 +38,10 @@ function fakeHelper({ reply = true, ready = true } = {}) {
     let bytes = Buffer.alloc(0);
     child.stdin.on('data', chunk => {
       bytes = Buffer.concat([bytes, chunk]);
-      while (bytes.length >= HEADER_BYTES + FRAME_BYTES) {
+      while (
+        bytes.length >= HEADER_BYTES &&
+        bytes.length >= HEADER_BYTES + bytes.readUInt32LE(28)
+      ) {
         const header = bytes.subarray(0, HEADER_BYTES);
         const message = {
           magic: header.toString('ascii', 0, 4),
@@ -50,7 +53,7 @@ function fakeHelper({ reply = true, ready = true } = {}) {
           payload: header.readUInt32LE(28),
         };
         received.push(message);
-        bytes = bytes.subarray(HEADER_BYTES + FRAME_BYTES);
+        bytes = bytes.subarray(HEADER_BYTES + message.payload);
         if (reply)
           child.stdout.write(
             JSON.stringify({
@@ -256,4 +259,39 @@ test('result validation drops non-finite values and bad wires', () => {
   assert.equal(result.nFrets, 24);
   assert.deepEqual(result.wires, []);
   assert.throws(() => validateResult({ type: 'ready' }));
+});
+
+test('v4q832 switches input size and rejects a mismatched payload', async t => {
+  const helper = fakeHelper();
+  const service = new FretTrackerService({
+    helperPath: 'x',
+    models: {
+      v1: '/app/FretTrackerV1.mlmodelc',
+      v4q832: '/app/FretTrackerV4Q832.mlmodelc',
+    },
+    spawnProcess: helper.spawnProcess,
+    log: quiet,
+  });
+  t.after(() => service.stop());
+  await service.track(frame());
+  await assert.rejects(service.track(frame({ model: 'v4q832' })), /832x832/);
+  const pixels = new Uint8Array(832 * 832 * 4);
+  assert.equal(
+    (await service.track(frame({ model: 'v4q832', pixels }))).model,
+    'v4q832',
+  );
+  assert.equal(helper.children[1].received[0].payload, pixels.byteLength);
+  assert.deepEqual(helper.children[1].args, [
+    '--model',
+    '/app/FretTrackerV4Q832.mlmodelc',
+    '--compute-units',
+    'cpuAndNeuralEngine',
+  ]);
+  assert.equal((await service.track(frame({ pixels }))).model, 'v4q832');
+  await assert.rejects(
+    service.track(frame({ model: 'v1', pixels })),
+    /640x640/,
+  );
+  assert.equal((await service.track(frame({ model: 'v1' }))).model, 'v1');
+  assert.equal(helper.children[2].received[0].payload, FRAME_BYTES);
 });

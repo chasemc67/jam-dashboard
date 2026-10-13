@@ -70,24 +70,26 @@ has `com.apple.security.device.camera`). Video stays on the Mac.
 - The renderer letterboxes each frame to 640×640 RGBA and sends it over IPC to
   `desktop/tracker.cjs`, which keeps one frame in flight to the bundled
   `FretTrackerCLI` helper (frames that arrive while it is busy are skipped).
-- The helper runs one of two bundled CoreML models, compiled from
-  `native/models/FretTracker{V1,V3}.mlpackage` at build time, and the Swift port
+- The helper runs one of three bundled CoreML models, compiled from
+  `native/models/FretTracker{V1,V3,V4Q832}.mlpackage` at build time, and the Swift port
   of the guitar-overlay tracker post-processing (RANSAC homography, board-end
   vote, One-Euro smoothing). It returns H, the fret count and wire endpoints in
   source pixels. See [`native/README.md`](native/README.md).
-- **Tracking model** picker: **FretNet v3** (`FretTrackerV3`, ResNet-50 + FPN
-  heatmaps trained from torchvision ImageNet weights; permissive: own code +
-  BSD-3-Clause weights) or **YOLO v1** (`FretTrackerV1`, YOLO11s-pose;
-  **AGPL-3.0**, from Ultralytics). Switching takes effect on the next frame
-  (the helper restarts with the other model, so smoothing and the fret-count
-  vote start over) and is remembered across launches. The default is v1:
-  v3 lines up the grid as well or better but numbers frets less reliably on
-  the frozen eval set. Both models
-  take the same 640×640 input and emit the same raw head layout, so pre- and
-  post-processing are shared. Licences, training and evaluation are documented in
-  guitar-overlay (`LICENSES.md`, `eval/model_permissive.md`). Shipping v1 keeps
-  the AGPL-3.0 obligation for the app; drop `FretTrackerV1` from
-  `electron-builder.json`, `build-helper.sh` and `main.cjs` to remove it.
+- **Tracking model** picker offers **YOLO v1 (AGPL)**, **FretNet v3 (permissive)**,
+  and **v4q-832 (permissive)**. Switching restarts the helper and resets temporal
+  state; the choice is remembered across launches. v1 remains the default.
+  v4q-832 uses a torchvision ResNet-50/FPN with keypoint queries, an 832×832
+  input, and a native robust-fit reindexing step before unletterboxing. Points
+  at least 0.30 fret from the nearest fitted wire are dropped; observed positions
+  are preserved. The threshold was selected on all 1,498 scale-v1aug VAL images.
+  The fixed held-out result is eval-v2 numbering 0.7142, wire mean/median
+  5.28/2.16 px, coverage 0.8461; 09-06 numbering 1.000, D13 0.762 px,
+  coverage 0.9872. v1/v3 retain their 640×640 input and existing processing.
+  v1 remains the speed-oriented default; see guitar-overlay
+  `eval/refit_validation.md` for validation, conversion parity and latency.
+  The permissive models use own code and BSD-3-Clause torchvision weights.
+  Shipping v1 retains the app's AGPL-3.0 obligation; remove its entries from
+  `electron-builder.json`, `build-helper.sh` and `main.cjs` to remove that model.
 - WebGL2 draws the video and the notes from the same marker logic as the
   fretboard diagram (`app/utils/fretNoteMarkers.ts`), projected through H onto
   the cells between wires with six evenly spaced strings.

@@ -17,7 +17,7 @@ for PRODUCT in MusicAnalyzerCLI FretTrackerCLI; do
 done
 # Fretboard models (CoreML fp16) -> compiled dist/FretTrackerV*.mlmodelc
 # V1 = YOLO11s-pose (AGPL-3.0), V3 = FretNet ResNet-50 heatmaps (permissive); see desktop/README.md.
-for MODEL in FretTrackerV1 FretTrackerV3; do
+for MODEL in FretTrackerV1 FretTrackerV3 FretTrackerV4Q832; do
   rm -rf "$PROJECT_DIRECTORY/dist/$MODEL.mlmodelc"
   xcrun coremlcompiler compile "$PROJECT_DIRECTORY/models/$MODEL.mlpackage" "$PROJECT_DIRECTORY/dist/" >/dev/null
   test -d "$PROJECT_DIRECTORY/dist/$MODEL.mlmodelc"

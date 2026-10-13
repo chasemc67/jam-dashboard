@@ -456,7 +456,8 @@ public func fitFretboard(
     ransacIters: Int = 300,
     inlierFrac: Double = 0.15,
     minInlierPx: Double = 2.0,
-    seed: UInt64 = 0
+    seed: UInt64 = 0,
+    ransacSamples: [[Int]]? = nil
 ) throws -> FretboardModel {
     if anchors.count < 4 || isDegenerate(anchors) { throw FitError.tooFewAnchors }
     let n = anchors.count
@@ -500,11 +501,16 @@ public func fitFretboard(
         let sX = src.map(\.x), sY = src.map(\.y), dX = dst.map(\.x), dY = dst.map(\.y)
         let qX = p1.map(\.x), qY = p1.map(\.y)
         let side = anchors.map(\.side), slot = anchors.map { $0.fret * 2 + $0.side }
-        for _ in 0..<ransacIters {
+        for iteration in 0..<ransacIters {
             // partial Fisher-Yates: 4 distinct indices
-            for k in 0..<4 {
-                let j = k + Int(rng.next() % UInt64(n - k))
-                idx.swapAt(k, j)
+            if let samples = ransacSamples {
+                precondition(samples.count >= ransacIters && samples[iteration].count == 4)
+                for k in 0..<4 { idx[k] = samples[iteration][k] }
+            } else {
+                for k in 0..<4 {
+                    let j = k + Int(rng.next() % UInt64(n - k))
+                    idx.swapAt(k, j)
+                }
             }
             let i0 = idx[0], i1 = idx[1], i2 = idx[2], i3 = idx[3]
             // _sample_ok for 4 points: exactly 2 per edge (=> 2+ frets) and no duplicate slot

@@ -34,6 +34,10 @@
     {
       "from": "desktop/native/dist/FretTrackerV3.mlmodelc",
       "to": "FretTrackerV3.mlmodelc"
+    },
+    {
+      "from": "desktop/native/dist/FretTrackerV4Q832.mlmodelc",
+      "to": "FretTrackerV4Q832.mlmodelc"
     }
   ],
   "mac": {

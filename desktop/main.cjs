@@ -260,6 +260,7 @@ if (!app.requestSingleInstanceLock()) {
         models: {
           v1: path.join(helperDirectory, 'FretTrackerV1.mlmodelc'),
           v3: path.join(helperDirectory, 'FretTrackerV3.mlmodelc'),
+          v4q832: path.join(helperDirectory, 'FretTrackerV4Q832.mlmodelc'),
         },
       });
       analyzer = new AnalyzerService({

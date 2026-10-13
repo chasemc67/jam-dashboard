@@ -1,7 +1,7 @@
 // Renderer contract for the desktop fret tracker (desktop/tracker.cjs).
 
-/** Bundled fretboard models: v1 = YOLO11s-pose (AGPL-3.0), v3 = FretNet (permissive). */
-export type FretTrackerModelId = 'v1' | 'v3';
+/** Bundled fretboard models: v1 = YOLO11s-pose (AGPL-3.0), v3 / v4q832 = FretNet (permissive). */
+export type FretTrackerModelId = 'v1' | 'v3' | 'v4q832';
 
 export type FretTrackerFrame = {
   /** Capture time in seconds. */

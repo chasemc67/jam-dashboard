@@ -23,12 +23,12 @@ import { displayMirror, modelFlip } from './orientation';
 import { OverlayRenderer } from './overlayRenderer';
 import {
   TRACKER_MODELS,
+  trackerInputSize,
   TRACKER_MODEL_KEY,
   storedTrackerModel,
 } from './trackerModels';
 
 const FILE_SOURCE = 'file';
-const INPUT = 640;
 
 type Stats = {
   trackedFps: number;
@@ -150,9 +150,8 @@ export default function LiveFretboard() {
       return;
     }
     const capture = document.createElement('canvas');
-    capture.width = INPUT;
-    capture.height = INPUT;
-    // GPU-backed, so only the 640x640 letterbox is read back, not the source frame.
+
+    // GPU-backed, so only the model-sized letterbox is read back, not the source frame.
     const context = capture.getContext('2d');
     let latest: FretTrackerResult | undefined;
     let inFlight = false;
@@ -175,6 +174,11 @@ export default function LiveFretboard() {
       const t = isFile ? video.currentTime : performance.now() / 1000;
       const flip = flipRef.current;
       const trackerModel = modelRef.current;
+      const inputSize = trackerInputSize(trackerModel);
+      if (capture.width !== inputSize || capture.height !== inputSize) {
+        capture.width = inputSize;
+        capture.height = inputSize;
+      }
       // loop, left-handed toggle or model switch (the helper restarts with the new model)
       if (t < lastT || flip !== lastMirrored || trackerModel !== lastModel) {
         reset = true;
@@ -183,10 +187,10 @@ export default function LiveFretboard() {
       lastT = t;
       lastMirrored = flip;
       lastModel = trackerModel;
-      const box = letterbox(width, height, INPUT);
+      const box = letterbox(width, height, inputSize);
       context.setTransform(1, 0, 0, 1, 0, 0);
       context.fillStyle = 'rgb(114, 114, 114)';
-      context.fillRect(0, 0, INPUT, INPUT);
+      context.fillRect(0, 0, inputSize, inputSize);
       if (flip) {
         context.setTransform(-1, 0, 0, 1, box.left + box.newWidth, box.top);
         context.drawImage(video, 0, 0, box.newWidth, box.newHeight);
@@ -199,7 +203,7 @@ export default function LiveFretboard() {
           box.newHeight,
         );
       }
-      const pixels = context.getImageData(0, 0, INPUT, INPUT).data;
+      const pixels = context.getImageData(0, 0, inputSize, inputSize).data;
       const started = performance.now();
       inFlight = true;
       const frameReset = reset;
@@ -454,12 +458,17 @@ export default function LiveFretboard() {
             className="h-9 w-[220px]"
             aria-label="Tracking model"
             data-testid="live-fretboard-model"
+            data-model-id={model}
           >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {TRACKER_MODELS.map(option => (
-              <SelectItem key={option.id} value={option.id}>
+              <SelectItem
+                key={option.id}
+                value={option.id}
+                data-model-id={option.id}
+              >
                 {option.label}
               </SelectItem>
             ))}

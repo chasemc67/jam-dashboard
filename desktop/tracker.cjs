@@ -1,7 +1,7 @@
 const { spawn } = require('node:child_process');
 
 // FretTrackerCLI protocol (desktop/native/README.md): a 32-byte little-endian
-// header, then a 640x640 RGBA frame letterboxed from the (mirrored if needed)
+// header, then a model-sized RGBA frame letterboxed from the (mirrored if needed)
 // source. The helper answers each frame with one JSON line.
 const INPUT_SIZE = 640;
 const FRAME_BYTES = INPUT_SIZE * INPUT_SIZE * 4;
@@ -11,9 +11,10 @@ const FRAME_TIMEOUT_MS = 5000;
 const READY_TIMEOUT_MS = 30000;
 const MAX_STDOUT_LINE = 1 << 20;
 // Bundled fretboard models (FretTrackerCLI loads either; both emit the same raw
-// head layout). v1 = YOLO11s-pose (AGPL-3.0), v3 = FretNet ResNet-50 heatmaps
+// head layout). v1 = YOLO11s-pose (AGPL-3.0), v3/v4q832 = FretNet ResNet-50
 // (permissive). See desktop/README.md.
-const MODEL_IDS = ['v1', 'v3'];
+const MODEL_IDS = ['v1', 'v3', 'v4q832'];
+const inputSizeForModel = model => (model === 'v4q832' ? 832 : INPUT_SIZE);
 const DEFAULT_MODEL = 'v1'; // see app/components/LiveFretboard/trackerModels.ts
 
 function trackerError(code, message) {
@@ -28,26 +29,30 @@ function encodeFrame({ id, t, width, height, mirrored, reset, pixels }) {
   header.writeUInt32LE(width, 16);
   header.writeUInt32LE(height, 20);
   header.writeUInt32LE((mirrored ? 1 : 0) | (reset ? 2 : 0), 24);
-  header.writeUInt32LE(FRAME_BYTES, 28);
+  header.writeUInt32LE(pixels.byteLength, 28);
   return [
     header,
     Buffer.from(pixels.buffer, pixels.byteOffset, pixels.byteLength),
   ];
 }
 
-function validateFrame(frame) {
+function validateFrame(frame, currentModel = DEFAULT_MODEL) {
   if (!frame || typeof frame !== 'object')
     throw trackerError('invalid', 'Invalid frame.');
   const { t, width, height, mirrored, reset, pixels, model } = frame;
+  const inputSize = inputSizeForModel(model ?? currentModel);
   if (!Number.isFinite(t)) throw trackerError('invalid', 'Invalid frame time.');
   for (const side of [width, height])
     if (!Number.isInteger(side) || side < 1 || side > MAX_SOURCE_SIDE)
       throw trackerError('invalid', 'Invalid frame size.');
   if (
     !(pixels instanceof Uint8Array || pixels instanceof Uint8ClampedArray) ||
-    pixels.byteLength !== FRAME_BYTES
+    pixels.byteLength !== inputSize * inputSize * 4
   )
-    throw trackerError('invalid', 'Frames must be 640x640 RGBA.');
+    throw trackerError(
+      'invalid',
+      `Frames must be ${inputSize}x${inputSize} RGBA.`,
+    );
   if (model !== undefined && !MODEL_IDS.includes(model))
     throw trackerError('invalid', 'Unknown tracker model.');
   return {
@@ -147,7 +152,13 @@ class FretTrackerService {
     if (this.ready) return this.ready;
     const child = this.spawnProcess(
       this.helperPath,
-      ['--model', this.models[this.model]],
+      [
+        '--model',
+        this.models[this.model],
+        ...(this.model === 'v4q832'
+          ? ['--compute-units', 'cpuAndNeuralEngine']
+          : []),
+      ],
       { stdio: ['pipe', 'pipe', 'pipe'] },
     );
     this.child = child;
@@ -256,7 +267,7 @@ class FretTrackerService {
 
   /** Track one frame. Rejects with code "busy" while a frame is in flight. */
   async track(input) {
-    const frame = validateFrame(input);
+    const frame = validateFrame(input, this.model);
     if (this.pending) throw trackerError('busy', 'The tracker is busy.');
     const model = frame.model ?? this.model;
     if (!this.models[model])

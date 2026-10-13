@@ -11,15 +11,13 @@ import Foundation
 //   FretTrackerCLI --bench N --model FretTrackerV1.mlmodelc [--compute-units ...]
 //
 // stdin: binary frames (32-byte little-endian header "FRT1", frameId u32, t f64, srcWidth u32, srcHeight u32,
-// flags u32 (bit0 mirrored, bit1 reset), payloadBytes u32 = 640*640*4, then 640x640 RGBA8 letterboxed canonical frame).
+// flags u32 (bit0 mirrored, bit1 reset), payloadBytes u32 = size*size*4, then model-sized RGBA8 letterboxed canonical frame).
 // stdout: one JSON line per frame. See desktop/native/README.md.
 //
 // Models: FretTrackerV1 (YOLO11s-pose, output (1, 155, 8400)) and FretTrackerV3 (FretNet, output (1, 155, 1)) share
-// the input (640x640 image, 1/255 baked in) and the raw head layout, so pre- and post-processing are the same; only the
-// anchor count differs and is read from the output shape.
+// the raw head layout. V4Q832 takes 832x832 input with a model-specific refit; V1/V3 take 640x640.
+// Dimensions and anchor count are read from the model. Image scale 1/255 is baked in.
 
-let inputSize = modelInputSize
-let payloadSize = inputSize * inputSize * 4
 let headerSize = 32
 
 // MARK: - JSON output
@@ -148,6 +146,14 @@ let outputName: String = {
     return outputs.first(where: { $0.value.type == .multiArray })?.key ?? "var_1348"
 }()
 
+guard let imageConstraint = mlModel.modelDescription.inputDescriptionsByName[inputName]?.imageConstraint,
+      imageConstraint.pixelsWide == imageConstraint.pixelsHigh,
+      [640, 832].contains(imageConstraint.pixelsWide) else { fail("unsupported model input size") }
+let inputSize = imageConstraint.pixelsWide
+let payloadSize = inputSize * inputSize * 4
+// Explicit model identity: never enable this postprocess merely because a model uses 832 input.
+let usesRefit = URL(fileURLWithPath: modelPath).deletingPathExtension().lastPathComponent == "FretTrackerV4Q832"
+
 // MARK: - Pixel buffer
 
 var pixelBuffer: CVPixelBuffer?
@@ -159,7 +165,7 @@ guard CVPixelBufferCreate(kCFAllocatorDefault, inputSize, inputSize, kCVPixelFor
                           pbAttrs as CFDictionary, &pixelBuffer) == kCVReturnSuccess, let pixelBuffer
 else { fail("CVPixelBufferCreate failed") }
 
-/// RGBA8 (640x640, row-major) -> BGRA pixel buffer.
+/// RGBA8 (model-sized, row-major) -> BGRA pixel buffer.
 func fillPixelBuffer() {
     CVPixelBufferLockBaseAddress(pixelBuffer, [])
     defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, []) }
@@ -246,7 +252,8 @@ func processFrame(srcWidth: Int, srcHeight: Int, mirrored: Bool, t: Double?) thr
     let t2 = nowMs()
     let det = try decodeOutput(out)
     let lb = Letterbox(width: srcWidth, height: srcHeight, size: inputSize)
-    let k = unletterbox(det.kpts, lb, clip: true)
+    let refined = usesRefit && det.score >= 0.25 ? refitPermissive832(det.kpts) : det.kpts
+    let k = unletterbox(refined, lb, clip: true)
     var state = tracker.update(kpts: k, width: srcWidth, height: srcHeight, mirrored: mirrored, t: t) {
         GrayImage(letterboxed: payloadArray, letterbox: lb, rgba: true)
     }
