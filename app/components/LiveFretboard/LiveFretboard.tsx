@@ -1,3 +1,10 @@
+import {
+  HAND_CUTOUT_KEY,
+  HAND_OPTION_KEY,
+  HAND_OPTIONS,
+  storedHandSettings,
+  handMaskTransform,
+} from './handCutout';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Camera, FileVideo, Loader2, Maximize, Minimize } from 'lucide-react';
 import { Button } from '~/components/ui/button';
@@ -87,6 +94,9 @@ export default function LiveFretboard() {
   const [model, setModel] = useState<FretTrackerModelId>(() =>
     storedTrackerModel(null),
   );
+  const [hand, setHand] = useState(() => storedHandSettings(null, null));
+  const handRef = useRef(hand);
+  handRef.current = hand;
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string>();
   const [stats, setStats] = useState<Stats>();
@@ -109,6 +119,12 @@ export default function LiveFretboard() {
   modelRef.current = model;
 
   useEffect(() => {
+    setHand(
+      storedHandSettings(
+        localStorage.getItem(HAND_CUTOUT_KEY),
+        localStorage.getItem(HAND_OPTION_KEY),
+      ),
+    );
     setModel(storedTrackerModel(localStorage.getItem(TRACKER_MODEL_KEY)));
   }, []);
 
@@ -164,6 +180,7 @@ export default function LiveFretboard() {
     let lastDone = 0;
     let frameHandle: number | undefined;
     let statsAt = 0;
+    let maskCapturedAt = -Infinity;
 
     const send = () => {
       if (inFlight || !context || video.readyState < 2) return;
@@ -217,10 +234,20 @@ export default function LiveFretboard() {
           reset: frameReset,
           pixels,
           model: trackerModel,
+          handCutout: handRef.current.enabled ? handRef.current.option : 'off',
         })
         .then(next => {
-          if (cancelled || !next || next.model !== modelRef.current) return;
+          if (
+            cancelled ||
+            !next ||
+            next.model !== modelRef.current ||
+            flip !== flipRef.current ||
+            next.handCutout !==
+              (handRef.current.enabled ? handRef.current.option : 'off')
+          )
+            return;
           latest = next;
+          maskCapturedAt = started;
           frames += 1;
           const now = performance.now();
           if (lastDone) {
@@ -272,7 +299,31 @@ export default function LiveFretboard() {
                 mirrored: mirrorViewRef.current,
               })
             : EMPTY_OVERLAY;
-        renderer.render(video, width, height, mirrorViewRef.current, overlay);
+        const mask =
+          handRef.current.enabled &&
+          latest?.handCutout === handRef.current.option &&
+          lastMirrored === flipRef.current &&
+          lastModel === modelRef.current &&
+          performance.now() - maskCapturedAt < 250 &&
+          (source !== FILE_SOURCE ||
+            Math.abs(video.currentTime - (latest?.t ?? -1)) < 0.25)
+            ? (latest?.handMask ?? null)
+            : null;
+        renderer.render(
+          video,
+          width,
+          height,
+          mirrorViewRef.current,
+          overlay,
+          mask,
+          handMaskTransform(
+            width,
+            height,
+            trackerInputSize(lastModel),
+            lastMirrored,
+            mirrorViewRef.current,
+          ),
+        );
       }
       schedule();
     };
@@ -474,6 +525,40 @@ export default function LiveFretboard() {
             ))}
           </SelectContent>
         </Select>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            data-testid="live-fretboard-hand-cutout"
+            checked={hand.enabled}
+            onChange={event => {
+              const enabled = event.target.checked;
+              setHand(value => ({ ...value, enabled }));
+              localStorage.setItem(HAND_CUTOUT_KEY, String(enabled));
+            }}
+          />{' '}
+          Hand cutout
+        </label>
+        <select
+          aria-label="Hand cutout option"
+          data-testid="live-fretboard-hand-option"
+          className="h-9 rounded-md border bg-background px-2 text-sm"
+          value={hand.option}
+          disabled={!hand.enabled}
+          onChange={event => {
+            const option = storedHandSettings(
+              'true',
+              event.target.value,
+            ).option;
+            setHand(value => ({ ...value, option }));
+            localStorage.setItem(HAND_OPTION_KEY, option);
+          }}
+        >
+          {HAND_OPTIONS.map(option => (
+            <option key={option.id} value={option.id}>
+              {option.label}
+            </option>
+          ))}
+        </select>
       </div>
       {error && (
         <p className="text-sm text-feedback-incorrect" role="alert">
@@ -535,6 +620,9 @@ export default function LiveFretboard() {
           data-valid={result?.valid ? 'true' : 'false'}
           data-frets={result?.nFrets}
           data-model={result?.model}
+          data-hand-cutout={result?.handCutout}
+          data-hand-ms={result?.handMs}
+          data-hand-mask={!!result?.handMask}
           data-lefty={settings.isLefty ? 'true' : 'false'}
           data-mirrored-view={mirroredView ? 'true' : 'false'}
         >
@@ -546,6 +634,12 @@ export default function LiveFretboard() {
           {stats.modelMs !== null && ` · model ${stats.modelMs.toFixed(1)} ms`}
           {stats.postMs !== null && ` · post ${stats.postMs.toFixed(1)} ms`}
           {result && ` · ${result.model}`}
+          {hand.enabled &&
+            result?.handMs != null &&
+            ` · hand ${result.handMs.toFixed(1)} ms`}
+          {hand.enabled &&
+            result?.handError &&
+            ` · Hand cutout unavailable: ${result.handError}`}
           {` · ${settings.isLefty ? 'left' : 'right'}-handed (Settings)`}
           {mirroredView && ' · mirrored view'}
         </p>

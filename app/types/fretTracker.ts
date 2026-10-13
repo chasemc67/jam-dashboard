@@ -3,6 +3,9 @@
 /** Bundled fretboard models: v1 = YOLO11s-pose (AGPL-3.0), v3 / v4q832 = FretNet (permissive). */
 export type FretTrackerModelId = 'v1' | 'v3' | 'v4q832';
 
+export type HandCutoutOption = 'vision-fast' | 'vision-balanced' | 'skin';
+export type HandMask = { width: number; height: number; alpha: string };
+
 export type FretTrackerFrame = {
   /** Capture time in seconds. */
   t: number;
@@ -17,9 +20,14 @@ export type FretTrackerFrame = {
   pixels: Uint8Array | Uint8ClampedArray;
   /** Model to run; switching restarts the helper (new smoothing and fret vote). */
   model?: FretTrackerModelId;
+  handCutout?: HandCutoutOption | 'off';
 };
 
 export type FretTrackerResult = {
+  handMask?: HandMask | null;
+  handCutout?: HandCutoutOption | 'off';
+  handMs?: number | null;
+  handError?: string | null;
   id: number;
   /** Model that produced this result. */
   model: FretTrackerModelId;

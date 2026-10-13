@@ -320,3 +320,22 @@ links open in the browser; unrelated permission requests are rejected.
 References: [Electron protocol](https://www.electronjs.org/docs/latest/api/protocol/),
 [Electron security](https://www.electronjs.org/docs/latest/tutorial/security),
 [electron-builder macOS](https://www.electron.build/mac/).
+
+**Hand cutout** (default off), beside the tracking model picker, reveals hands
+above the overlay. Vision fast, Vision balanced, and a skin-color baseline run
+natively with any tracking model. The checkbox and selected option are stored
+independently in localStorage (`jam-live-fretboard-hand-cutout` and
+`jam-live-fretboard-hand-option`). Fast prioritizes latency; balanced gives finer
+edges. Person segmentation restricted to hand boxes can still erase guitar
+pixels, and missed hand detections can flicker. No hand inference runs when off.
+The live stats report added hand time and any Vision error.
+
+For native screenshot verification:
+
+```sh
+node desktop/e2e/live-fretboard.mjs --video clip.mp4 --out out/hands/e2e \
+  --models v4q832,v3,v1 --hand-cutout vision-fast --seek-seconds 30 --lefty
+```
+
+`--lefty` must match the recorded orientation (09-06 needs it). The e2e also toggles
+hand cutout off/on, verifies zero native work while off, and checks persistence.

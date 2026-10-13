@@ -1,3 +1,4 @@
+import type { HandMask } from '~/types/fretTracker';
 // WebGL2 renderer for the live fretboard: draws the video frame, then the
 // projected note patches, wires, strings and labels on top, in source pixels.
 import type { OverlayGeometry } from './overlayGeometry';
@@ -29,7 +30,9 @@ in vec2 a_uv;
 uniform vec2 u_size;
 out vec4 v_color;
 out vec2 v_uv;
+out vec2 v_screen;
 void main() {
+  v_screen = (a_pos + 0.5) / u_size;
   vec2 clip = (a_pos + 0.5) / u_size * 2.0 - 1.0;
   gl_Position = vec4(clip.x, -clip.y, 0.0, 1.0);
   v_color = a_color;
@@ -41,10 +44,15 @@ in vec4 v_color;
 in vec2 v_uv;
 uniform sampler2D u_atlas;
 uniform float u_text;
+in vec2 v_screen;
+uniform sampler2D u_hand;
+uniform vec4 u_handTransform;
+uniform float u_hasHand;
 out vec4 color;
 void main() {
   float alpha = u_text > 0.5 ? texture(u_atlas, v_uv).a : 1.0;
-  color = vec4(v_color.rgb, v_color.a * alpha);
+  float handAlpha = u_hasHand > 0.5 ? texture(u_hand, v_screen * u_handTransform.xy + u_handTransform.zw).r : 0.0;
+  color = vec4(v_color.rgb, v_color.a * alpha * (1.0 - handAlpha));
 }`;
 
 const ATLAS_CELL = 64;
@@ -97,6 +105,8 @@ export class OverlayRenderer {
   private videoProgram: WebGLProgram;
   private shapeProgram: WebGLProgram;
   private videoTexture: WebGLTexture;
+  private handTexture: WebGLTexture;
+  private lastHand: HandMask | null = null;
   private atlasTexture: WebGLTexture;
   private quadBuffer: WebGLBuffer;
   private shapeBuffer: WebGLBuffer;
@@ -126,6 +136,18 @@ export class OverlayRenderer {
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
       return t;
     };
+    this.handTexture = texture();
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.R8,
+      1,
+      1,
+      0,
+      gl.RED,
+      gl.UNSIGNED_BYTE,
+      new Uint8Array([0]),
+    );
     this.videoTexture = texture();
     this.atlasTexture = texture();
     const buffer = () => {
@@ -219,6 +241,8 @@ export class OverlayRenderer {
     height: number,
     mirrored: boolean,
     overlay: OverlayGeometry,
+    handMask: HandMask | null = null,
+    handTransform: [number, number, number, number] = [1, 1, 0, 0],
   ) {
     const gl = this.gl;
     if (this.canvas.width !== width || this.canvas.height !== height) {
@@ -317,6 +341,34 @@ export class OverlayRenderer {
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.atlasTexture);
     gl.uniform1i(gl.getUniformLocation(this.shapeProgram, 'u_atlas'), 0);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, this.handTexture);
+    if (handMask && handMask !== this.lastHand) {
+      const bytes = Uint8Array.from(atob(handMask.alpha), c => c.charCodeAt(0));
+      gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+      gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        gl.R8,
+        handMask.width,
+        handMask.height,
+        0,
+        gl.RED,
+        gl.UNSIGNED_BYTE,
+        bytes,
+      );
+      this.lastHand = handMask;
+    }
+    gl.uniform1i(gl.getUniformLocation(this.shapeProgram, 'u_hand'), 1);
+    gl.uniform1f(
+      gl.getUniformLocation(this.shapeProgram, 'u_hasHand'),
+      handMask ? 1 : 0,
+    );
+    gl.uniform4fv(
+      gl.getUniformLocation(this.shapeProgram, 'u_handTransform'),
+      handTransform,
+    );
+    gl.activeTexture(gl.TEXTURE0);
     const textFlag = gl.getUniformLocation(this.shapeProgram, 'u_text');
     gl.uniform1f(textFlag, 0);
     gl.drawArrays(gl.TRIANGLES, 0, shapeCount);
@@ -330,6 +382,7 @@ export class OverlayRenderer {
 
   dispose() {
     const gl = this.gl;
+    gl.deleteTexture(this.handTexture);
     gl.deleteTexture(this.videoTexture);
     gl.deleteTexture(this.atlasTexture);
     gl.deleteBuffer(this.quadBuffer);

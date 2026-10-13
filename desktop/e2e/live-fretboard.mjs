@@ -4,7 +4,7 @@
 //
 //   node desktop/e2e/live-fretboard.mjs --video clip.mp4 --out shots/ \
 //     [--app "release/mac-arm64/Jam Dashboard.app"] [--shots 10] [--lefty] \
-//     [--models v3,v1] [--fullscreen-shots 1]
+//     [--models v3,v1] [--fullscreen-shots 1] [--hand-cutout vision-fast]
 // --lefty turns on the page-level Left-handed setting (model input flipped).
 // --models picks each tracking model in turn from the picker while the video keeps
 // running (runtime switch, no restart); shots are prefixed with the model id.
@@ -28,6 +28,12 @@ const out = path.resolve(option('--out', 'e2e-out'));
 const appBundle = option('--app');
 const shots = Number(option('--shots', '10'));
 const lefty = args.includes('--lefty');
+const handCutout = option('--hand-cutout', 'off');
+const seek = Number(option('--seek-seconds', '0'));
+if (!Number.isFinite(seek) || seek < 0)
+  throw new Error('Invalid --seek-seconds');
+if (!['off', 'vision-fast', 'vision-balanced', 'skin'].includes(handCutout))
+  throw new Error('Invalid --hand-cutout');
 const fullscreenShots = Number(option('--fullscreen-shots', '1'));
 const port = Number(option('--port', '9339'));
 const interval = Number(option('--interval-ms', '700'));
@@ -160,7 +166,7 @@ async function chooseModel(id) {
   if (!(await evaluate(selected))) throw new Error(`Could not select ${id}`);
 }
 
-const summary = { video, lefty, shots: [], stats: [] };
+const summary = { video, lefty, handCutout, shots: [], stats: [] };
 try {
   await send('Runtime.enable');
   await send('DOM.enable');
@@ -172,6 +178,9 @@ try {
   );
   // The page-level Left-handed setting drives the model flip; set it, then reload.
   const settingsChanged = await evaluate(`(() => {
+    const handChanged = localStorage.getItem('jam-live-fretboard-hand-cutout') !== ${JSON.stringify(String(handCutout !== 'off'))} || localStorage.getItem('jam-live-fretboard-hand-option') !== ${JSON.stringify(handCutout)};
+    localStorage.setItem('jam-live-fretboard-hand-cutout', ${JSON.stringify(String(handCutout !== 'off'))});
+    localStorage.setItem('jam-live-fretboard-hand-option', ${JSON.stringify(handCutout)});
     const key = 'jam-dashboard-settings';
     const stored = JSON.parse(localStorage.getItem(key) || '{}');
     // The persisted model loads after mount, so start from the first one.
@@ -179,7 +188,7 @@ try {
     const modelKey = 'jam-live-fretboard-model';
     const modelChanged = !!model && localStorage.getItem(modelKey) !== model;
     if (model) localStorage.setItem(modelKey, model);
-    if (stored.isLefty === ${lefty} && !modelChanged) return false;
+    if (stored.isLefty === ${lefty} && !modelChanged && !handChanged) return false;
     localStorage.setItem(key, JSON.stringify({ ...stored, isLefty: ${lefty} }));
     return true;
   })()`);
@@ -219,6 +228,47 @@ try {
     'tracked frames',
   );
 
+  if (seek) {
+    await evaluate(
+      `document.querySelector('[data-testid=live-fretboard] video').currentTime = ${seek}`,
+    );
+    await sleep(1500);
+  }
+  if (handCutout !== 'off')
+    await waitFor(
+      `document.querySelector('[data-testid=live-fretboard-stats]')?.dataset.handCutout === ${JSON.stringify(handCutout)} && document.querySelector('[data-testid=live-fretboard-stats]')?.dataset.handMask === 'true'`,
+      30000,
+      'a native hand mask',
+    );
+  if (handCutout !== 'off') {
+    summary.handToggleInitiallyChecked = await evaluate(
+      `document.querySelector('[data-testid=live-fretboard-hand-cutout]').checked`,
+    );
+    if (!summary.handToggleInitiallyChecked)
+      throw new Error('Hand setting did not restore');
+    await click(
+      `document.querySelector('[data-testid=live-fretboard-hand-cutout]')`,
+    );
+    await waitFor(
+      `document.querySelector('[data-testid=live-fretboard-stats]')?.dataset.handCutout === 'off' && document.querySelector('[data-testid=live-fretboard-stats]')?.dataset.handMs === '0' && document.querySelector('[data-testid=live-fretboard-stats]')?.dataset.handMask === 'false'`,
+      10000,
+      'off with zero mask work',
+    );
+    summary.handOffVerified = true;
+    await click(
+      `document.querySelector('[data-testid=live-fretboard-hand-cutout]')`,
+    );
+    await waitFor(
+      `document.querySelector('[data-testid=live-fretboard-stats]')?.dataset.handCutout === ${JSON.stringify(handCutout)} && document.querySelector('[data-testid=live-fretboard-stats]')?.dataset.handMask === 'true'`,
+      10000,
+      'hand cutout restored',
+    );
+    summary.handPersistenceVerified = await evaluate(
+      `localStorage.getItem('jam-live-fretboard-hand-cutout') === 'true' && localStorage.getItem('jam-live-fretboard-hand-option') === ${JSON.stringify(handCutout)}`,
+    );
+    if (!summary.handPersistenceVerified)
+      throw new Error('Hand setting did not persist');
+  }
   const capture = async name => {
     const clip = await evaluate(`(() => {
       const canvas = document.querySelector('[data-testid=live-fretboard-canvas]');
