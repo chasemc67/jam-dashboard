@@ -15,7 +15,7 @@ import Foundation
 // stdout: one JSON line per frame. See desktop/native/README.md.
 //
 // Models: FretTrackerV1 (YOLO11s-pose, output (1, 155, 8400)) and FretTrackerV3 (FretNet, output (1, 155, 1)) share
-// the raw head layout. V4Q832 takes 832x832 input with a model-specific refit; V1/V3 take 640x640.
+// the raw head layout. Query-head models take 832x832 or 512x512 input with shared refit; V1/V3 take 640x640.
 // Dimensions and anchor count are read from the model. Image scale 1/255 is baked in.
 
 let headerSize = 32
@@ -148,11 +148,13 @@ let outputName: String = {
 
 guard let imageConstraint = mlModel.modelDescription.inputDescriptionsByName[inputName]?.imageConstraint,
       imageConstraint.pixelsWide == imageConstraint.pixelsHigh,
-      [640, 832].contains(imageConstraint.pixelsWide) else { fail("unsupported model input size") }
+      [512, 640, 832].contains(imageConstraint.pixelsWide) else { fail("unsupported model input size") }
 let inputSize = imageConstraint.pixelsWide
 let payloadSize = inputSize * inputSize * 4
 // Explicit model identity: never enable this postprocess merely because a model uses 832 input.
-let usesRefit = URL(fileURLWithPath: modelPath).deletingPathExtension().lastPathComponent == "FretTrackerV4Q832"
+let modelConfiguration = FretModelConfiguration(packageName: URL(fileURLWithPath: modelPath).deletingPathExtension().lastPathComponent)
+if let modelConfiguration, modelConfiguration.inputSize != inputSize { fail("model input size does not match bundled configuration") }
+let usesRefit = modelConfiguration?.usesRefit ?? false
 
 // MARK: - Pixel buffer
 
@@ -257,7 +259,7 @@ func processFrame(srcWidth: Int, srcHeight: Int, mirrored: Bool, t: Double?) thr
     let t2 = nowMs()
     let det = try decodeOutput(out)
     let lb = Letterbox(width: srcWidth, height: srcHeight, size: inputSize)
-    let refined = usesRefit && det.score >= 0.25 ? refitPermissive832(det.kpts) : det.kpts
+    let refined = usesRefit && det.score >= 0.25 ? refitFretNet(det.kpts) : det.kpts
     let k = unletterbox(refined, lb, clip: true)
     var state = tracker.update(kpts: k, width: srcWidth, height: srcHeight, mirrored: mirrored, t: t) {
         GrayImage(letterboxed: payloadArray, letterbox: lb, rgba: true)

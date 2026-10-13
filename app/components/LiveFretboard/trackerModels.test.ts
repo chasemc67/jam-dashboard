@@ -21,5 +21,7 @@ it('uses each bundled model input size and keeps v1 the default', () => {
   expect(trackerInputSize('v1')).toBe(640);
   expect(trackerInputSize('v3')).toBe(640);
   expect(trackerInputSize('v4q832')).toBe(832);
+  expect(trackerInputSize('r832_w8a8')).toBe(832);
+  expect(trackerInputSize('extended_512_w8a8')).toBe(512);
   expect(DEFAULT_TRACKER_MODEL).toBe('v1');
 });

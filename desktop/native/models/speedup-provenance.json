@@ -1,0 +1,53 @@
+{
+  "hash_method": "SHA-256 of sorted relative file paths (UTF-8) followed by file bytes, matching speedup_coreml.py",
+  "models": [
+    {
+      "candidate": "r832_w8a8",
+      "bundle": "FretTrackerR832W8A8",
+      "source": "mini:~/gro-coreml/speedup/r832_w8a8.mlpackage",
+      "report": "eval/speedup/ml_held_r832_w8a8.json",
+      "package_sha256": "f426b7b67c06b42cbefca628634c662bdbbf5a5f1d3444fcc4b3694a84546739",
+      "input": {
+        "name": "image",
+        "width": 832,
+        "height": 832,
+        "colorSpace": "RGB"
+      },
+      "output": {
+        "name": "output",
+        "shape": [
+          1,
+          155,
+          1
+        ],
+        "dtype": "FLOAT16"
+      },
+      "refit_tolerance": 0.3,
+      "compute_units": "cpuAndNeuralEngine"
+    },
+    {
+      "candidate": "extended_512_w8a8",
+      "bundle": "FretTrackerExtended512W8A8",
+      "source": "mini:~/gro-coreml/speedup/extended_512_w8a8.mlpackage",
+      "report": "eval/speedup/ml_held_extended_512_w8a8.json",
+      "package_sha256": "5242798d7193491b6e8956a5b1776889116b048dd84cc0776898393135c936e7",
+      "input": {
+        "name": "image",
+        "width": 512,
+        "height": 512,
+        "colorSpace": "RGB"
+      },
+      "output": {
+        "name": "output",
+        "shape": [
+          1,
+          155,
+          1
+        ],
+        "dtype": "FLOAT16"
+      },
+      "refit_tolerance": 0.3,
+      "compute_units": "cpuAndNeuralEngine"
+    }
+  ]
+}

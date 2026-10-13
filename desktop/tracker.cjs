@@ -10,11 +10,17 @@ const MAX_SOURCE_SIDE = 16384;
 const FRAME_TIMEOUT_MS = 5000;
 const READY_TIMEOUT_MS = 30000;
 const MAX_STDOUT_LINE = 1 << 20;
-// Bundled fretboard models (FretTrackerCLI loads either; both emit the same raw
-// head layout). v1 = YOLO11s-pose (AGPL-3.0), v3/v4q832 = FretNet ResNet-50
-// (permissive). See desktop/README.md.
-const MODEL_IDS = ['v1', 'v3', 'v4q832'];
-const inputSizeForModel = model => (model === 'v4q832' ? 832 : INPUT_SIZE);
+// Bundled models share the raw head layout. V1 is YOLO11s-pose (AGPL-3.0);
+// the FretNet ResNet-50/34 variants are permissive. See desktop/README.md.
+const MODEL_CONFIG = {
+  v1: { size: 640, refit: false },
+  v3: { size: 640, refit: false },
+  v4q832: { size: 832, refit: true },
+  r832_w8a8: { size: 832, refit: true },
+  extended_512_w8a8: { size: 512, refit: true },
+};
+const MODEL_IDS = Object.keys(MODEL_CONFIG);
+const inputSizeForModel = model => MODEL_CONFIG[model].size;
 const HAND_OPTIONS = ['off', 'vision-fast', 'vision-balanced', 'skin'];
 const DEFAULT_MODEL = 'v1'; // see app/components/LiveFretboard/trackerModels.ts
 
@@ -64,6 +70,8 @@ function validateFrame(frame, currentModel = DEFAULT_MODEL) {
     model,
     handCutout = 'off',
   } = frame;
+  if (model !== undefined && !MODEL_IDS.includes(model))
+    throw trackerError('invalid', 'Unknown tracker model.');
   const inputSize = inputSizeForModel(model ?? currentModel);
   if (!Number.isFinite(t)) throw trackerError('invalid', 'Invalid frame time.');
   for (const side of [width, height])
@@ -77,8 +85,6 @@ function validateFrame(frame, currentModel = DEFAULT_MODEL) {
       'invalid',
       `Frames must be ${inputSize}x${inputSize} RGBA.`,
     );
-  if (model !== undefined && !MODEL_IDS.includes(model))
-    throw trackerError('invalid', 'Unknown tracker model.');
   if (!HAND_OPTIONS.includes(handCutout))
     throw trackerError('invalid', 'Unknown hand cutout option.');
   return {
@@ -214,7 +220,7 @@ class FretTrackerService {
         '--emit-kpts',
         '--model',
         this.models[this.model],
-        ...(this.model === 'v4q832'
+        ...(MODEL_CONFIG[this.model].refit
           ? ['--compute-units', 'cpuAndNeuralEngine']
           : []),
       ],

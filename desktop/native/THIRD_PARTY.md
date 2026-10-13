@@ -1,4 +1,24 @@
-# Hand cutout model audit (2026-10-12)
+# Third-party model provenance
+
+## Speed model provenance review (2026-10-13)
+
+The two new bundles use the provenance recorded in guitar-overlay `LICENSES.md`
+("Model v3" and "Speed experiments"). The permissive-only requirement applies to
+these additions; the existing AGPL-3.0 V1 bundle remains unchanged and default.
+
+| Bundle / candidate | Code, weights and training provenance |
+| --- | --- |
+| `FretTrackerR832W8A8` / `r832_w8a8` | Original FretNet/query head; torchvision ResNet-50 architecture and `ResNet50_Weights.IMAGENET1K_V2` ImageNet initialization, published under BSD-3-Clause. Existing project-trained v4q teacher, weight/activation quantized with coremltools. |
+| `FretTrackerExtended512W8A8` / `extended_512_w8a8` | Original `scripts/speedup_train.py` GT/distillation code and existing v4q teacher; torchvision ResNet-34 and `ResNet34_Weights.DEFAULT` (`IMAGENET1K_V1`) ImageNet initialization, published under BSD-3-Clause. VAL-selected 512 student, weight/activation quantized with coremltools. |
+| Dependencies | PyTorch, torchvision, NumPy and coremltools: BSD-3-Clause; OpenCV: Apache-2.0. No Ultralytics code or weights enter either new model. |
+| Training data | Existing project labels in YOLO-pose text format (no Ultralytics dependency); teacher provenance and split hashes in speedup training protocols. ImageNet pretrained weights retain the source's separate dataset-terms caveat; unrestricted rights to pretraining images are not asserted. |
+
+[torchvision BSD-3-Clause license](https://github.com/pytorch/vision/blob/main/LICENSE)
+and [ResNet weight definitions](https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py).
+Exact measured package identities and output contracts are recorded in
+`models/speedup-provenance.json`. Both use the shared 0.30-fret refit/renumber path.
+
+## Hand cutout model audit (2026-10-12)
 
 No training or new model binaries are shipped with hand cutout.
 
@@ -24,7 +44,7 @@ The repository also downloads unused ViT-S/ONNX checkpoint variants under the sa
 Apache-2.0 license; they are not evaluated, exported, or shipped.
 
 Existing V1 remains AGPL-3.0 (Ultralytics), as documented in `desktop/README.md`;
-it is not used for the comparison MP4s. This feature adds no AGPL dependency.
+it is not used for the hand-cutout comparison MP4s. Hand cutout adds no AGPL dependency.
 Existing V3 has the same documented permissive provenance as V4Q832. Model-picker
 compatibility tests may load all three existing models without modifying them.
 

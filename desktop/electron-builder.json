@@ -39,6 +39,14 @@
     {
       "from": "desktop/native/dist/FretTrackerV4Q832.mlmodelc",
       "to": "FretTrackerV4Q832.mlmodelc"
+    },
+    {
+      "from": "desktop/native/dist/FretTrackerR832W8A8.mlmodelc",
+      "to": "FretTrackerR832W8A8.mlmodelc"
+    },
+    {
+      "from": "desktop/native/dist/FretTrackerExtended512W8A8.mlmodelc",
+      "to": "FretTrackerExtended512W8A8.mlmodelc"
     }
   ],
   "mac": {

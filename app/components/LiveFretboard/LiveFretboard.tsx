@@ -846,6 +846,10 @@ export default function LiveFretboard() {
           className="text-xs text-muted-foreground"
           data-testid="live-fretboard-stats"
           data-frames={stats.frames}
+          data-fps={stats.trackedFps}
+          data-model-ms={stats.modelMs}
+          data-round-trip-ms={stats.roundTripMs}
+          data-post-ms={stats.postMs}
           data-valid={result?.valid ? 'true' : 'false'}
           data-frets={result?.nFrets}
           data-model={result?.model}

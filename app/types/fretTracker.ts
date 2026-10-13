@@ -1,7 +1,12 @@
 // Renderer contract for the desktop fret tracker (desktop/tracker.cjs).
 
-/** Bundled fretboard models: v1 = YOLO11s-pose (AGPL-3.0), v3 / v4q832 = FretNet (permissive). */
-export type FretTrackerModelId = 'v1' | 'v3' | 'v4q832';
+/** Bundled fretboard models: v1 = YOLO11s-pose (AGPL-3.0), all others = FretNet (permissive). */
+export type FretTrackerModelId =
+  | 'v1'
+  | 'v3'
+  | 'v4q832'
+  | 'r832_w8a8'
+  | 'extended_512_w8a8';
 
 export type HandCutoutOption = 'vision-fast' | 'vision-balanced' | 'skin';
 export type HandMask = { width: number; height: number; alpha: string };

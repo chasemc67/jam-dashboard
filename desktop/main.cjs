@@ -264,6 +264,8 @@ if (!app.requestSingleInstanceLock()) {
           v1: path.join(helperDirectory, 'FretTrackerV1.mlmodelc'),
           v3: path.join(helperDirectory, 'FretTrackerV3.mlmodelc'),
           v4q832: path.join(helperDirectory, 'FretTrackerV4Q832.mlmodelc'),
+          r832_w8a8: path.join(helperDirectory, 'FretTrackerR832W8A8.mlmodelc'),
+          extended_512_w8a8: path.join(helperDirectory, 'FretTrackerExtended512W8A8.mlmodelc'),
         },
       });
       analyzer = new AnalyzerService({

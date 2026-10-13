@@ -264,41 +264,46 @@ test('result validation drops non-finite values and bad wires', () => {
   assert.throws(() => validateResult({ type: 'ready' }));
 });
 
-test('v4q832 switches input size and rejects a mismatched payload', async t => {
-  const helper = fakeHelper();
-  const service = new FretTrackerService({
-    helperPath: 'x',
-    models: {
-      v1: '/app/FretTrackerV1.mlmodelc',
-      v4q832: '/app/FretTrackerV4Q832.mlmodelc',
-    },
-    spawnProcess: helper.spawnProcess,
-    log: quiet,
+for (const [model, size, packageName] of [
+  ['v4q832', 832, 'FretTrackerV4Q832'],
+  ['r832_w8a8', 832, 'FretTrackerR832W8A8'],
+  ['extended_512_w8a8', 512, 'FretTrackerExtended512W8A8'],
+])
+  test(`${model} switches input size and rejects a mismatched payload`, async t => {
+    const helper = fakeHelper();
+    const service = new FretTrackerService({
+      helperPath: 'x',
+      models: {
+        v1: '/app/FretTrackerV1.mlmodelc',
+        [model]: `/app/${packageName}.mlmodelc`,
+      },
+      spawnProcess: helper.spawnProcess,
+      log: quiet,
+    });
+    t.after(() => service.stop());
+    await service.track(frame());
+    await assert.rejects(
+      service.track(frame({ model })),
+      new RegExp(`${size}x${size}`),
+    );
+    const pixels = new Uint8Array(size * size * 4);
+    assert.equal((await service.track(frame({ model, pixels }))).model, model);
+    assert.equal(helper.children[1].received[0].payload, pixels.byteLength);
+    assert.deepEqual(helper.children[1].args, [
+      '--emit-kpts',
+      '--model',
+      `/app/${packageName}.mlmodelc`,
+      '--compute-units',
+      'cpuAndNeuralEngine',
+    ]);
+    assert.equal((await service.track(frame({ pixels }))).model, model);
+    await assert.rejects(
+      service.track(frame({ model: 'v1', pixels })),
+      /640x640/,
+    );
+    assert.equal((await service.track(frame({ model: 'v1' }))).model, 'v1');
+    assert.equal(helper.children[2].received[0].payload, FRAME_BYTES);
   });
-  t.after(() => service.stop());
-  await service.track(frame());
-  await assert.rejects(service.track(frame({ model: 'v4q832' })), /832x832/);
-  const pixels = new Uint8Array(832 * 832 * 4);
-  assert.equal(
-    (await service.track(frame({ model: 'v4q832', pixels }))).model,
-    'v4q832',
-  );
-  assert.equal(helper.children[1].received[0].payload, pixels.byteLength);
-  assert.deepEqual(helper.children[1].args, [
-    '--emit-kpts',
-    '--model',
-    '/app/FretTrackerV4Q832.mlmodelc',
-    '--compute-units',
-    'cpuAndNeuralEngine',
-  ]);
-  assert.equal((await service.track(frame({ pixels }))).model, 'v4q832');
-  await assert.rejects(
-    service.track(frame({ model: 'v1', pixels })),
-    /640x640/,
-  );
-  assert.equal((await service.track(frame({ model: 'v1' }))).model, 'v1');
-  assert.equal(helper.children[2].received[0].payload, FRAME_BYTES);
-});
 
 test('hand options are validated and encoded independently of model/reset/mirror', () => {
   const { validateFrame } = require('../tracker.cjs');

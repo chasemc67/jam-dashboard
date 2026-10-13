@@ -78,7 +78,7 @@ Parity against the Python tracker: `scripts/fret_parity.py` (Mac, needs gro + co
 
 `FretTrackerV4Q832` uses 832×832 RGBA input; the helper reads dimensions from
 CoreML, and the renderer/service select and validate the corresponding frame
-size. The wire refit runs only for this model identity, in letterbox coordinates
+size. The wire refit runs for this model and the two fast query-head models, in letterbox coordinates
 before clipping. `Refit.swift` keeps positions and confidence, assigns the nearest
 fitted integer fret, drops distances >=0.30 fret, preserves the side, and retains
 the first highest-confidence collision. Fit failure retains the original points.
@@ -111,3 +111,27 @@ it, including pose/ROI and mask extraction, excluding JSON encoding.
 See [THIRD_PARTY.md](THIRD_PARTY.md) for the model license audit. The offline
 comparison harness is `scripts/eval_hands.py`; its Python dependencies and external
 models are evaluation-only and are not bundled in the app.
+
+### Fast CoreML models
+
+The picker also bundles `r832_w8a8` (**v4q-832 fast (8-bit)**, 832 input) and
+`extended_512_w8a8` (**ResNet-34 512 fast (8-bit)**, 512 input). Both use the same
+query-head decoder and 0.30-fret refit/renumber pipeline as v4q-832, with
+CPU_AND_NE compute. Model dimensions control RGBA letterboxing and IPC validation.
+V1 remains default; hand cutout remains off with skin as its default method.
+
+The exact measured exports, package SHA-256 identities and output contracts are
+in `desktop/native/models/speedup-provenance.json` (relative to repository root).
+Licenses and training provenance are recorded in `desktop/native/THIRD_PARTY.md`.
+The 512 model trades accuracy for speed: the prior 09-06 experiment numbered 14/15
+frames correctly, versus 15/15 for the 832 fast model.
+
+E2E captures of the rendered canvas and numeric tracking/model timings:
+
+```sh
+node desktop/e2e/live-fretboard.mjs --video clip.mp4 --out out/speedup/clip \
+  --models v1,v4q832,r832_w8a8,extended_512_w8a8 --capture-seconds 10 --shots 2
+```
+
+`summary.json` records tracked-frame throughput over wall time and sampled model
+step timings while recording; the WEBM files contain the actual app overlay.

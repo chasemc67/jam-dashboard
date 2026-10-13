@@ -94,7 +94,13 @@ async function verify({ directory, version, signed }) {
     );
     if (!existsSync(path.join(app, 'Contents/Resources/app-update.yml')))
       errors.push(`${arch}: app-update.yml is missing`);
-    for (const model of ['FretTrackerV1', 'FretTrackerV3', 'FretTrackerV4Q832'])
+    for (const model of [
+      'FretTrackerV1',
+      'FretTrackerV3',
+      'FretTrackerV4Q832',
+      'FretTrackerR832W8A8',
+      'FretTrackerExtended512W8A8',
+    ])
       if (
         !existsSync(
           path.join(app, `Contents/Resources/${model}.mlmodelc/coremldata.bin`),

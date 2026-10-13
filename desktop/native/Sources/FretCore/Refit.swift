@@ -1,6 +1,6 @@
 import Foundation
 
-/// v4q-832 only: VAL-selected 0.30-fret rejection, before unletterboxing/clipping.
+/// Query-head FretNet models: VAL-selected 0.30-fret rejection, before unletterboxing/clipping.
 /// Keep observed coordinates/confidence and side, relabel to the nearest fitted wire,
 /// reject ambiguous/nonfinite/out-of-range points, and keep the first highest-confidence collision.
 public func reassignFittedWires(_ kpts: [Float], H: Mat3, tolerance: Double = 0.30) -> [Float] {
@@ -32,7 +32,7 @@ public func reassignFittedWires(_ kpts: [Float], H: Mat3, tolerance: Double = 0.
 }
 
 /// Matches the geometry-only Python backend; failure retains stage-one predictions.
-public func refitPermissive832(_ kpts: [Float]) -> [Float] {
+public func refitFretNet(_ kpts: [Float]) -> [Float] {
     guard kpts.count == nKpts * 3, kpts.allSatisfy({ $0.isFinite }) else { return kpts }
     let anchors = anchorsFrom(kpts)
     guard let fit = try? fitFretboard(anchors, ransacIters: 100,

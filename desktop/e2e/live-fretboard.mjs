@@ -4,7 +4,7 @@
 //
 //   node desktop/e2e/live-fretboard.mjs --video clip.mp4 --out shots/ \
 //     [--app "release/mac-arm64/Jam Dashboard.app"] [--shots 10] [--lefty] \
-//     [--models v3,v1] [--fullscreen-shots 1] [--hand-cutout vision-fast] [--hand-opacity 100]
+//     [--models v3,v1] [--fullscreen-shots 1] [--hand-cutout vision-fast] [--hand-opacity 100] [--capture-seconds 10]
 // --lefty turns on the page-level Left-handed setting (model input flipped).
 // --models picks each tracking model in turn from the picker while the video keeps
 // running (runtime switch, no restart); shots are prefixed with the model id.
@@ -27,6 +27,14 @@ const video = path.resolve(option('--video', ''));
 const out = path.resolve(option('--out', 'e2e-out'));
 const appBundle = option('--app');
 const shots = Number(option('--shots', '10'));
+// Capture the rendered canvas through the browser without using the product Record feature.
+const captureSeconds = Number(option('--capture-seconds', '0'));
+if (
+  !Number.isFinite(captureSeconds) ||
+  captureSeconds < 0 ||
+  captureSeconds > 120
+)
+  throw new Error('Invalid --capture-seconds (expected 0–120)');
 const lefty = args.includes('--lefty');
 const handCutout = option('--hand-cutout', 'off');
 const handOpacity = Number(option('--hand-opacity', '100'));
@@ -41,6 +49,9 @@ const fullscreenShots = Number(option('--fullscreen-shots', '1'));
 const port = Number(option('--port', '9339'));
 const interval = Number(option('--interval-ms', '700'));
 const models = option('--models', '').split(',').filter(Boolean);
+const bundledModels = ['v1', 'v3', 'v4q832', 'r832_w8a8', 'extended_512_w8a8'];
+if (models.some(id => !bundledModels.includes(id)))
+  throw new Error('Unknown --models id');
 if (!option('--video')) throw new Error('--video is required');
 mkdirSync(out, { recursive: true });
 
@@ -313,6 +324,82 @@ try {
     summary.shots.push({ file, stats });
     console.log(`${name}: ${stats?.text}`);
   };
+  const captureVideo = async id => {
+    if (!captureSeconds || summary.stats.some(stats => stats.model === id))
+      return;
+    const recording = await evaluate(`(async () => {
+      const canvas = document.querySelector('[data-testid=live-fretboard-canvas]');
+      const video = document.querySelector('[data-testid=live-fretboard] video');
+      // Every model gets the same source interval, with a settled model before seeking.
+      video.pause();
+      if (Math.abs(video.currentTime - ${seek}) > 0.01) {
+        await new Promise(resolve => {
+          video.addEventListener('seeked', resolve, { once: true });
+          video.currentTime = ${seek};
+        });
+      }
+      const stream = canvas.captureStream(30);
+      const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 6000000 });
+      const chunks = [], samples = [];
+      recorder.ondataavailable = event => { if (event.data.size) chunks.push(event.data); };
+      const stopped = new Promise(resolve => { recorder.onstop = resolve; });
+      const start = performance.now();
+      const sample = () => {
+        const el = document.querySelector('[data-testid=live-fretboard-stats]');
+        if (el) samples.push({ elapsedMs: performance.now() - start, mediaTime: video.currentTime, ...el.dataset });
+      };
+      sample();
+      const timer = setInterval(sample, 100);
+      recorder.start();
+      await video.play();
+      await new Promise(resolve => setTimeout(resolve, ${captureSeconds * 1000}));
+      sample(); clearInterval(timer); recorder.stop(); await stopped;
+      stream.getTracks().forEach(track => track.stop());
+      const bytes = new Uint8Array(await new Blob(chunks).arrayBuffer());
+      let binary = '';
+      for (let i = 0; i < bytes.length; i += 32768)
+        binary += String.fromCharCode(...bytes.subarray(i, i + 32768));
+      return { base64: btoa(binary), samples };
+    })()`);
+    const file = path.join(out, `${id}.webm`);
+    writeFileSync(file, Buffer.from(recording.base64, 'base64'));
+    const samples = recording.samples;
+    if (samples.some(sample => sample.model !== id))
+      throw new Error(`Wrong model during ${id} capture`);
+    if (!samples.some(sample => sample.valid === 'true'))
+      throw new Error(`No valid tracking for ${id}`);
+    const first = samples[0],
+      last = samples.at(-1);
+    const fps =
+      ((Number(last.frames) - Number(first.frames)) * 1000) /
+      (last.elapsedMs - first.elapsedMs);
+    if (!(fps > 0)) throw new Error(`No tracking progress for ${id}`);
+    const unique = [
+      ...new Map(samples.map(sample => [sample.frames, sample])).values(),
+    ];
+    const timings = unique
+      .map(sample => Number(sample.modelMs))
+      .filter(Number.isFinite)
+      .sort((a, b) => a - b);
+    const stats = {
+      model: id,
+      file,
+      fps,
+      modelMsMedian: timings[Math.floor(timings.length / 2)],
+      modelMsP95: timings[Math.floor((timings.length - 1) * 0.95)],
+      samples,
+    };
+    summary.stats.push(stats);
+    console.log(
+      `${id}: ${fps.toFixed(2)} tracked fps, model median ${stats.modelMsMedian.toFixed(2)} ms`,
+    );
+  };
+  await captureVideo(
+    models[0] ??
+      (await evaluate(
+        `document.querySelector('[data-testid=live-fretboard-stats]').dataset.model`,
+      )),
+  );
   const prefix = models.length ? `${models[0]}-` : '';
   for (let i = 0; i < shots; i++) {
     await capture(`${prefix}live-fretboard-${String(i + 1).padStart(2, '0')}`);
@@ -326,6 +413,7 @@ try {
       `results from ${id}`,
     );
     await sleep(2500);
+    await captureVideo(id);
     for (let i = 0; i < shots; i++) {
       await capture(`${id}-live-fretboard-${String(i + 1).padStart(2, '0')}`);
       await sleep(interval);

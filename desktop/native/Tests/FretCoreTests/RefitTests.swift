@@ -17,7 +17,19 @@ final class RefitTests: XCTestCase {
         XCTAssertEqual(fixtures.count, 50)
         for fixture in fixtures {
             XCTAssertEqual(reassignFittedWires(fixture.k, H: Mat3(fixture.H)), fixture.expected, fixture.item)
-            XCTAssertEqual(refitPermissive832(fixture.k), fixture.expected, "full fit: \(fixture.item)")
+            XCTAssertEqual(refitFretNet(fixture.k), fixture.expected, "full fit: \(fixture.item)")
+        }
+    }
+
+    func testMeasuredSpeedModelPredictions() throws {
+        let url = try XCTUnwrap(Bundle.module.url(forResource: "speedup_reference", withExtension: "json",
+                                                 subdirectory: "Fixtures"))
+        let fixtures = try JSONDecoder().decode([Fixture].self, from: Data(contentsOf: url))
+        XCTAssertEqual(fixtures.count, 14)
+        for fixture in fixtures {
+            // Includes held-out and 09-06 predictions from both exact measured W8A8 packages.
+            let decoded = decode(raw: [0, 0, 0, 0, 1] + fixture.k, anchorCount: 1)
+            XCTAssertEqual(refitFretNet(decoded.kpts), fixture.expected, fixture.item)
         }
     }
 
@@ -26,7 +38,7 @@ final class RefitTests: XCTestCase {
         k[0] = .nan; k[2] = 0.9
         XCTAssertEqual(reassignFittedWires(k, H: .identity), [Float](repeating: 0, count: 150))
         k[0] = 0; k[1] = 0.5
-        XCTAssertEqual(refitPermissive832(k), k) // too few fit anchors
+        XCTAssertEqual(refitFretNet(k), k) // too few fit anchors
         k[0] = 1.1
         XCTAssertEqual(reassignFittedWires(k, H: .identity), [Float](repeating: 0, count: 150))
     }

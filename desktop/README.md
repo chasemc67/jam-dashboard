@@ -463,3 +463,33 @@ IPC gate and isolated preload. Renderer requests contain opaque session IDs,
 fixed stream names, and bounded chunks, never filesystem paths. MediaRecorder
 emits one-second chunks. A bounded renderer queue stops recording with an error
 if disk writes fall behind, rather than retaining an entire session in memory.
+
+### Fast CoreML models
+
+The picker also bundles `r832_w8a8` (**v4q-832 fast (8-bit)**, 832 input) and
+`extended_512_w8a8` (**ResNet-34 512 fast (8-bit)**, 512 input). Both use the same
+query-head decoder and 0.30-fret refit/renumber pipeline as v4q-832, with
+CPU_AND_NE compute. Model dimensions control RGBA letterboxing and IPC validation.
+V1 remains default; hand cutout remains off with skin as its default method.
+
+The exact measured exports, package SHA-256 identities and output contracts are
+in `desktop/native/models/speedup-provenance.json` (relative to repository root).
+Licenses and training provenance are recorded in `desktop/native/THIRD_PARTY.md`.
+The 512 model trades accuracy for speed: the prior 09-06 experiment numbered 14/15
+frames correctly, versus 15/15 for the 832 fast model.
+
+E2E captures of the rendered canvas and numeric tracking/model timings:
+
+```sh
+node desktop/e2e/live-fretboard.mjs --video clip.mp4 --out out/speedup/clip \
+  --models v1,v4q832,r832_w8a8,extended_512_w8a8 --capture-seconds 10 --shots 2
+```
+
+`summary.json` records tracked-frame throughput over wall time and sampled model
+step timings while recording; the WEBM files contain the actual app overlay.
+
+Create a labelled v1 / v4q-832 fast / ResNet-34 fast comparison from an E2E run:
+
+```sh
+node desktop/e2e/compare-speedup.mjs out/speedup/clip
+```
