@@ -1,9 +1,7 @@
-/* Loaded only by /glasses. Meta Ray-Ban Display reads body touch-action once at
-   page load to opt the page into continuous drag (used to slide the fretboard). */
+/* Loaded only by /glasses. */
 html,
 body {
   background: #000;
-  touch-action: none;
 }
 .glasses-focus:focus {
   outline: 4px solid #fff;
